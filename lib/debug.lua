@@ -66,7 +66,7 @@ function Debug.install(mod, Items, runtime)
       { label="BACK", value="back" },
     })
     if action == "prism" then
-      giveItem(ctx, Items.byKey.shiny_finder.itemId, 1)
+      giveItem(ctx, Items.byKey.prism_scent.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables()) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -84,34 +84,23 @@ function Debug.install(mod, Items, runtime)
 
   local function warpMenu(ctx)
     local rows = {}
-    for _, dest in ipairs(WARPS) do
-      rows[#rows + 1] = { label=dest.label, value=dest.key }
-    end
+    for _, dest in ipairs(WARPS) do rows[#rows + 1] = { label=dest.label, value=dest.key } end
     rows[#rows + 1] = { label="RETURN", value="return" }
     rows[#rows + 1] = { label="BACK", value="back" }
     local key = choose(ctx, "DEBUG WARP", rows)
     if not key or key == "back" then return false end
-
     local dest
     if key == "return" then
       dest = runtime.debugReturn
-      if not dest then
-        showText(ctx, "No debug return\npoint is stored.")
-        return false
-      end
+      if not dest then showText(ctx, "No debug return\npoint is stored.") return false end
       runtime.debugReturn = nil
     else
-      for _, row in ipairs(WARPS) do
-        if row.key == key then dest = row break end
-      end
+      for _, row in ipairs(WARPS) do if row.key == key then dest = row break end end
       if not runtime.debugReturn then runtime.debugReturn = mod.world:current() end
     end
     if not dest then return false end
     local ok, err = mod.world:warpTo(dest.mapId, dest.x, dest.y, dest.facing)
-    if not ok then
-      showText(ctx, "Warp failed:\n" .. tostring(err))
-      return false
-    end
+    if not ok then showText(ctx, "Warp failed:\n" .. tostring(err)) return false end
     return true
   end
 
@@ -140,21 +129,13 @@ function Debug.install(mod, Items, runtime)
       { label="DEBUG TELEMETRY", value="telemetry" },
       { label="BACK", value="back" },
     })
-    if action == "effect" then
-      runtime:clearFieldEffect()
-    elseif action == "runtime" then
-      runtime:resetRuntime()
-    elseif action == "save" then
-      runtime:resetPersistent(itemKeys(Items))
-    elseif action == "inventory" then
-      for _, item in ipairs(Items.consumables()) do takeItem(ctx, item.itemId, 99) end
-    elseif action == "unlocks" then
-      for _, item in ipairs(Items.permanent()) do runtime:lock(item.key) end
-    elseif action == "telemetry" then
-      runtime.debugRolls, runtime.debugSuccesses = 0, 0
-    else
-      return
-    end
+    if action == "effect" then runtime:clearFieldEffect()
+    elseif action == "runtime" then runtime:resetRuntime()
+    elseif action == "save" then runtime:resetPersistent(itemKeys(Items))
+    elseif action == "inventory" then for _, item in ipairs(Items.consumables()) do takeItem(ctx, item.itemId, 99) end
+    elseif action == "unlocks" then for _, item in ipairs(Items.permanent()) do runtime:lock(item.key) end
+    elseif action == "telemetry" then runtime.debugRolls, runtime.debugSuccesses = 0, 0
+    else return end
     showText(ctx, "DScrete state reset.")
   end
 
@@ -169,17 +150,11 @@ function Debug.install(mod, Items, runtime)
           { label="RESET", value="reset" },
           { label="CANCEL", value="cancel" },
         })
-        if action == "items" then
-          grantMenu(ctx)
-        elseif action == "warp" then
-          if warpMenu(ctx) then return end
-        elseif action == "inspect" then
-          inspect(ctx)
-        elseif action == "reset" then
-          resetMenu(ctx)
-        else
-          return
-        end
+        if action == "items" then grantMenu(ctx)
+        elseif action == "warp" then if warpMenu(ctx) then return end
+        elseif action == "inspect" then inspect(ctx)
+        elseif action == "reset" then resetMenu(ctx)
+        else return end
       end
     end,
   })
@@ -190,12 +165,7 @@ function Debug.install(mod, Items, runtime)
         movement="STAY", range="NONE", text=DEBUG_TEXT, x=9, y=10 },
     } },
   })
-
-  mod.content.map_scripts:register("PALLET_TOWN", {
-    talk = {
-      [DEBUG_TEXT] = { { DEBUG_COMMAND } },
-    },
-  })
+  mod.content.map_scripts:register("PALLET_TOWN", { talk = { [DEBUG_TEXT] = { { DEBUG_COMMAND } } } })
 end
 
 return Debug
