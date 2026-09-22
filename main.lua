@@ -81,7 +81,7 @@ return function(mod)
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
   })
-  Debug.install(mod,Items,runtime)
+  Debug.install(mod,Items,runtime,{treasure=treasure,glitch=glitch})
 
   mod.exports.version=mod.version
   mod.exports.items=Items
