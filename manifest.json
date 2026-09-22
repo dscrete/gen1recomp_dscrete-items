@@ -7,7 +7,7 @@
   "profile": "content",
   "category": "GAMEPLAY",
   "games": ["gen1"],
-  "game_version": ">=0.2.74 <0.3.0",
+  "game_version": ">=0.2.5 <0.3.0",
   "priority": 100,
   "dependencies": [],
   "optional_dependencies": [],
