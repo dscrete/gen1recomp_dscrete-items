@@ -12,10 +12,36 @@ local function copySlot(slot)
   return out
 end
 
+local function copyDef(encDef, source, terrain)
+  local copy, target = {}, {}
+  for k, v in pairs(encDef) do copy[k] = v end
+  for k, v in pairs(source) do target[k] = v end
+  target.slots = {}
+  for i, slot in ipairs(source.slots or {}) do target.slots[i] = copySlot(slot) end
+  if terrain == "water" then copy.water = target else copy.grass = target end
+  return copy, target
+end
+
+local function rebuildBuckets(target, scaled)
+  local total = 0
+  for _, weight in ipairs(scaled) do total = total + weight end
+  if total <= 0 then return false end
+  target.buckets = {}
+  local cumulative = 0
+  for i, weight in ipairs(scaled) do
+    cumulative = cumulative + weight
+    local threshold = (i == #scaled) and 256
+      or math.floor((cumulative * 256 / total) + 0.5)
+    if i > 1 and threshold < target.buckets[i - 1] then threshold = target.buckets[i - 1] end
+    if threshold > 256 then threshold = 256 end
+    target.buckets[i] = threshold
+  end
+  return true
+end
+
 function EncounterWeights.terrainTable(encDef, terrain)
   if type(encDef) ~= "table" then return nil end
   if terrain == "water" then return encDef.water end
-  -- Gen 1 caves use the grass encounter table while ctx.terrain is indoor.
   return encDef.grass
 end
 
@@ -36,16 +62,13 @@ end
 function EncounterWeights.distributionFromTable(tableDef)
   local dist = {}
   for _, row in ipairs(EncounterWeights.slotWeights(tableDef)) do
-    if row.species and row.weight > 0 then
-      dist[row.species] = (dist[row.species] or 0) + row.weight
-    end
+    if row.species and row.weight > 0 then dist[row.species] = (dist[row.species] or 0) + row.weight end
   end
   return dist
 end
 
 function EncounterWeights.distribution(encDef, terrain)
-  return EncounterWeights.distributionFromTable(
-    EncounterWeights.terrainTable(encDef, terrain))
+  return EncounterWeights.distributionFromTable(EncounterWeights.terrainTable(encDef, terrain))
 end
 
 function EncounterWeights.rarestSpecies(dist)
@@ -67,17 +90,8 @@ function EncounterWeights.total(dist)
   return n
 end
 
--- Elusive Scent is a rarity-compression effect, not a "boost only the rarest"
--- effect. The commonest species is the baseline (1x). Every species below that
--- weight receives a progressively larger multiplier, with lower weights gaining
--- more. The strength value is the upper multiplier approached by extremely rare
--- species: mild=2, strong=4, extreme=8.
---
--- The square makes the curve gentle around common/uncommon species and stronger
--- near the rare end. This preserves the area's ordering while narrowing the gap.
 function EncounterWeights.rarityMultiplier(weight, maximum, strength)
-  weight, maximum, strength = tonumber(weight) or 0, tonumber(maximum) or 0,
-    tonumber(strength) or 1
+  weight, maximum, strength = tonumber(weight) or 0, tonumber(maximum) or 0, tonumber(strength) or 1
   if weight <= 0 or maximum <= 0 or strength <= 1 then return 1 end
   local ratio = math.max(0, math.min(1, weight / maximum))
   local rarity = 1 - ratio
@@ -98,7 +112,6 @@ function EncounterWeights.compressDistribution(dist, strength)
   return out
 end
 
--- Retained as a small generic helper for later targeted modifiers.
 function EncounterWeights.boostDistribution(dist, selected, factor)
   factor = tonumber(factor) or 1
   local out = {}
@@ -108,50 +121,54 @@ function EncounterWeights.boostDistribution(dist, selected, factor)
   return out
 end
 
+function EncounterWeights.reserveSpecies(dist, species, share)
+  share = math.max(0, math.min(0.95, tonumber(share) or 0))
+  local total = EncounterWeights.total(dist)
+  local out = {}
+  if total <= 0 or not species or share <= 0 then
+    for k, v in pairs(dist or {}) do out[k] = v end
+    return out
+  end
+  local nativeScale = 1 - share
+  for k, weight in pairs(dist or {}) do out[k] = (tonumber(weight) or 0) * nativeScale end
+  out[species] = (out[species] or 0) + total * share
+  return out
+end
+
 function EncounterWeights.boostEncounterDef(encDef, terrain, strength)
   if type(encDef) ~= "table" then return encDef, {} end
   local source = EncounterWeights.terrainTable(encDef, terrain)
   if not source then return encDef, {} end
   local dist = EncounterWeights.distributionFromTable(source)
   local compressed = EncounterWeights.compressDistribution(dist, strength)
-  if EncounterWeights.total(compressed) <= 0 or (tonumber(strength) or 1) <= 1 then
-    return encDef, compressed
-  end
-
-  local copy = {}
-  for k, v in pairs(encDef) do copy[k] = v end
-  local target = {}
-  for k, v in pairs(source) do target[k] = v end
-  target.slots = {}
-  for i, slot in ipairs(source.slots or {}) do target.slots[i] = copySlot(slot) end
-
-  local rows = EncounterWeights.slotWeights(source)
-  local scaled, total = {}, 0
+  if EncounterWeights.total(compressed) <= 0 or (tonumber(strength) or 1) <= 1 then return encDef, compressed end
+  local copy, target = copyDef(encDef, source, terrain)
+  local rows, scaled = EncounterWeights.slotWeights(source), {}
   for i, row in ipairs(rows) do
-    local baseSpeciesWeight = dist[row.species] or 0
-    local wantedSpeciesWeight = compressed[row.species] or baseSpeciesWeight
-    local multiplier = baseSpeciesWeight > 0 and (wantedSpeciesWeight / baseSpeciesWeight) or 1
-    local weight = row.weight * multiplier
-    scaled[i] = weight
-    total = total + weight
+    local base = dist[row.species] or 0
+    local wanted = compressed[row.species] or base
+    local multiplier = base > 0 and wanted / base or 1
+    scaled[i] = row.weight * multiplier
   end
-  if total <= 0 then return encDef, compressed end
-
-  target.buckets = {}
-  local cumulative = 0
-  for i, weight in ipairs(scaled) do
-    cumulative = cumulative + weight
-    local threshold = (i == #scaled) and 256
-      or math.floor((cumulative * 256 / total) + 0.5)
-    if i > 1 and threshold < target.buckets[i - 1] then
-      threshold = target.buckets[i - 1]
-    end
-    if threshold > 256 then threshold = 256 end
-    target.buckets[i] = threshold
-  end
-
-  if terrain == "water" then copy.water = target else copy.grass = target end
+  if not rebuildBuckets(target, scaled) then return encDef, compressed end
   return copy, compressed
+end
+
+function EncounterWeights.boostSpeciesEncounterDef(encDef, terrain, species, factor)
+  if type(encDef) ~= "table" or not species then return encDef, false end
+  local source = EncounterWeights.terrainTable(encDef, terrain)
+  if not source then return encDef, false end
+  local dist = EncounterWeights.distributionFromTable(source)
+  if not dist[species] then return encDef, false end
+  factor = tonumber(factor) or 1
+  if factor <= 1 then return encDef, true end
+  local copy, target = copyDef(encDef, source, terrain)
+  local scaled = {}
+  for i, row in ipairs(EncounterWeights.slotWeights(source)) do
+    scaled[i] = row.weight * (row.species == species and factor or 1)
+  end
+  if not rebuildBuckets(target, scaled) then return encDef, true end
+  return copy, true
 end
 
 function EncounterWeights.signalBand(weight, total)
