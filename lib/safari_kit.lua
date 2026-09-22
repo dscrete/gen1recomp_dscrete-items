@@ -5,7 +5,7 @@ SafariKit.ITEM_ID = "DS_SAFARI_KIT"
 SafariKit.BAIT_POWER_OPTION = "safari_kit_bait_power"
 SafariKit.PASS_STEPS_OPTION = "safari_kit_pass_steps"
 SafariKit.PASS_BALLS_OPTION = "safari_kit_pass_balls"
-SafariKit.SESSION_KEY = "safari_kit_session"
+SafariKit.SESSION_KEY = "safari_kit"
 
 local STRENGTHS={ mild=2,strong=4,extreme=8 }
 local PASS_STEPS={ [100]=true,[250]=true,[500]=true }
