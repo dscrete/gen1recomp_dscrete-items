@@ -4,18 +4,18 @@ TreasureDetector.KEY = "treasure_detector"
 TreasureDetector.ENABLED_KEY = TreasureDetector.KEY
 
 local BANDS = {
-  { max=0, name="DIRECTLY HERE", rank=5, text="BEEP! BEEP!" },
-  { max=1, name="VERY STRONG", rank=4, text="BEEP BEEP!" },
-  { max=3, name="STRONG", rank=3, text="BEEP!" },
-  { max=6, name="SIGNAL", rank=2, text="BEEP" },
-  { max=10, name="FAINT", rank=1, text="beep" },
+  { max=0, name="DIRECTLY HERE", rank=5 },
+  { max=1, name="VERY STRONG", rank=4 },
+  { max=3, name="STRONG", rank=3 },
+  { max=6, name="SIGNAL", rank=2 },
+  { max=10, name="FAINT", rank=1 },
 }
 
 function TreasureDetector.bandForDistance(distance)
   distance=tonumber(distance)
-  if distance==nil then return {name="NO SIGNAL",rank=0,text=nil} end
+  if distance==nil then return {name="NO SIGNAL",rank=0} end
   for _,band in ipairs(BANDS) do if distance<=band.max then return band end end
-  return {name="NO SIGNAL",rank=0,text=nil}
+  return {name="NO SIGNAL",rank=0}
 end
 
 function TreasureDetector.nearestHidden(overview,x,y)
@@ -30,7 +30,7 @@ function TreasureDetector.nearestHidden(overview,x,y)
   return best
 end
 
-function TreasureDetector.install(mod,runtime,fx)
+function TreasureDetector.install(mod,runtime,_fx)
   local lastMap,lastX,lastY,lastRank=nil,nil,nil,0
 
   local function enabled()
@@ -47,13 +47,14 @@ function TreasureDetector.install(mod,runtime,fx)
     return TreasureDetector.bandForDistance(TreasureDetector.nearestHidden(overview,pos.x,pos.y))
   end
 
-  local function safeBeep(game,text)
-    if fx and text then fx.flashMessage(text,0.65) end
+  local function safeBeep(game)
     local ok,Sound=pcall(require,"src.core.Sound")
     if ok and Sound and game and game.data then
       local audio=game.data.audio
       local name="Sfx_SecondPartOfItemfinder"
-      if audio and audio.sfx and audio.sfx[Sound.resolve(game.data,name)] then Sound.play(game.data,name) end
+      if audio and audio.sfx and audio.sfx[Sound.resolve(game.data,name)] then
+        Sound.play(game.data,name)
+      end
     end
   end
 
@@ -66,7 +67,7 @@ function TreasureDetector.install(mod,runtime,fx)
     if mapChanged then lastRank=0 end
     lastMap,lastX,lastY=pos.mapId,pos.x,pos.y
     local band=reading()
-    if band.rank>lastRank and band.rank>0 then safeBeep(game,band.text) end
+    if band.rank>lastRank and band.rank>0 then safeBeep(game) end
     lastRank=band.rank
   end
 
