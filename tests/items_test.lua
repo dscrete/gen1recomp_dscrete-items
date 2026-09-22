@@ -19,7 +19,8 @@ end)
 
 test("implemented encounter consumables have effects", function()
   local expected={ prism_scent="DS_PRISM_SCENT_EFFECT", elusive_scent="DS_ELUSIVE_SCENT_EFFECT",
-    mystery_lure="DS_MYSTERY_LURE_EFFECT", species_whistle="DS_SPECIES_WHISTLE_EFFECT" }
+    mystery_lure="DS_MYSTERY_LURE_EFFECT", species_whistle="DS_SPECIES_WHISTLE_EFFECT",
+    prototype_resonator="DS_PROTOTYPE_RESONATOR_EFFECT", safari_kit="DS_SAFARI_KIT_EFFECT" }
   for key,effect in pairs(expected) do
     local item=Items.byKey[key]
     eq(item.effect,effect,key)
@@ -37,9 +38,11 @@ end)
 
 test("implemented filters expose only built content", function()
   local consumables=Items.consumables(true)
-  eq(#consumables,4)
+  eq(#consumables,6)
   eq(consumables[1].key,"prism_scent")
   eq(consumables[2].key,"elusive_scent")
   eq(consumables[3].key,"mystery_lure")
   eq(consumables[4].key,"species_whistle")
+  eq(consumables[5].key,"prototype_resonator")
+  eq(consumables[6].key,"safari_kit")
 end)
