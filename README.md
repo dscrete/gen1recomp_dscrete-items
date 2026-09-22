@@ -1,10 +1,17 @@
 # DScrete Items
 
-**DScrete Items** is a planned Gen1Recomp expansion built around strange, useful
-pieces of late-1990s Pokemon technology. The initial goal is to implement a shared
-item framework and the items themselves. How players obtain them will be designed
-later, so acquisition locations, currencies, ranks, and reward systems are
-intentionally out of scope for now.
+**DScrete Items** is a Gen1Recomp expansion built around strange, useful pieces of
+late-1990s Pokemon technology. Rather than backporting later-generation features,
+the mod adds gadgets that create new decisions and activities while fitting the
+existing game's presentation.
+
+The guiding loop is:
+
+> find a gadget -> gain a capability -> discover a new way to play
+
+How players obtain the gadgets is intentionally separate from the item framework.
+Oak research, Silph prototypes, Safari ecology, Rocket incidents, shops, currencies,
+or other reward systems can be layered on later without changing item behavior.
 
 ## Engine compatibility
 
@@ -17,18 +24,14 @@ fork, or bundle the engine. The authoritative integration target is:
 - supported engine range `>=0.2.74 <0.3.0`.
 
 The compatibility contract is machine-readable in [`manifest.json`](manifest.json).
-Development and integration testing use a separate Gen1Recomp checkout with this
-repository placed or symlinked under its `mods/` directory. Release archives contain
-only the standalone mod files.
-
-Implementation must use only the public API documented by the tagged upstream
-source. If an item needs an unavailable hook, registry, or behavior, record the gap
-instead of including private engine headers or silently depending on internals.
+Implementation uses the public API exposed by the pinned revision. Engine-integrated
+validation is kept separate from the standalone tests and requires an external
+Gen1Recomp checkout plus imported Gen 1 cache.
 
 ## Design principles
 
 1. **Gen 1 first.** Items use the existing bag, text boxes, palettes, sounds, and
-   animations wherever possible. New art is optional rather than a requirement.
+   animations wherever possible. New art is optional rather than required.
 2. **Capabilities, not conveniences.** An item should create a new decision or
    unlock an activity, not merely shorten a menu operation.
 3. **One shared framework.** Timed field effects, encounter modifiers, permanent
@@ -37,100 +40,92 @@ instead of including private engine headers or silently depending on internals.
 4. **Respect the encounter table.** Effects bias an area's identity; they do not
    silently replace it. Exceptional encounters are curated by habitat.
 5. **No guaranteed miracles.** Rare and shiny effects improve odds, but retain
-   uncertainty. Gen-1-compatible shiny Pokemon must be produced through valid DVs.
+   uncertainty. Gen-1-compatible shiny Pokemon are produced through valid DVs.
+6. **Distribution comes later.** Item implementation does not assume how an item is
+   earned. Reward systems can be designed independently once behavior is stable.
 
-## Ownership categories
+## Storage and ownership
 
-Ownership describes how an item is stored and used, independently of how it may
-eventually be awarded:
+Ownership describes how an item is stored and used:
 
-- **Permanent:** unlocked once, never consumed, and shown in a dedicated
-  **GADGETS** menu rather than occupying a normal bag slot.
-- **Reusable:** owned as a persistent gadget and usable repeatedly. Any cooldown,
-  charges, or other limiting rule must be defined when that item is implemented.
+- **Permanent:** unlocked once, never consumed, and intended for a dedicated
+  **GADGETS** menu rather than a normal bag slot.
+- **Reusable:** persistent gadget usable repeatedly, with any cooldown/charge rule
+  defined by that item.
 - **Consumable:** stored in the normal bag and removes exactly one copy only after
-  its effect has been applied successfully.
-- **Consumable pair:** two linked consumable states, such as placing and then using
-  a beacon. The implementation must define cancellation and replacement behavior.
+  its effect is successfully applied.
+- **Consumable pair:** linked consumable states such as placing and using a beacon.
 
 Only one encounter-modifying field effect may be active at a time. Activating a
-different one asks the player to confirm replacement.
-
-## Thematic item families
-
-Items also carry a thematic family label. These labels establish the identity and
-visual language of each item; they do not yet decide exactly where, when, or how
-the player obtains it.
-
-**Oak / Pallet**
-
-- Field equipment and Pokédex technology
-- Shiny Finder
-- Rare Lure, Mystery Lure, and Species Whistle
-- Pokédex Chip
-
-**Silph Co.**
-
-- Link Cable and PC Transfer Unit
-- Trainer Beacon and EXP Battery
-- Blank TM
-- Prototype Ball and Prototype Repel
-- Silph Tracker and Emergency Teleporter
-
-**Cinnabar Lab**
-
-- Fossil Catalyst and Move Recorder
-- DNA Stabilizer and Mutation Capsule
-- Glitch Detector
-
-**Safari Zone**
-
-- Safari Bait / Pass
-- Wildlife-focused variants of lures and trackers
-
-**Rocket content**
-
-- Rocket Decoder
-- Stolen or black-market variants of prototype gadgets
-
-**Exploration**
-
-- Treasure Detector
-- Map Beacon
-
-The family label is required metadata, but variants may reuse an item's underlying
-behavior with different presentation or balance. A family is not an acquisition
-system and does not imply a shop, quest, currency, or reward track.
+different one requires explicit replacement confirmation.
 
 ## Item catalogue
 
-This catalogue defines ownership and intended behavior, not acquisition method.
+The **category** column assigns implementation ownership. It describes which shared
+system contains the behavior, not where or how the player receives the item.
 
-| Item | Ownership | Intended effect |
-| --- | --- | --- |
-| Shiny Finder | Consumable | Temporarily raises wild shiny generation to about 1 in 100 via valid shiny DVs. |
-| Rare Lure | Consumable | Biases encounters toward the rarest species already in the area's table. |
-| Mystery Lure | Consumable | Adds a small, curated habitat-specific encounter pool for a limited duration. |
-| Species Whistle | Consumable | Selects a species and raises its weight in compatible encounter tables. |
-| Silph Tracker | Permanent | Reports whether a selected species is absent, faint, present, or strong locally. |
-| Treasure Detector | Permanent | Gives stronger feedback as the player approaches an uncollected hidden item. |
-| Trainer Beacon | Consumable | Allows a previously defeated, eligible trainer to be challenged again. |
-| Prototype Ball | Consumable | Applies a documented conditional modifier to the normal capture calculation. |
-| Prototype Repel | Consumable | Attracts encounters at or above the lead Pokemon's level. |
-| EXP Battery | Consumable | Arms a bonus for a future eligible EXP award. |
-| Link Cable | Consumable | Evolves Kadabra, Machoke, Graveler, or Haunter using the existing trade presentation. |
-| PC Transfer Unit | Consumable | Opens portable PC access once, then returns to the original map safely. |
-| Blank TM | Consumable | Records one eligible move, then teaches it to a compatible recipient. |
-| Emergency Teleporter | Consumable | Returns the player to the last valid Pokemon Center. |
-| Map Beacon | Consumable pair | Records a valid field tile and later returns the player to it. |
-| Move Recorder | Consumable | Offers an eligible missed level-up move to the selected Pokemon. |
-| Fossil Catalyst | Consumable | Applies a disclosed modifier during fossil revival. |
-| DNA Stabilizer | Consumable | Improves DVs within bounded, shiny-safe rules. |
-| Mutation Capsule | Consumable | Rerolls one random DV and previews the affected stat. |
-| Glitch Detector | Consumable | Enables a curated temporary encounter anomaly without corrupting game state. |
-| Safari Bait / Pass | Consumable | Alters curated Safari encounters or one clearly stated Safari rule. |
-| Rocket Decoder | Permanent | Detects and decodes authored, temporary Rocket incidents. |
-| Pokédex Chip | Permanent | Adds encounter statistics to Pokédex information. |
+| Item | Type | Category | Intended effect |
+| --- | --- | --- | --- |
+| Shiny Finder | Consumable | Encounters | Temporarily raises shiny generation to about 1 in 100 via valid shiny DVs. |
+| Rare Lure | Consumable | Encounters | Biases encounters toward the rarest species already in the area's table. |
+| Mystery Lure | Consumable | Encounters | Adds a small, curated habitat-specific encounter pool for a limited duration. |
+| Species Whistle | Consumable | Encounters | Selects a species and raises its weight in compatible encounter tables. |
+| Prototype Repel | Consumable | Encounters | Attracts encounters at or above the lead Pokemon's level. |
+| Glitch Detector | Consumable | Encounters | Enables a curated temporary encounter anomaly without corrupting game state. |
+| Safari Bait / Pass | Consumable | Encounters | Alters curated Safari encounters or one clearly stated Safari rule. |
+| Silph Tracker | Permanent | Detection | Reports whether a selected species is absent, faint, present, or strong locally. |
+| Treasure Detector | Permanent | Detection | Gives stronger feedback as the player approaches an uncollected hidden item. |
+| Rocket Decoder | Permanent | Detection | Detects and decodes authored, temporary Rocket incidents. |
+| Pokedex Chip | Permanent | Detection | Adds encounter statistics to Pokedex information. |
+| Prototype Ball | Consumable | Battle | Applies a documented conditional modifier to the normal capture calculation. |
+| EXP Battery | Consumable | Battle | Arms a bonus for a future eligible EXP award. |
+| Trainer Beacon | Consumable | Battle | Allows a previously defeated, eligible trainer to be challenged again. |
+| Link Cable | Consumable | Pokemon | Evolves Kadabra, Machoke, Graveler, or Haunter using the existing trade presentation. |
+| Move Recorder | Consumable | Pokemon | Offers an eligible missed level-up move to the selected Pokemon. |
+| Fossil Catalyst | Consumable | Pokemon | Applies a disclosed modifier during fossil revival. |
+| DNA Stabilizer | Consumable | Pokemon | Improves DVs within bounded, shiny-safe rules. |
+| Mutation Capsule | Consumable | Pokemon | Rerolls one random DV and previews the affected stat. |
+| Blank TM | Consumable | Pokemon | Records one eligible move, then teaches it to a compatible recipient. |
+| PC Transfer Unit | Consumable | Travel | Opens portable PC access once, then returns to the original map safely. |
+| Emergency Teleporter | Consumable | Travel | Returns the player to the last valid Pokemon Center. |
+| Map Beacon | Consumable pair | Travel | Records a valid field tile and later returns the player to it. |
+
+## Category ownership
+
+- **Encounters:** encounter-table transforms, wild generation, durations, and
+  habitat rules.
+- **Detection:** reusable information tools and overworld feedback.
+- **Battle:** capture, experience, and trainer-rematch hooks.
+- **Pokemon:** moves, evolution, fossils, and DV modification.
+- **Travel:** map, PC, warp, and safe-return behavior.
+
+These boundaries are implementation boundaries only. Player-facing sources and
+progression remain deliberately unassigned.
+
+## Current playable foundation
+
+The repository now contains a real Mod API 2 implementation rather than a gameplay
+model in Python:
+
+- loadable manifest and `main.lua` entrypoint;
+- shared Lua item/runtime layer with persistent `mod.save` state;
+- real bag registration for consumables;
+- developer-only Pallet Town harness with **GET ITEMS**, **WARP**, **INSPECT**, and
+  **RESET**;
+- a complete Shiny Finder vertical slice using valid Gen-1 virtual-shiny DVs;
+- standalone Lua/static tests and a pinned external-engine validation target.
+
+The debug harness is registered only when Gen1Recomp runs the mod in developer mode.
+
+## Testing and downloadable build
+
+`make test` runs the standalone test suite. `make test-integration` validates against
+an external checkout of the exact pinned Gen1Recomp revision.
+
+Every GitHub push and pull request also runs the standalone workflow and builds a
+minimal `dscrete-items-dev.zip` containing only `manifest.json`, `main.lua`, and
+`lib/`. The ZIP is uploaded to the workflow run as the **dscrete-items-dev** artifact
+for direct testing in Gen1Recomp.
 
 ## Scope and safety decisions
 
@@ -143,16 +138,14 @@ This catalogue defines ownership and intended behavior, not acquisition method.
 - Blank TM compatibility is data-driven and cannot bypass a species' intended move
   compatibility merely because the source Pokemon knows the move.
 - Shiny generation modifies wild DVs at creation time. It does not apply a cosmetic
-  flag, retroactively alter owned Pokemon, or promise that an encounter will shine.
+  flag, retroactively alter owned Pokemon, or guarantee an encounter will shine.
 
 ## Delivery
 
-The ordered implementation checklist, beginning with shared groundwork and then
-the **Shiny Finder**, lives in [the implementation plan](docs/IMPLEMENTATION.md).
-New items should be added to both the catalogue and that checklist, with explicit
-ownership and thematic family labels, before implementation begins.
+The ordered source of truth is [docs/CHECKLIST.md](docs/CHECKLIST.md). Detailed
+behavioral contracts, current integration status, and edge cases live in
+[docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-The first playable milestone also includes a debug-only Pallet Town NPC with
-**GET ITEMS**, **WARP**, **INSPECT**, and **RESET** commands. It provides free test
-items, curated safe warps, and DScrete state inspection without defining how items
-are acquired in a release build.
+Shiny Finder is the first completed vertical slice. The next recommended work is the
+shared encounter foundation: Rare Lure, Silph Tracker, Mystery Lure, Species Whistle,
+and Prototype Repel.
