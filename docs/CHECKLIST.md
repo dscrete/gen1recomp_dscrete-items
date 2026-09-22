@@ -39,7 +39,7 @@ code ownership; they do not decide how players obtain an item.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
-      **PROTO RESONATOR**, and **SAFARI KIT** grants.
+      **PROTO RESONATOR**, **SAFARI KIT**, and **GLITCH DET.** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
@@ -98,6 +98,8 @@ code ownership; they do not decide how players obtain an item.
         strength.
   - [x] Reflect active Elusive Scent, Mystery Lure, Species Whistle, and Safari Kit
         BAIT weighting.
+  - [x] Show **INTERFERENCE - DETECTED** while an active Glitch Detector map has
+        anomaly tiles, without revealing the anomalous species.
   - [x] Keep scope to the current map only.
   - [x] Present scan results on a dedicated manual scrolling screen with separate name
         and signal lines so long labels never clip and fast-forward cannot skip entries.
@@ -194,7 +196,31 @@ code ownership; they do not decide how players obtain an item.
         no-kit lock, acquiring extra Kits mid-session, leaving/re-entering, and save/
         reboot from each session mode.
 
-- [ ] **Glitch Detector** — enable curated temporary encounter anomalies without corrupting game state.
+- [x] **Glitch Detector** — create visible, safe encounter anomalies on specific tiles.
+  - [x] Implement as a consumable timed field effect mutually exclusive with the other
+        normal field effects.
+  - [x] Seed three nearby passable/water anomaly cells per active map and persist the
+        active map plus tile coordinates through save/load under the item reusable key.
+  - [x] Render intermittent non-blocking glitch streaks over anomaly cells without
+        mutating map blocks, collision, warps, or save-map data.
+  - [x] Only alter successful ordinary encounter rolls when the player is standing on
+        one of the anomaly cells; ordinary cells keep their normal encounter behavior.
+  - [x] Choose anomalies from all loaded Kanto Pokédex species 1-151 except Articuno,
+        Zapdos, Moltres, Mewtwo, and Mew; do not use MissingNo or invalid species IDs.
+  - [x] Preserve the rolled native encounter level and ordinary catch/battle behavior.
+  - [x] Expose **MILD 20% / STRONG 40% / EXTREME 60%** anomaly replacement chances,
+        with STRONG default, plus standard 50 / 100 / 250 / 500 / 1000 / 2500 steps.
+  - [x] Show only **INTERFERENCE DETECTED** in Silph Tracker rather than revealing the
+        anomaly species.
+  - [x] Clear persisted anomaly-cell state on expiry/replacement/full DScrete reset.
+  - [x] Add deterministic tests for presets, tile selection, state serialization,
+        Kanto/legendary filtering, and anomaly-cell lookup.
+  - [ ] Live-smoke anomaly placement on outdoor grass routes, caves, and water maps;
+        verify visible cells correspond to useful encounter terrain rather than inert
+        walkable path cells.
+  - [ ] Live-smoke the render overlay at map edges/camera boundaries and save/reboot,
+        and verify it does not interfere with battles, menus, transitions, or Wilds.
+
 - [ ] For each future encounter item, prefer public hook chaining/merged encounter
       views so other encounter, overworld-spawn, and presentation mods remain optional
       and composable rather than becoming dependencies.
@@ -204,10 +230,29 @@ code ownership; they do not decide how players obtain an item.
 - [x] Build the permanent **GADGETS** menu and unlock handling.
   - [x] Add **GADGETS** to the Start menu only when at least one implemented
         permanent/reusable DScrete gadget is unlocked.
-  - [x] Route Silph Tracker through the GADGETS menu.
+  - [x] Route Silph Tracker and Treasure Detector through the GADGETS menu.
   - [x] Hide unlocked-but-unimplemented catalogue gadgets from the player-facing menu.
   - [ ] Complete minimum-engine/in-game menu navigation smoke testing.
-- [ ] **Treasure Detector** — scale feedback by distance to an uncollected hidden item.
+
+- [x] **Treasure Detector** — passively signal proximity to uncollected hidden items.
+  - [x] Implement as a permanent gadget with no bag slot.
+  - [x] Read only uncollected current-map hidden-item markers from `mod.world:mapOverview()`;
+        do not reveal the item name or a direction arrow.
+  - [x] Use Manhattan distance bands: **FAINT** within 10, **SIGNAL** within 6,
+        **STRONG** within 3, **VERY STRONG** at 1, and **DIRECTLY HERE** at 0.
+  - [x] While passive mode is enabled, emit a beep only when movement crosses into a
+        stronger band; moving within a band or farther away does not spam feedback.
+  - [x] Draw the beep text briefly over the overworld without pushing a dialogue/menu
+        state, and play the Itemfinder-style beep when that sound is available.
+  - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
+  - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
+        the setting and full DScrete reset restores the default ON state.
+  - [x] Add deterministic nearest-hidden-item and distance-band tests.
+  - [ ] Live-smoke non-blocking `beep / BEEP / BEEP! / BEEP BEEP!` placement while
+        walking, including map-edge camera positions, fast-forward, menus, and battles.
+  - [ ] Verify hidden-item collection immediately removes the signal and that maps
+        with no remaining hidden items stay silent.
+
 - [ ] **Pokedex Chip** — display encounter statistics in Pokedex information.
 - [ ] **Rocket Decoder** — detect and decode authored temporary incidents.
 
