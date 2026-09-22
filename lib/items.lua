@@ -13,8 +13,8 @@ Items.EFFECT_KIND = { FIELD_EFFECT=true, TOOL=true, TRAINER=true, CAPTURE=true, 
 Items.all = {
   { key="prism_scent", itemId="DS_PRISM_SCENT", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_PRISM_SCENT_EFFECT", implemented=true },
   { key="elusive_scent", itemId="DS_ELUSIVE_SCENT", name="ELUSIVE SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_ELUSIVE_SCENT_EFFECT", implemented=true },
-  { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
-  { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
+  { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_MYSTERY_LURE_EFFECT", implemented=true },
+  { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_SPECIES_WHISTLE_EFFECT", implemented=true },
   { key="silph_tracker", name="SILPH TRACKER", ownership="PERMANENT", family="SILPH_CO", effectKind="TOOL", implemented=true },
   { key="treasure_detector", name="TREASURE DET.", ownership="PERMANENT", family="EXPLORATION", effectKind="TOOL" },
   { key="trainer_beacon", itemId="DS_TRAINER_BEACON", name="TRAINER BEACON", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAINER" },
@@ -63,9 +63,7 @@ function Items.permanent(implementedOnly)
   local out = {}
   for _, item in ipairs(Items.all) do
     if (item.ownership == "PERMANENT" or item.ownership == "REUSABLE")
-        and (not implementedOnly or item.implemented) then
-      out[#out+1] = item
-    end
+        and (not implementedOnly or item.implemented) then out[#out+1] = item end
   end
   return out
 end
