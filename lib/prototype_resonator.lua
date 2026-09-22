@@ -82,6 +82,7 @@ end
 
 function PrototypeResonator.install(mod,runtime,Weights)
   local wildsWrapped=false
+  local lastGame=nil
 
   local function adjustedLevel(save,native,nativeMaximum)
     local _,lead=PrototypeResonator.firstUsableLead(save)
@@ -125,7 +126,8 @@ function PrototypeResonator.install(mod,runtime,Weights)
         or PrototypeResonator.isSafari(ctx.mapId) then return enc end
     local tableDef=Weights.terrainTable(encDef,ctx.terrain)
     local maximum=PrototypeResonator.maxLevelFromTable(Weights,tableDef)
-    if maximum>0 then enc.level=adjustedLevel(ctx.save or (ctx.game and ctx.game.save),enc.level,maximum) end
+    local save=lastGame and lastGame.save
+    if maximum>0 and save then enc.level=adjustedLevel(save,enc.level,maximum) end
     return enc
   end)
 
@@ -134,8 +136,7 @@ function PrototypeResonator.install(mod,runtime,Weights)
     if not enc or not runtime:isActive(PrototypeResonator.EFFECT_ID)
         or PrototypeResonator.isSafari(mapId) then return enc end
     local maximum=PrototypeResonator.maxLevelFromCandidates(candidates)
-    local game=mod.world and mod.world.game
-    local save=(game and game.save) or nil
+    local save=lastGame and lastGame.save
     if maximum>0 and save then enc.level=adjustedLevel(save,enc.level,maximum) end
     return enc
   end)
@@ -175,6 +176,7 @@ function PrototypeResonator.install(mod,runtime,Weights)
   end
 
   mod.hooks:wrap("input.step",function(next,game,dt)
+    lastGame=game
     local r=next(game,dt)
     if runtime.pendingExpirationNotice==PrototypeResonator.EFFECT_ID then
       local _,busy=mod.world:availableFieldActions()
@@ -187,7 +189,7 @@ function PrototypeResonator.install(mod,runtime,Weights)
   end)
 
   mod.events:on("mods.loaded",installWildsCompatibility)
-  mod.events:on("game.ready",installWildsCompatibility)
+  mod.events:on("game.ready",function(game) if game then lastGame=game end; installWildsCompatibility() end)
   return PrototypeResonator
 end
 
