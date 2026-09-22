@@ -11,7 +11,7 @@ end
 return function(mod)
   mod.options:define({
     {
-      key = "shiny_finder_chance",
+      key = "prism_scent_chance",
       label = "PRISM ODDS",
       type = "choice",
       default = "100",
@@ -23,7 +23,7 @@ return function(mod)
       },
     },
     {
-      key = "shiny_finder_steps",
+      key = "prism_scent_steps",
       label = "PRISM STEPS",
       type = "choice",
       default = "250",
