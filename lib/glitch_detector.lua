@@ -59,7 +59,9 @@ function GlitchDetector.candidates(overview,originX,originY)
       local c=row:sub(x,x)
       local cx,cy=x-1,y-1
       local d=math.abs(cx-(originX or 0))+math.abs(cy-(originY or 0))
-      if (c=="." or c=="~") and d>=2 and d<=10 and not blocked[key(cx,cy)] then
+      -- Keep seeded anomalies close enough that at least one should normally be
+      -- visible from the activation point instead of hiding across the map.
+      if (c=="." or c=="~") and d>=2 and d<=6 and not blocked[key(cx,cy)] then
         out[#out+1]={x=cx,y=cy}
       end
     end
