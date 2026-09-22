@@ -61,6 +61,8 @@ function Debug.install(mod, Items, runtime)
     local action = choose(ctx, "GET ITEMS", {
       { label="PRISM SCENT", value="prism" },
       { label="ELUSIVE SCENT", value="elusive" },
+      { label="MYSTERY LURE", value="mystery" },
+      { label="PKMN WHISTLE", value="whistle" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -70,6 +72,10 @@ function Debug.install(mod, Items, runtime)
       giveItem(ctx, Items.byKey.prism_scent.itemId, 1)
     elseif action == "elusive" then
       giveItem(ctx, Items.byKey.elusive_scent.itemId, 1)
+    elseif action == "mystery" then
+      giveItem(ctx, Items.byKey.mystery_lure.itemId, 1)
+    elseif action == "whistle" then
+      giveItem(ctx, Items.byKey.species_whistle.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -113,7 +119,7 @@ function Debug.install(mod, Items, runtime)
     local state = runtime:snapshot(permanent)
     local unlocked = #state.unlocked > 0 and table.concat(state.unlocked, ", ") or "none"
     local effect = state.activeFieldEffect or "none"
-    local selected = state.selectedSpecies or "none"
+    local selected = runtime:getReusableState("species_whistle_target", nil) or state.selectedSpecies or "none"
     local exp = state.pendingExpMultiplier or "none"
     local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fEXP MOD %s\nPRISM %d/%d\fUNLOCKED:\n%s")
       :format(tostring(mod.version), tostring(state.schemaVersion), tostring(effect),
