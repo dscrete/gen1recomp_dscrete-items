@@ -16,7 +16,7 @@ local function displayName(game,species)
   return (def and def.name) or tostring(species)
 end
 
-function SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,SpeciesWhistle)
+function SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,SpeciesWhistle,SafariKit)
   local function basePreview(mapId,terrain)
     if mod.world and type(mod.world.effectiveEncounters)=="function" then
       local ok,info=pcall(mod.world.effectiveEncounters,mod.world,mapId,terrain)
@@ -31,6 +31,9 @@ function SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,Speci
   end
 
   local function applyActive(dist,mapId,terrain)
+    if SafariKit and SafariKit.baitActive and SafariKit.baitActive() and SafariKit.isSafari(mapId) then
+      return Weights.compressDistribution(dist,SafariKit.resolveBaitStrength(mod.options:get(SafariKit.BAIT_POWER_OPTION)))
+    end
     if runtime:isActive(ElusiveScent.EFFECT_ID) then
       return Weights.compressDistribution(dist,ElusiveScent.resolveStrength(mod.options:get(ElusiveScent.STRENGTH_OPTION)))
     end
