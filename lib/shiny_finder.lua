@@ -202,7 +202,7 @@ function PrismScent.install(mod, runtime)
     liveGame = game
     logicTick = logicTick + 1
     local result = next(game, dt)
-    if runtime.pendingExpirationNotice then
+    if runtime.pendingExpirationNotice == PrismScent.EFFECT_ID then
       local _, busy = mod.world:availableFieldActions()
       if busy == nil then
         runtime.pendingExpirationNotice = nil
@@ -212,6 +212,8 @@ function PrismScent.install(mod, runtime)
     return result
   end)
 
+  -- Shared timed-field step counter: only one field effect can be active, so
+  -- this counts legal player movement for Prism Scent and later DScrete scents.
   mod.hooks:wrap("movement.collision", function(next, allowed, ctx)
     local result = next(allowed, ctx)
     if not (result and runtime.activeFieldEffect and liveGame and liveGame.input) then return result end
