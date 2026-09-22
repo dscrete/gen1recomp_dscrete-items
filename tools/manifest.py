@@ -1,51 +1,54 @@
-"""Validation helpers for the DScrete Items compatibility manifest."""
+#!/usr/bin/env python3
+"""Small standalone sanity check for fields verified in Gen1Recomp v0.2.74.
+
+The authoritative validator remains Gen1Recomp's Manifest.validate/modkit; this
+exists only so the standalone repository catches an obviously incomplete package.
+"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
-
-EXPECTED_COMPATIBILITY: dict[str, Any] = {
+EXPECTED = {
+    "id": "gen1recomp_dscrete_items",
+    "name": "DScrete Items",
     "api": 2,
+    "entry": "main.lua",
+    "profile": "content",
     "games": ["gen1"],
     "game_version": ">=0.2.74 <0.3.0",
+}
+REQUIRED_TYPES = {
+    "id": str,
+    "name": str,
+    "version": str,
+    "entry": str,
+    "api": int,
 }
 
 
 class ManifestError(ValueError):
-    """Raised when the mod manifest violates its pinned compatibility contract."""
+    pass
 
 
-def load_manifest(path: Path) -> dict[str, Any]:
-    """Load a JSON manifest and require an object at its root."""
+def load_manifest(path: Path) -> dict:
     try:
-        document = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as error:
-        raise ManifestError(f"manifest not found: {path}") from error
-    except json.JSONDecodeError as error:
-        raise ManifestError(
-            f"invalid JSON in {path}:{error.lineno}:{error.colno}: {error.msg}"
-        ) from error
-
-    if not isinstance(document, dict):
-        raise ManifestError("manifest root must be a JSON object")
-    return document
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ManifestError(str(exc)) from exc
+    if not isinstance(value, dict):
+        raise ManifestError("manifest root must be an object")
+    return value
 
 
-def validate_compatibility(document: dict[str, Any]) -> None:
-    """Validate only the compatibility fields confirmed for the initial manifest.
-
-    Other Mod API fields remain the responsibility of the tagged upstream schema.
-    This intentionally avoids guessing at fields that have not been verified against
-    Gen1Recomp v0.2.74.
-    """
-    errors = []
-    for field, expected in EXPECTED_COMPATIBILITY.items():
-        actual = document.get(field)
-        if actual != expected:
-            errors.append(f"{field}: expected {expected!r}, got {actual!r}")
-
+def validate_compatibility(document: dict) -> None:
+    errors: list[str] = []
+    for key, typ in REQUIRED_TYPES.items():
+        if not isinstance(document.get(key), typ) or document.get(key) in (None, ""):
+            errors.append(f"{key}: required {typ.__name__}")
+    for key, expected in EXPECTED.items():
+        if document.get(key) != expected:
+            errors.append(f"{key}: expected {expected!r}, got {document.get(key)!r}")
     if errors:
         raise ManifestError("manifest compatibility mismatch:\n- " + "\n- ".join(errors))

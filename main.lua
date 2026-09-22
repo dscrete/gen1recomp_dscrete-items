@@ -1,11 +1,23 @@
 -- DScrete Items -- Gen1Recomp Mod API 2 entrypoint.
---
--- Keep the root entry deliberately small. Feature modules are loaded from this
--- mod's own directory through mod:read + sandboxed load, so release builds do
--- not depend on engine internals or a second runtime.
+
+local function loadLocal(mod, path)
+  local source, readErr = mod:read(path)
+  assert(source, ("DScrete Items could not read %s: %s"):format(path, tostring(readErr)))
+  local chunk, loadErr = load(source, "@" .. path)
+  assert(chunk, ("DScrete Items could not load %s: %s"):format(path, tostring(loadErr)))
+  return chunk()
+end
 
 return function(mod)
-  -- Phase modules are installed by later commits. This entry exists now so the
-  -- repository is already a valid, loadable Mod API 2 package.
+  local Items = loadLocal(mod, "lib/items.lua")
+  local Runtime = loadLocal(mod, "lib/runtime.lua")
+  local runtime = Runtime.new(mod.save)
+
+  Items.registerBagItems(mod)
+
+  -- Stable public surface for later DScrete systems (Oak Research, Safari
+  -- ecology, etc.) without requiring them to reach into this mod's files.
   mod.exports.version = mod.version
+  mod.exports.items = Items
+  mod.exports.runtime = runtime
 end
