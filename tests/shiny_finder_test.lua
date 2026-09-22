@@ -18,10 +18,30 @@ test("Shiny Finder produces valid Gen 1 virtual-shiny DVs", function()
   end
 end)
 
+test("Shiny Finder chance presets resolve safely", function()
+  for _, value in ipairs({ "1", "10", "100", "1000" }) do
+    check(Shiny.resolveChanceDenominator(value) == tonumber(value))
+  end
+  check(Shiny.resolveChanceDenominator("not-a-preset") == 100)
+end)
+
+test("Shiny Finder duration presets resolve safely", function()
+  for _, value in ipairs({ "50", "100", "250", "500", "1000", "2500" }) do
+    check(Shiny.resolveDuration(value) == tonumber(value))
+  end
+  check(Shiny.resolveDuration("not-a-preset") == 250)
+end)
+
 test("Shiny Finder chance boundary is deterministic", function()
   check(Shiny.rollSucceeds(sequence({ 1 })))
   check(not Shiny.rollSucceeds(sequence({ 2 })))
   check(not Shiny.rollSucceeds(sequence({ 100 })))
+end)
+
+test("Shiny Finder supports guaranteed and rarer configured odds", function()
+  check(Shiny.rollSucceeds(sequence({ 1 }), 1, 1))
+  check(not Shiny.rollSucceeds(sequence({ 10 }), 1, 10))
+  check(not Shiny.rollSucceeds(sequence({ 1000 }), 1, 1000))
 end)
 
 test("seeded Shiny Finder simulation stays near one percent", function()
