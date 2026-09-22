@@ -1,7 +1,7 @@
 local TreasureDetector = {}
 
 TreasureDetector.KEY = "treasure_detector"
-TreasureDetector.ENABLED_KEY = "treasure_detector_enabled"
+TreasureDetector.ENABLED_KEY = TreasureDetector.KEY
 
 local BANDS = {
   { max=0, name="DIRECTLY HERE", rank=5, text="BEEP! BEEP!" },
