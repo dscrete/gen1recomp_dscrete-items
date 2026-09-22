@@ -201,8 +201,13 @@ code ownership; they do not decide how players obtain an item.
         normal field effects.
   - [x] Seed three nearby passable/water anomaly cells per active map and persist the
         active map plus tile coordinates through save/load under the item reusable key.
-  - [x] Render intermittent non-blocking glitch streaks over anomaly cells without
-        mutating map blocks, collision, warps, or save-map data.
+  - [x] Keep seeded anomaly cells within Manhattan distance 2-6 of activation when
+        possible so the player can actually spot and investigate them.
+  - [x] Render a faint always-present tell plus periodic wall-clock flicker inside a
+        single 8x8 tile fragment, so anomaly visuals remain visible while standing still
+        and never exceed one tile.
+  - [x] Keep rendering camera-relative to the saved world cell without mutating map
+        blocks, collision, warps, or save-map data.
   - [x] Only alter successful ordinary encounter rolls when the player is standing on
         one of the anomaly cells; ordinary cells keep their normal encounter behavior.
   - [x] Choose anomalies from all loaded Kanto Pokédex species 1-151 except Articuno,
@@ -214,12 +219,13 @@ code ownership; they do not decide how players obtain an item.
         anomaly species.
   - [x] Clear persisted anomaly-cell state on expiry/replacement/full DScrete reset.
   - [x] Add deterministic tests for presets, tile selection, state serialization,
-        Kanto/legendary filtering, and anomaly-cell lookup.
+        Kanto/legendary filtering, camera transform, and anomaly-cell lookup.
   - [ ] Live-smoke anomaly placement on outdoor grass routes, caves, and water maps;
         verify visible cells correspond to useful encounter terrain rather than inert
         walkable path cells.
-  - [ ] Live-smoke the render overlay at map edges/camera boundaries and save/reboot,
-        and verify it does not interfere with battles, menus, transitions, or Wilds.
+  - [ ] Live-smoke the idle flicker at multiple zoom levels, map edges/camera boundaries,
+        and save/reboot; verify it stays on one world tile and does not interfere with
+        battles, menus, transitions, or Wilds.
 
 - [ ] For each future encounter item, prefer public hook chaining/merged encounter
       views so other encounter, overworld-spawn, and presentation mods remain optional
@@ -242,14 +248,14 @@ code ownership; they do not decide how players obtain an item.
         **STRONG** within 3, **VERY STRONG** at 1, and **DIRECTLY HERE** at 0.
   - [x] While passive mode is enabled, emit a beep only when movement crosses into a
         stronger band; moving within a band or farther away does not spam feedback.
-  - [x] Draw the beep text briefly over the overworld without pushing a dialogue/menu
-        state, and play the Itemfinder-style beep when that sound is available.
+  - [x] Use audio-only passive feedback after live testing showed screen-space text was
+        too dependent on zoom/camera presentation.
   - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
   - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
         the setting and full DScrete reset restores the default ON state.
   - [x] Add deterministic nearest-hidden-item and distance-band tests.
-  - [ ] Live-smoke non-blocking `beep / BEEP / BEEP! / BEEP BEEP!` placement while
-        walking, including map-edge camera positions, fast-forward, menus, and battles.
+  - [ ] Live-smoke audio-only proximity feedback while walking, including fast-forward,
+        menus, battles, and multiple zoom levels.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
