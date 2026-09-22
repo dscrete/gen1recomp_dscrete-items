@@ -35,7 +35,7 @@ return function(mod)
     { key="safari_kit_bait_power", label="SAFARI KIT BAIT POWER", type="choice", default="strong", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
     { key="safari_kit_pass_steps", label="SAFARI KIT PASS STEPS", type="choice", default="250", choices={{"100","100"},{"250","250"},{"500","500"}} },
     { key="safari_kit_pass_balls", label="SAFARI KIT PASS BALLS", type="choice", default="5", choices={{"3","3"},{"5","5"},{"10","10"}} },
-    { key="glitch_detector_rate", label="GLITCH DET. ANOMALY RATE", type="choice", default="strong", choices={{"MILD - 20%","mild"},{"STRONG - 40%","strong"},{"EXTREME - 60%","extreme"}} },
+    { key="glitch_detector_flash_rate", label="GLITCH DET. FLASH RATE", type="choice", default="subtle", choices={{"SUBTLE - ~4S","subtle"},{"NORMAL - ~2S","normal"},{"FREQUENT - ~1S","frequent"}} },
     glitchSteps,
   })
 
