@@ -23,7 +23,7 @@ test("Glitch Detector state roundtrips for save load", function()
   eq(none,nil); eq(#empty,0)
 end)
 
-test("Glitch Detector chooses nearby walkable tiles and avoids markers", function()
+test("Glitch Detector chooses close walkable tiles and avoids markers", function()
   local overview={
     rows={".............",".............",".............",".............","............."},
     markers={{kind="warp",x=5,y=2},{kind="hidden",x=6,y=2}},
@@ -32,7 +32,7 @@ test("Glitch Detector chooses nearby walkable tiles and avoids markers", functio
   check(#candidates>0)
   for _,t in ipairs(candidates) do
     local d=math.abs(t.x-4)+math.abs(t.y-2)
-    check(d>=2 and d<=10,"candidate distance")
+    check(d>=2 and d<=6,"candidate distance")
     check(not (t.x==5 and t.y==2),"warp excluded")
     check(not (t.x==6 and t.y==2),"hidden marker excluded")
   end
@@ -72,7 +72,7 @@ test("Treasure Detector finds nearest uncollected hidden marker", function()
   eq(TreasureDetector.nearestHidden({markers={}},4,3),nil)
 end)
 
-test("Treasure Detector distance bands get stronger nearby", function()
+test("Treasure Detector distance bands get stronger nearby without text payloads", function()
   eq(TreasureDetector.bandForDistance(nil).name,"NO SIGNAL")
   eq(TreasureDetector.bandForDistance(15).name,"NO SIGNAL")
   eq(TreasureDetector.bandForDistance(10).name,"FAINT")
@@ -80,4 +80,5 @@ test("Treasure Detector distance bands get stronger nearby", function()
   eq(TreasureDetector.bandForDistance(3).name,"STRONG")
   eq(TreasureDetector.bandForDistance(1).name,"VERY STRONG")
   eq(TreasureDetector.bandForDistance(0).name,"DIRECTLY HERE")
+  eq(TreasureDetector.bandForDistance(3).text,nil)
 end)
