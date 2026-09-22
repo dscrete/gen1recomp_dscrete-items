@@ -7,6 +7,7 @@ SpeciesWhistle.STEPS_OPTION = "species_whistle_steps"
 SpeciesWhistle.NONLOCAL_OPTION = "species_whistle_nonlocal"
 SpeciesWhistle.NONLOCAL_RATE_OPTION = "species_whistle_nonlocal_rate"
 SpeciesWhistle.TARGET_KEY = "species_whistle_target"
+SpeciesWhistle.ITEM_ID = "DS_SPECIES_WHISTLE"
 
 local STRENGTHS={ mild=2, strong=4, extreme=8 }
 local DURATIONS={ [25]=true,[50]=true,[100]=true,[250]=true,[500]=true,[1000]=true }
@@ -59,40 +60,61 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     return type(species)=="string" and not LEGENDARY[species] and data and data.pokemon and data.pokemon[species] and seen(save,species)
   end
 
-  local function openSelector(game)
+  local function targetRows(game)
     local rows={}
     for species,def in pairs(game.data.pokemon or {}) do
       if validTarget(game.data,game.save,species) then rows[#rows+1]={label=(def.name or species),value=species} end
     end
     table.sort(rows,function(a,b) return a.label<b.label end)
+    return rows
+  end
+
+  -- The public item.use hook exists specifically to let a mod delay the normal
+  -- bag-item dispatch behind its own screen. Intercept only the Whistle, open
+  -- the selector, then resume the same vanilla use path after a species is picked.
+  -- Cancelling never calls vanilla, so the item is not consumed.
+  mod.hooks:wrap("item.use",function(next,game,battle,id,itemTarget,list,moveIndex,picker)
+    if id~=SpeciesWhistle.ITEM_ID or battle then
+      return next(game,battle,id,itemTarget,list,moveIndex,picker)
+    end
+
+    local rows=targetRows(game)
+    if #rows==0 then
+      return next(game,battle,id,itemTarget,list,moveIndex,picker)
+    end
     rows[#rows+1]={label="CANCEL",value="cancel"}
+
+    local remembered=target()
+    local rememberedIndex=1
+    for i,row in ipairs(rows) do if row.value==remembered then rememberedIndex=i break end end
+
     local menu
     menu=mod.ui.ListMenu.new(game,"WHISTLE TARGET",rows,{
       pageJump=true,
       onChoose=function(row)
-        if row and row.value~="cancel" then runtime:setReusableState(SpeciesWhistle.TARGET_KEY,row.value) end
+        if not row then return end
+        if row.value=="cancel" then
+          if menu then menu:close() end
+          return
+        end
+        runtime:setReusableState(SpeciesWhistle.TARGET_KEY,row.value)
+        if menu then menu:close() end
+        next(game,battle,id,itemTarget,list,moveIndex,picker)
+      end,
+      onCancel=function()
         if menu then menu:close() end
       end,
-      onCancel=function() if menu then menu:close() end end,
     })
+    menu.index=rememberedIndex
     game.stack:push(menu)
-  end
-  SpeciesWhistle.openSelector=openSelector
-
-  mod.hooks:wrap("ui.start_menu.items",function(next,game,items)
-    local out=next(game,items); if type(out)~="table" then out=items end
-    local inv=game.save and game.save.inventory or {}
-    if (tonumber(inv.DS_SPECIES_WHISTLE) or 0)<=0 then return out end
-    local row={label=target() and "WHISTLE TARGET*" or "WHISTLE TARGET",onSelect=function() openSelector(game) end}
-    for i,item in ipairs(out) do if item.label=="OPTION" then table.insert(out,i,row); return out end end
-    out[#out+1]=row; return out
+    return nil
   end)
 
   mod.content.item_effects:register(SpeciesWhistle.ITEM_EFFECT_ID,{
     needsTarget=false,field=true,battle=false,
     use=function(ctx)
       local species=target()
-      if not validTarget(ctx.data,ctx.save,species) then return "failed", {"Choose a seen POKéMON\nwith WHISTLE TARGET."} end
+      if not validTarget(ctx.data,ctx.save,species) then return "failed", {"No seen POKéMON\ncan answer the call."} end
       local current=mod.world:current(); local mapId=current and current.mapId
       if not mapId then return "failed", {"The whistle has\nno effect here."} end
       local native=localSpecies(mod,Weights,mapId,species)
@@ -178,6 +200,7 @@ function SpeciesWhistle.install(mod,runtime,Weights)
   mod.events:on("game.ready",installWildsCompatibility)
   SpeciesWhistle.target=target
   SpeciesWhistle.localSpecies=function(mapId,species) return localSpecies(mod,Weights,mapId,species) end
+  SpeciesWhistle.targetRows=targetRows
   return SpeciesWhistle
 end
 
