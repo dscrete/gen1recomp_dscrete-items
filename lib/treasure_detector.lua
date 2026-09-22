@@ -97,7 +97,7 @@ end
 
 function TreasureDetector.install(mod,runtime,_fx)
   local lastMap,lastX,lastY,lastRank=nil,nil,nil,0
-  local pendingTones,pendingIndex,nextBeepAt={},1,0
+  local pendingTones,pendingIndex,pendingSpacing,nextBeepAt={},1,0.30,0
   local lastSoundStatus="NEVER"
   local lastTriggerBand="NONE"
 
@@ -152,6 +152,7 @@ function TreasureDetector.install(mod,runtime,_fx)
     local p=TreasureDetector.patternForRank(band.rank)
     pendingTones=p.tones
     pendingIndex=1
+    pendingSpacing=p.spacing
     nextBeepAt=0
     lastTriggerBand=band.name
   end
@@ -160,20 +161,13 @@ function TreasureDetector.install(mod,runtime,_fx)
     if pendingIndex>#pendingTones then return end
     local t=now()
     if t<nextBeepAt then return end
-    local band=TreasureDetector.bandForDistance(nil)
-    local rank=0
-    for _,b in ipairs(BANDS) do
-      local p=PATTERNS[b.rank]
-      if p and #p.tones==#pendingTones then rank=b.rank end
-    end
     local hz=pendingTones[pendingIndex]
     if not playOne(game,hz) then
       pendingIndex=#pendingTones+1
       return
     end
-    local spacing=(PATTERNS[rank] and PATTERNS[rank].spacing) or 0.16
     pendingIndex=pendingIndex+1
-    nextBeepAt=t+spacing
+    nextBeepAt=t+pendingSpacing
   end
 
   local function passiveStep(game)
