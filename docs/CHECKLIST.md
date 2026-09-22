@@ -25,8 +25,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Implement the shared timed field-effect lifecycle, replacement confirmation,
       eligible-step countdown, persistence, and one-time expiration.
 - [x] Add deterministic test helpers and seeded probability simulations.
-- [x] Add shared encounter-weight helpers for rarity, weighting, signal bands, and
-      later encounter modifiers.
+- [x] Add shared encounter-weight helpers for rarity compression, targeted boosts,
+      reserved encounter shares, signal bands, and later encounter modifiers.
 - [x] Require completed work and changed requirements to update this checklist via
       repository instructions in `AGENTS.md`.
 
@@ -38,7 +38,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT** and **ELUSIVE SCENT** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
-      inspection/reset helpers to implemented content only.
+      inspection/reset helpers to implemented content only. Mystery Lure and Species
+      Whistle join **ALL IMPLEMENTED** once their effects are registered.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -68,8 +69,6 @@ code ownership; they do not decide how players obtain an item.
 ## 2. Encounter foundation — Encounters
 
 - [x] **Elusive Scent** — compress the local rarity curve without adding species.
-  - [x] Rename the planned Rare Lure to **Elusive Scent** with dedicated IDs and
-        options.
   - [x] Keep the commonest species as the 1x baseline, boost uncommon species, and
         progressively boost rarer species more strongly before normalization.
   - [x] Preserve rarity ordering rather than targeting only the single rarest tier.
@@ -88,23 +87,58 @@ code ownership; they do not decide how players obtain an item.
   - [x] Add deterministic rarity-compression tests, including a Pikachu-like
         uncommon/rare regression that must increase effective share.
   - [ ] Complete minimum-engine and in-game smoke testing, including Wilds and Safari.
+
 - [x] **Silph Tracker** — report coarse current-map signal bands.
   - [x] Implement it as a permanent gadget with no bag slot.
   - [x] Show every local species found by the current effective/merged encounter view.
   - [x] Use **NO SIGNAL / FAINT / WEAK / STRONG / VERY STRONG** bands.
   - [x] Replace unseen species names with **UNKNOWN** while preserving their signal
         strength.
-  - [x] Reflect active Elusive Scent rarity compression and newer public effective-
-        encounter previews when available, with merged-registry fallback on older
-        engines.
+  - [x] Reflect active Elusive Scent, Mystery Lure, and Species Whistle weighting.
   - [x] Keep scope to the current map only.
-  - [x] Use a dedicated manual-scrolling Tracker screen rather than dialogue or a
-        generic ListMenu; render the species name and full signal on separate fixed
-        lines so long combinations such as **VERY STRONG** cannot be clipped.
+  - [x] Present scan results as a persistent manual list so fast-forward cannot skip
+        earlier readings.
   - [ ] Complete minimum-engine and in-game UI/readout smoke testing.
-- [ ] **Mystery Lure** — reserve a configured share for curated habitat candidates.
-- [ ] **Species Whistle** — boost a selected compatible species without inserting an
-      incompatible one.
+
+- [x] **Mystery Lure** — reserve a temporary share for one random habitat mystery.
+  - [x] Use habitat pools (forest / cave / water / field) rather than per-map tables.
+  - [x] Exclude Articuno, Zapdos, Moltres, Mewtwo, and Mew.
+  - [x] Default to Pokédex-seen candidates only, with **ALLOW UNSEEN** as a mod option.
+  - [x] Randomly choose one valid mystery species per habitat while the effect is
+        active and retain the chosen candidate for that habitat.
+  - [x] Reserve **LOW 5% / MEDIUM 10% / HIGH 20%** of successful encounters, with LOW
+        as the default.
+  - [x] Preserve the area's existing encounter level when a mystery species replaces
+        the native species.
+  - [x] Use the standard 50 / 100 / 250 / 500 / 1000 / 2500 duration presets.
+  - [x] Remain mutually exclusive with the other field effects.
+  - [x] Apply to ordinary land/water encounters and fishing, but refuse activation in
+        Safari Zone maps.
+  - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
+  - [x] Add deterministic preset, habitat, legendary-exclusion, and share tests.
+  - [ ] Complete minimum-engine/in-game smoke testing across habitats, fishing, Safari
+        refusal, unseen-pool option, and Wilds.
+
+- [x] **Species Whistle** — call one remembered Pokédex-seen non-legendary species.
+  - [x] Add a **WHISTLE TARGET** Start-menu selector while a Whistle is in the bag,
+        because item-effect callbacks are synchronous and cannot safely host the
+        asynchronous species picker themselves.
+  - [x] Restrict target selection to Pokédex-seen non-legendary species and remember
+        the last selection persistently.
+  - [x] If the target is native locally, boost it by configurable **MILD / STRONG /
+        EXTREME** 2x / 4x / 8x weighting.
+  - [x] By default, fail without consumption when the selected species is not local.
+  - [x] Add optional **WHISTLE RARE** non-local mode with separately configurable
+        0.5% / 1% / 2% insertion rates.
+  - [x] Use shorter duration presets: 25 / 50 / 100 / 250 / 500 / 1000 steps.
+  - [x] Remain mutually exclusive with the other field effects.
+  - [x] Apply to normal encounters and fishing and reflect the effective chance in
+        Silph Tracker.
+  - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
+  - [x] Add deterministic target-boost, non-local-share, preset, and legendary tests.
+  - [ ] Complete minimum-engine/in-game smoke testing of target selection, local and
+        non-local modes, fishing, persistence, Tracker reflection, and Wilds.
+
 - [ ] **Prototype Repel** — attract encounters at or above the lead Pokemon's level.
 - [ ] **Safari Bait / Pass** — alter one curated encounter set or stated Safari rule.
 - [ ] **Glitch Detector** — enable curated temporary encounter anomalies without corrupting game state.
