@@ -37,7 +37,7 @@ function Runtime:resetRuntime()
   self.pendingExpMultiplier = nil
   self.pendingNaturalEncounter = false
   self.pendingExpirationNotice = nil
-  self.lastPlayerPosition = nil
+  self.pendingFieldReplacement = nil
   self.debugReturn = nil
   self.debugRolls = 0
   self.debugSuccesses = 0
@@ -54,6 +54,7 @@ function Runtime:activateFieldEffect(effectId, duration, replace)
   self.activeFieldEffect = effectId
   self.remainingSteps = duration
   self.selectedSpecies = nil
+  self.pendingFieldReplacement = nil
   return true, Runtime.RESULT.APPLIED, current
 end
 
@@ -62,10 +63,15 @@ function Runtime:clearFieldEffect()
   self.activeFieldEffect = nil
   self.remainingSteps = 0
   self.selectedSpecies = nil
+  self.pendingFieldReplacement = nil
   return old
 end
 
 function Runtime:onEligibleStep()
+  -- A replacement confirmation is intentionally short-lived: walking away
+  -- from the bag cancels it, so a later use cannot accidentally replace an
+  -- effect the player forgot they had been asked about.
+  self.pendingFieldReplacement = nil
   if not self.activeFieldEffect then return nil end
   if self.remainingSteps <= 0 then return self:clearFieldEffect() end
   self.remainingSteps = self.remainingSteps - 1
@@ -75,6 +81,18 @@ end
 
 function Runtime:isActive(effectId)
   return self.activeFieldEffect == effectId and self.remainingSteps > 0
+end
+
+function Runtime:requestFieldReplacement(newEffect)
+  local current = self.activeFieldEffect
+  if not current or current == newEffect then return false end
+  local pending = self.pendingFieldReplacement
+  if pending and pending.newEffect == newEffect and pending.oldEffect == current then
+    self.pendingFieldReplacement = nil
+    return true
+  end
+  self.pendingFieldReplacement = { newEffect = newEffect, oldEffect = current }
+  return false
 end
 
 function Runtime:unlock(key)

@@ -59,6 +59,7 @@ end
 function ShinyFinder.install(mod, runtime)
   local Stats = require("src.pokemon.Stats") -- public/sandbox-supported helper
   local rng = function(lo, hi) return love.math.random(lo, hi) end
+  local liveGame, logicTick, lastCountedTick = nil, 0, -1
 
   mod.content.item_effects:register(ShinyFinder.ITEM_EFFECT_ID, {
     needsTarget = false,
@@ -68,11 +69,17 @@ function ShinyFinder.install(mod, runtime)
       if runtime.activeFieldEffect == ShinyFinder.EFFECT_ID then
         return "failed", { "The SHINY FINDER\nis already searching." }
       end
+      local replace = false
       if runtime.activeFieldEffect then
-        return "failed", { "Another field effect\nis already active." }
+        replace = runtime:requestFieldReplacement(ShinyFinder.EFFECT_ID)
+        if not replace then
+          return "failed", {
+            "Another field effect\nis already active.\fUse SHINY FINDER\nagain to replace it.",
+          }
+        end
       end
       local ok = runtime:activateFieldEffect(
-        ShinyFinder.EFFECT_ID, ShinyFinder.DURATION_STEPS, false)
+        ShinyFinder.EFFECT_ID, ShinyFinder.DURATION_STEPS, replace)
       if not ok then
         return "failed", { "The SHINY FINDER\nfailed to start." }
       end
@@ -137,25 +144,12 @@ function ShinyFinder.install(mod, runtime)
     runtime.debugSuccesses = runtime.debugSuccesses + 1
   end)
 
-  -- movement.collision is the public movement decision seam. A successful
-  -- result means the move is legal; a wall bump is false. Compare its origin
-  -- to mod.world:current() so NPC collision checks cannot spend Finder steps.
-  mod.hooks:wrap("movement.collision", function(next, allowed, ctx)
-    local result = next(allowed, ctx)
-    if result and runtime.activeFieldEffect then
-      local current = mod.world:current()
-      if current and current.x == ctx.fromX and current.y == ctx.fromY then
-        local expired = runtime:onEligibleStep()
-        if expired then runtime.pendingExpirationNotice = expired end
-      end
-    end
-    return result
-  end)
-
-  -- Do not open a text box while the player is in the middle of the step that
-  -- exhausted the Finder. availableFieldActions is used only as the public
-  -- "world is accepting menu input" guard; the action list itself is ignored.
+  -- input.step gives us the live public game argument. The hook runs just
+  -- before Input:step; movement.collision runs later in that same logic tick,
+  -- when wasPressed/isDown represent the actual movement intent.
   mod.hooks:wrap("input.step", function(next, game, dt)
+    liveGame = game
+    logicTick = logicTick + 1
     local result = next(game, dt)
     if runtime.pendingExpirationNotice then
       local _, busy = mod.world:availableFieldActions()
@@ -168,9 +162,32 @@ function ShinyFinder.install(mod, runtime)
     return result
   end)
 
+  -- movement.collision is also queried by a few read-only world checks, so a
+  -- legal collision result alone is not enough. Require the current player
+  -- origin, a real held/pressed direction and at most one count per logic tick.
+  -- Wall bumps are false, warps do not use this path, and scriptMove does not
+  -- synthesize a player's directional input.
+  mod.hooks:wrap("movement.collision", function(next, allowed, ctx)
+    local result = next(allowed, ctx)
+    if not (result and runtime.activeFieldEffect and liveGame and liveGame.input) then
+      return result
+    end
+    local current = mod.world:current()
+    local input = liveGame.input
+    local manual = ctx.dir and (input:isDown(ctx.dir) or input:wasPressed(ctx.dir))
+    if current and manual and lastCountedTick ~= logicTick
+        and current.x == ctx.fromX and current.y == ctx.fromY then
+      lastCountedTick = logicTick
+      local expired = runtime:onEligibleStep()
+      if expired then runtime.pendingExpirationNotice = expired end
+    end
+    return result
+  end)
+
   -- Runtime-only effects deliberately do not survive loading/restarting a run.
   mod.events:on("game.ready", function()
     runtime:resetRuntime()
+    liveGame, logicTick, lastCountedTick = nil, 0, -1
   end)
 end
 

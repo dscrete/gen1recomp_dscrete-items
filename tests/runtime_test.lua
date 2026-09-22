@@ -38,6 +38,18 @@ test("field effects require explicit replacement", function()
   eq(runtime.remainingSteps, 20)
 end)
 
+test("replacement requires a second matching confirmation", function()
+  local runtime = Runtime.new(store())
+  runtime:activateFieldEffect("rare_lure", 10)
+  eq(runtime:requestFieldReplacement("shiny_finder"), false)
+  eq(runtime:requestFieldReplacement("shiny_finder"), true)
+  runtime.pendingFieldReplacement = nil
+  eq(runtime:requestFieldReplacement("mystery_lure"), false)
+  runtime:onEligibleStep()
+  eq(runtime:requestFieldReplacement("mystery_lure"), false,
+    "walking must clear a stale replacement confirmation")
+end)
+
 test("eligible steps expire exactly once", function()
   local runtime = Runtime.new(store())
   runtime:activateFieldEffect("shiny_finder", 3)

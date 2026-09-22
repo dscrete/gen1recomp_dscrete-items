@@ -1,22 +1,36 @@
-# Public API integration gaps
+# Public API status and remaining gaps
 
-DScrete Items targets Gen1Recomp v0.2.74, Mod API 2. Engine-independent item data,
-state rules, transactions, and the debug menu model can be tested in this standalone
-repository. The following Phase 4 work must not be connected by guessing private
-symbols:
+DScrete Items targets Gen1Recomp **v0.2.74** at commit
+`9545ebbb839a8a7ea28472b626681154ab222623` and uses Mod API 2 public surfaces.
 
-- registering the debug-only NPC in Pallet Town;
-- rendering its menu and text;
-- granting items through the public inventory registry;
-- mapping curated warp names to verified public map IDs and safe coordinates; and
-- compiling debug registrations out of release packages.
+## Resolved for the first playable slice
 
-The Shiny Finder additionally needs the public wild-DV-generation hook and the
-runtime's public shiny predicate. Its engine-independent logic accepts that
-predicate as an adapter and treats packed DVs as opaque; it does not duplicate or
-guess the engine's shiny formula.
+The v0.2.74 API already supplies the pieces needed for Phases 1-5:
 
-Each adapter will be implemented after its hook is confirmed in the tagged
-`docs/modding.md` or public v0.2.74 headers. If no public hook exists, the feature
-will remain unavailable and the missing capability will be recorded here rather
-than implemented through an engine-internal dependency.
+- `content.items` and `content.item_effects` for real bag items and transactional use;
+- `mod.save` for persistent DScrete ownership/state;
+- `content.maps`, `content.map_scripts`, `content.commands`, `mod.ui` and
+  `mod.developer` for the developer-only Pallet Town harness;
+- `mod.world:current()` / `warpTo()` for debug navigation;
+- `movement.collision` for successful manual-step accounting;
+- `encounter.roll` and `encounter.fishing` to identify natural random encounters;
+- `battle.started` to receive the newly-created wild battle object; and
+- the sandbox-supported `src.pokemon.Stats` helper for `Stats.isShiny` and stat
+  recalculation.
+
+Gen 1 does **not** expose Gen 2's `shiny.roll` hook. The Shiny Finder therefore marks
+a candidate only when it comes from the natural encounter hooks, then changes that
+new battle Pokemon's DVs at `battle.started`. Static battles, gifts, trades and
+trainer parties never receive the natural-encounter marker. This is the narrowest
+public-API implementation available in v0.2.74 and avoids engine-internal requires.
+
+## Still requiring engine-side execution
+
+This standalone repository cannot prove rendering, map placement or live save/bag
+behavior by itself. `make test-integration` deliberately requires an external
+checkout at the exact pinned commit and runs Gen1Recomp's own `modkit.py validate`.
+The smoke matrix in `integration_tests/README.md` must also be exercised in-game
+before a release build is tagged.
+
+Future items may reveal new public API gaps. Record those here when discovered;
+do not replace a missing public seam with an undeclared engine-internal dependency.
