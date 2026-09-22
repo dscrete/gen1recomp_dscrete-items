@@ -67,13 +67,16 @@ code ownership; they do not decide how players obtain an item.
 
 ## 2. Encounter foundation — Encounters
 
-- [x] **Elusive Scent** — reweight the rarest species already present locally.
+- [x] **Elusive Scent** — compress the local rarity curve without adding species.
   - [x] Rename the planned Rare Lure to **Elusive Scent** with dedicated IDs and
         options.
-  - [x] Boost all species tied for the lowest combined encounter weight equally.
+  - [x] Keep the commonest species as the 1x baseline, boost uncommon species, and
+        progressively boost rarer species more strongly before normalization.
+  - [x] Preserve rarity ordering rather than targeting only the single rarest tier.
   - [x] Keep encounter frequency, species membership, and encounter levels unchanged.
-  - [x] Support configurable **MILD / STRONG / EXTREME** strengths (2x / 4x / 8x
-        rare-species weight).
+  - [x] Support configurable **MILD / STRONG / EXTREME** compression strengths; very
+        rare species approach 2x / 4x / 8x weighting while common species remain at
+        baseline.
   - [x] Use the shared configurable 50 / 100 / 250 / 500 / 1000 / 2500 step presets.
   - [x] Keep it mutually exclusive with Prism Scent through the shared field-effect
         replacement flow.
@@ -82,7 +85,8 @@ code ownership; they do not decide how players obtain an item.
   - [x] Compose through the normal `encounter.roll` chain and merged encounter
         registry data instead of replacing vanilla/other-mod logic wholesale.
   - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
-  - [x] Add deterministic rarity/reweighting tests.
+  - [x] Add deterministic rarity-compression tests, including a Pikachu-like
+        uncommon/rare regression that must increase effective share.
   - [ ] Complete minimum-engine and in-game smoke testing, including Wilds and Safari.
 - [x] **Silph Tracker** — report coarse current-map signal bands.
   - [x] Implement it as a permanent gadget with no bag slot.
@@ -90,8 +94,9 @@ code ownership; they do not decide how players obtain an item.
   - [x] Use **NO SIGNAL / FAINT / WEAK / STRONG / VERY STRONG** bands.
   - [x] Replace unseen species names with **UNKNOWN** while preserving their signal
         strength.
-  - [x] Reflect active Elusive Scent weighting and newer public effective-encounter
-        previews when available, with merged-registry fallback on older engines.
+  - [x] Reflect active Elusive Scent rarity compression and newer public effective-
+        encounter previews when available, with merged-registry fallback on older
+        engines.
   - [x] Keep scope to the current map only.
   - [x] Present scan results as a persistent scrollable list, one species per row, so
         fast-forward cannot auto-scroll past earlier readings.
@@ -101,7 +106,7 @@ code ownership; they do not decide how players obtain an item.
       incompatible one.
 - [ ] **Prototype Repel** — attract encounters at or above the lead Pokemon's level.
 - [ ] **Safari Bait / Pass** — alter one curated encounter set or stated Safari rule.
-- [ ] **Glitch Detector** — enable curated anomalies without corrupting game state.
+- [ ] **Glitch Detector** — enable curated temporary encounter anomalies without corrupting game state.
 - [ ] For each future encounter item, prefer public hook chaining/merged encounter
       views so other encounter, overworld-spawn, and presentation mods remain optional
       and composable rather than becoming dependencies.
