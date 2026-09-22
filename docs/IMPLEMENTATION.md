@@ -11,12 +11,8 @@ The gadget framework owns four kinds of state:
 ```text
 GadgetSaveData
   schema_version
-  research_points
-  research_rank
   permanent_unlock_bits
-  active_assignments[MAX_ASSIGNMENTS]
-  assignment_progress[MAX_ASSIGNMENTS]
-  research_statistics
+  encounter_statistics
   trainer_rematch_state
   placed_beacon
 
@@ -123,34 +119,28 @@ presentation if that presentation can safely return to the bag flow. If not, the
 feature remains disabled until a dedicated transition wrapper exists; silently
 falling back to a plain text evolution is not the intended release behavior.
 
-## 4. Research system
+## 4. Category boundaries
 
-Assignments are data records with an ID, template, parameters, prerequisites, RP
-reward, rank value, and text IDs. Events are evaluated only against active tasks.
-Supported initial events are:
+Every item definition has exactly one implementation category. Categories keep
+hooks and shared behavior together without coupling item behavior to a future reward
+or progression system:
 
-- wild encounter started;
-- battle action completed;
-- wild Pokemon captured;
-- map or habitat entered; and
-- gadget result produced.
+- **Encounters** owns table transforms, wild generation, habitats, and durations.
+- **Detection** owns reusable information tools and overworld feedback.
+- **Battle** owns capture, experience, and trainer-rematch integration.
+- **Pokemon** owns move, evolution, fossil, and DV operations.
+- **Travel** owns map, PC, warp, and safe-return operations.
 
-Progress keys must be explicit. For example, a route biodiversity task stores a
-species bitset rather than incrementing on every encounter, and a multi-habitat
-task records unique habitat IDs. Capture tasks inspect the captured Pokemon and the
-battle history snapshot, not the current party after menus have run.
-
-Oak's UI has four commands: **ASSIGNMENTS**, **REPORT**, **EXCHANGE**, and **RANK**.
-Reporting is explicit so the player sees what completed and why RP changed. RP
-addition is saturating; purchasing validates rank, points, capacity, and ownership
-before subtracting currency.
+Cross-category dependencies use explicit interfaces. For example, Detection may
+read the normalized encounter view from Encounters, but it must not reproduce the
+normalization rules. Adding an item requires assigning a category before its item ID
+or save fields are accepted.
 
 ## 5. Data definitions
 
 Content belongs in declarative tables wherever behavior can remain generic:
 
-- gadget metadata: item ID, type, price, rank, source, duration, and text IDs;
-- research assignments and rewards;
+- gadget metadata: item ID, type, category, duration, and text IDs;
 - habitat membership and Mystery Lure candidates;
 - tracker signal thresholds;
 - rematch eligibility and party-scaling policy;
@@ -159,11 +149,14 @@ Content belongs in declarative tables wherever behavior can remain generic:
 - shiny-valid DV combinations; and
 - safe/unsafe context flags for travel gadgets.
 
-Build-time validation must reject duplicate IDs, unavailable text, impossible rank
-requirements, weights outside their storage type, empty Mystery Lure habitats,
-invalid species or move IDs, and permanent rewards configured as consumables.
+Build-time validation must reject duplicate IDs, unavailable text, missing or unknown
+categories, weights outside their storage type, empty Mystery Lure habitats, invalid
+species or move IDs, and permanent gadgets configured as consumables.
 
-## 6. Delivery phases
+## 6. Delivery order
+
+The checkbox status and complete ordering live in [CHECKLIST.md](CHECKLIST.md). This
+section summarizes the integration milestones and their exit criteria.
 
 ### Phase 0 — integration audit
 
@@ -173,38 +166,41 @@ invalid species or move IDs, and permanent rewards configured as consumables.
 - Record calling constraints and decide how mod save data is allocated.
 - Add a minimal build and smoke-test target before gameplay work.
 
-### Phase 1 — playable research loop
+### Phase 1 — Shiny Finder vertical slice
 
 - Versioned save block and migrations.
 - Shared field-effect lifecycle.
+- Transactional consumable item use.
+- Shiny Finder activation, wild-DV hook, duration, and expiration.
+- Deterministic DV tests and a seeded statistical simulation.
+
+Exit criteria: a fresh or migrated save can use a Shiny Finder without premature
+consumption, produce only valid shiny DVs on successful rolls, preserve its state
+across save/load as designed, and expire safely.
+
+### Phase 2 — encounter foundation
+
 - Rare Lure and Silph Tracker.
-- A small authored set of Oak assignments.
-- RP reporting, rank display, and exchange menu.
-
-Exit criteria: a fresh or migrated save can complete an assignment, buy and use a
-Rare Lure, observe statistically correct encounter bias, reload safely, and query
-the same table with the Tracker.
-
-### Phase 2 — broaden field play
-
 - Mystery Lure and Species Whistle.
-- Treasure Detector and Prototype Repel.
-- EXP Battery and initial Prototype Balls.
-- Safari-specific assignments and rewards.
+- Prototype Repel, Safari Bait / Pass, and Glitch Detector.
 
-### Phase 3 — Pokemon and trainer tools
+### Phase 3 — detection and battle tools
+
+- Permanent GADGETS menu and unlock handling.
+- Treasure Detector, Pokedex Chip, and Rocket Decoder.
+- Prototype Ball, EXP Battery, and Trainer Beacon.
+
+### Phase 4 — Pokemon tools
 
 - Link Cable with trade presentation.
-- Trainer Beacon with rematch allowlist.
 - Move Recorder, fossil equipment, and bounded DV items.
-- PC Transfer and safe travel gadgets.
-
-### Phase 4 — advanced activities
-
-- Shiny Finder with genuine compatible DV generation.
 - Blank TM compatibility and recording flow.
-- Rocket incidents and Decoder.
-- Curated Glitch Detector events and Pokedex Chip statistics.
+
+### Phase 5 — travel tools
+
+- Shared unsafe-context validation.
+- Emergency Teleporter and PC Transfer Unit.
+- Map Beacon placement and return.
 
 ## 7. Test strategy
 
@@ -215,8 +211,8 @@ the same table with the Tracker.
 - Species compatibility agrees between Tracker and Whistle.
 - Step duration decrements only for eligible movement and expires once.
 - Item transactions consume once on success and never on cancellation or failure.
-- RP and counters saturate without wrapping.
-- Rank and ownership gates cannot be bypassed through stale menus.
+- Counters saturate without wrapping.
+- Unlock and eligibility gates cannot be bypassed through stale menus.
 - Save round trips preserve persistent state and clear runtime caches.
 - Every prior schema version migrates to the current schema.
 - Shiny-forced DVs pass the runtime's own shiny predicate.
@@ -237,9 +233,9 @@ data where the supported runtime exposes them.
 
 ## 8. Definition of done for each gadget
 
-A gadget is complete only when it has:
+A gadget implementation is complete only when it has:
 
-1. a source and progression gate;
+1. an item definition and implementation category;
 2. use, cancel, invalid-context, active, and expiration text;
 3. explicit persistence and stacking behavior;
 4. data validation;
@@ -247,4 +243,3 @@ A gadget is complete only when it has:
 6. save/load and map-transition coverage;
 7. a documented balance knob; and
 8. no path that consumes it before its effect commits.
-
