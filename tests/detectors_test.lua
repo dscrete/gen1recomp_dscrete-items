@@ -62,6 +62,15 @@ test("detector overlays use live camera world coordinates", function()
   eq(movedY,48)
 end)
 
+test("glitch overlay is injected before the world pass ends", function()
+  local f=assert(io.open("lib/overworld_fx.lua","r"))
+  local src=f:read("*a"); f:close()
+  check(src:find("originalWorld=screen.drawWorld",1,true)~=nil,
+    "overlay must wrap drawWorld, not the post-world screen draw")
+  check(src:find("screen._dscreteWorldFxWrapped",1,true)~=nil,
+    "world-pass wrapper guard")
+end)
+
 test("Treasure Detector finds nearest uncollected hidden marker", function()
   local overview={markers={
     {kind="warp",x=1,y=1},
@@ -81,4 +90,15 @@ test("Treasure Detector distance bands get stronger nearby without text payloads
   eq(TreasureDetector.bandForDistance(1).name,"VERY STRONG")
   eq(TreasureDetector.bandForDistance(0).name,"DIRECTLY HERE")
   eq(TreasureDetector.bandForDistance(3).text,nil)
+end)
+
+test("Treasure Detector uses bounded audible ping patterns", function()
+  eq(TreasureDetector.SOUND_PRIMARY,"Tink")
+  eq(TreasureDetector.SOUND_FALLBACK,"Press_AB")
+  eq(TreasureDetector.beepCount(0),0)
+  eq(TreasureDetector.beepCount(1),1)
+  eq(TreasureDetector.beepCount(3),2)
+  eq(TreasureDetector.beepCount(5),3)
+  check(TreasureDetector.beepPitch(5)>TreasureDetector.beepPitch(1),
+    "stronger signal should use higher pitch")
 end)
