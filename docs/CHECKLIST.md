@@ -99,8 +99,10 @@ code ownership; they do not decide how players obtain an item.
   - [x] Reflect active Elusive Scent, Mystery Lure, Species Whistle, and Safari Kit
         BAIT weighting.
   - [x] Keep scope to the current map only.
-  - [x] Present scan results as a persistent manual list so fast-forward cannot skip
-        earlier readings.
+  - [x] Present scan results on a dedicated manual scrolling screen with separate name
+        and signal lines so long labels never clip and fast-forward cannot skip entries.
+  - [x] Add a regression guard that fails standalone tests if `SilphTracker.open()` is
+        switched back to the generic `ListMenu` implementation.
   - [ ] Complete minimum-engine and in-game UI/readout smoke testing.
 
 - [x] **Mystery Lure** — reserve a temporary share for one random habitat mystery.
