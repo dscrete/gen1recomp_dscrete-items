@@ -1,17 +1,17 @@
-# Discrete Items
+# DScrete Items
 
-**Discrete Items** is a planned Gen1Recomp expansion built around strange, useful
+**DScrete Items** is a planned Gen1Recomp expansion built around strange, useful
 pieces of late-1990s Pokemon technology. Rather than backporting later-generation
-features, the mod turns new gadgets into a common reward language for research,
-exploration, Silph prototypes, Cinnabar experiments, Safari ecology, and Rocket
-investigations.
+features, the mod adds gadgets that create new decisions and activities while
+fitting the existing game's presentation.
 
 The guiding loop is:
 
-> activity -> points or reward -> gadget -> new capability -> new activity
+> find a gadget -> gain a capability -> discover a new way to play
 
 This repository currently defines the product and implementation contract for the
-mod. Integration begins with the vertical slice in [the implementation plan](docs/IMPLEMENTATION.md).
+mod. Integration starts with the groundwork and Shiny Finder milestones in the
+[implementation checklist](docs/CHECKLIST.md).
 
 ## Design principles
 
@@ -26,75 +26,57 @@ mod. Integration begins with the vertical slice in [the implementation plan](doc
    silently replace it. Exceptional encounters are curated by habitat.
 5. **No guaranteed miracles.** Rare and shiny effects improve odds, but retain
    uncertainty. Gen-1-compatible shiny Pokemon must be produced through valid DVs.
-6. **Useful places stay useful.** Oak, Silph Co., Cinnabar Lab, the Safari Zone,
-   and Rocket locations each own a distinct family of rewards.
+6. **Distribution comes later.** Implementation does not assume how an item is
+   earned. Shops, characters, locations, and activities can be designed after the
+   items themselves are stable.
 
-## Gadget catalogue
+## Item catalogue
 
-| Gadget | Type | Source | Intended effect |
+The **category** column assigns implementation ownership. It describes which shared
+system should contain the behavior, not where or how the player receives the item.
+
+| Item | Type | Category | Intended effect |
 | --- | --- | --- | --- |
-| Rare Lure | Consumable | Oak / Safari | Biases encounters toward the rarest species already in the area's table. |
-| Mystery Lure | Consumable | Oak / Safari | Adds a small, curated habitat-specific encounter pool for a limited duration. |
-| Species Whistle | Consumable | Oak | Selects a species and raises its weight in compatible encounter tables. |
-| Silph Tracker | Permanent | Oak / Silph | Reports whether a selected species is absent, faint, present, or strong locally. |
-| Treasure Detector | Permanent | Oak | Gives stronger feedback as the player approaches an uncollected hidden item. |
-| Trainer Beacon | Consumable | Silph | Allows a previously defeated, eligible trainer to be challenged again. |
-| Prototype Ball | Consumable | Silph | Applies a documented conditional modifier to the normal capture calculation. |
-| Prototype Repel | Consumable | Silph | Attracts encounters at or above the lead Pokemon's level. |
-| EXP Battery | Consumable | Oak / Silph | Arms a bonus for a future eligible EXP award. |
-| Link Cable | Consumable | Silph | Evolves Kadabra, Machoke, Graveler, or Haunter using the existing trade presentation. |
-| PC Transfer Unit | Consumable | Silph | Opens portable PC access once, then returns to the original map safely. |
-| Blank TM | Consumable | Silph | Records one eligible move, then teaches it to a compatible recipient. |
-| Emergency Teleporter | Consumable | Silph | Returns the player to the last valid Pokemon Center. |
-| Map Beacon | Consumable pair | Exploration | Records a valid field tile and later returns the player to it. |
-| Move Recorder | Consumable | Cinnabar | Offers an eligible missed level-up move to the selected Pokemon. |
-| Fossil Catalyst | Consumable | Cinnabar | Applies a disclosed modifier during fossil revival. |
-| DNA Stabilizer | Consumable | Cinnabar | Improves DVs within bounded, shiny-safe rules. |
-| Mutation Capsule | Consumable | Cinnabar | Rerolls one random DV and previews the affected stat. |
-| Glitch Detector | Consumable | Cinnabar | Enables a curated temporary encounter anomaly without corrupting game state. |
-| Safari Bait / Pass | Consumable | Safari Zone | Alters curated Safari encounters or one clearly stated Safari rule. |
-| Rocket Decoder | Permanent | Rocket content | Detects and decodes authored, temporary Rocket incidents. |
-| Oak's Specimen Jar | Reusable | Oak | Records evidence for active catch and observation assignments. |
-| Pokedex Chip | Permanent | Oak | Adds encounter and research statistics to Pokedex information. |
-| Shiny Finder | Consumable | Oak | Temporarily raises shiny generation to about 1 in 100 via valid shiny DVs. |
+| Shiny Finder | Consumable | Encounters | Temporarily raises shiny generation to about 1 in 100 via valid shiny DVs. |
+| Rare Lure | Consumable | Encounters | Biases encounters toward the rarest species already in the area's table. |
+| Mystery Lure | Consumable | Encounters | Adds a small, curated habitat-specific encounter pool for a limited duration. |
+| Species Whistle | Consumable | Encounters | Selects a species and raises its weight in compatible encounter tables. |
+| Prototype Repel | Consumable | Encounters | Attracts encounters at or above the lead Pokemon's level. |
+| Glitch Detector | Consumable | Encounters | Enables a curated temporary encounter anomaly without corrupting game state. |
+| Safari Bait / Pass | Consumable | Encounters | Alters curated Safari encounters or one clearly stated Safari rule. |
+| Silph Tracker | Permanent | Detection | Reports whether a selected species is absent, faint, present, or strong locally. |
+| Treasure Detector | Permanent | Detection | Gives stronger feedback as the player approaches an uncollected hidden item. |
+| Rocket Decoder | Permanent | Detection | Detects and decodes authored, temporary Rocket incidents. |
+| Pokedex Chip | Permanent | Detection | Adds encounter statistics to Pokedex information. |
+| Prototype Ball | Consumable | Battle | Applies a documented conditional modifier to the normal capture calculation. |
+| EXP Battery | Consumable | Battle | Arms a bonus for a future eligible EXP award. |
+| Trainer Beacon | Consumable | Battle | Allows a previously defeated, eligible trainer to be challenged again. |
+| Link Cable | Consumable | Pokemon | Evolves Kadabra, Machoke, Graveler, or Haunter using the existing trade presentation. |
+| Move Recorder | Consumable | Pokemon | Offers an eligible missed level-up move to the selected Pokemon. |
+| Fossil Catalyst | Consumable | Pokemon | Applies a disclosed modifier during fossil revival. |
+| DNA Stabilizer | Consumable | Pokemon | Improves DVs within bounded, shiny-safe rules. |
+| Mutation Capsule | Consumable | Pokemon | Rerolls one random DV and previews the affected stat. |
+| Blank TM | Consumable | Pokemon | Records one eligible move, then teaches it to a compatible recipient. |
+| PC Transfer Unit | Consumable | Travel | Opens portable PC access once, then returns to the original map safely. |
+| Emergency Teleporter | Consumable | Travel | Returns the player to the last valid Pokemon Center. |
+| Map Beacon | Consumable pair | Travel | Records a valid field tile and later returns the player to it. |
 
 Permanent gadgets live in a dedicated **GADGETS** menu and do not consume normal
 bag slots. Consumables remain normal items so their cost and scarcity stay visible.
 Only one encounter-modifying field effect may be active at a time; using another
 asks the player to replace the current effect.
 
-## Oak's Research
+## Category ownership
 
-Oak offers authored assignments rather than an unbounded checklist. Assignment
-templates include observing a species, recording a route's biodiversity, catching
-above a level threshold, catching after inflicting a status condition, surveying
-multiple habitats, finding a rare specimen, and completing a special battle
-observation. Progress is updated by shared encounter, battle, capture, and map hooks.
+- **Encounters:** encounter-table transforms, wild generation, durations, and
+  habitat rules.
+- **Detection:** reusable information tools and their menus or overworld feedback.
+- **Battle:** capture, experience, and trainer-rematch hooks.
+- **Pokemon:** moves, evolution, fossils, and DV modification.
+- **Travel:** map, PC, warp, and safe-return behavior.
 
-Completed assignments award **Research Points (RP)** and rank progress. RP is saved
-as a capped currency and is never represented by a bag item.
-
-| Rank | Example unlocks |
-| --- | --- |
-| Field Assistant | Rare Lure, Mystery Lure, basic research supplies |
-| Field Researcher | Silph Tracker, Species Whistle, Trainer Beacon |
-| Senior Researcher | Link Cable, EXP Battery, fossil equipment |
-| Pokemon Expert | Shiny Finder, DNA Stabilizer, Mutation Capsule |
-
-Initial balancing targets are 10 RP for a Rare Lure, 15 for the Treasure Detector,
-20 for a Trainer Beacon, 25 for a Species Whistle, 30 for an EXP Battery, 40 for a
-Link Cable, 75 for a Shiny Finder, and 100 for a DNA Stabilizer. These values are
-configuration, not hard-coded progression rules.
-
-## Ownership by location
-
-- **Oak / Pallet:** field research, Pokedex upgrades, lures, and the Shiny Finder.
-- **Silph Co.:** Link Cable, portable PC, Trainer Beacon, Blank TM, experimental
-  balls, and Prototype Repel.
-- **Cinnabar Lab:** fossil and DV experiments, Move Recorder, and Glitch Detector.
-- **Safari Zone:** ecological surveys, Safari bait, passes, and wildlife tracking.
-- **Rocket content:** the Decoder and stolen or black-market prototype variants.
-- **Exploration:** map beacons, hidden-item surveys, and cartography rewards.
+These boundaries are intended to remain stable as more items are added. Player-facing
+sources and progression are deliberately unassigned for now.
 
 ## Scope and safety decisions
 
@@ -111,9 +93,7 @@ configuration, not hard-coded progression rules.
 
 ## Delivery
 
-The first playable slice is intentionally small: the shared save/state layer,
-Rare Lure, Silph Tracker, Oak research tasks, and the RP exchange. Once that loop is
-stable, additional gadgets should be added through data definitions and focused
-hooks rather than parallel one-off systems. See [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
-for phases, contracts, edge cases, and acceptance criteria.
-
+The ordered source of truth is [docs/CHECKLIST.md](docs/CHECKLIST.md). After the
+shared foundation, **Shiny Finder is the first item to implement**. Later items are
+ordered to reuse proven hooks and infrastructure. Detailed behavioral contracts and
+edge cases remain in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
