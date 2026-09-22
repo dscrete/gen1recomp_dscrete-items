@@ -9,6 +9,35 @@ local function loadLocal(mod, path)
 end
 
 return function(mod)
+  mod.options:define({
+    {
+      key = "shiny_finder_chance",
+      label = "SHINY ODDS",
+      type = "choice",
+      default = "100",
+      choices = {
+        { "1 / 1", "1" },
+        { "1 / 10", "10" },
+        { "1 / 100", "100" },
+        { "1 / 1000", "1000" },
+      },
+    },
+    {
+      key = "shiny_finder_steps",
+      label = "SHINY STEPS",
+      type = "choice",
+      default = "250",
+      choices = {
+        { "50", "50" },
+        { "100", "100" },
+        { "250", "250" },
+        { "500", "500" },
+        { "1000", "1000" },
+        { "2500", "2500" },
+      },
+    },
+  })
+
   local Items = loadLocal(mod, "lib/items.lua")
   local Runtime = loadLocal(mod, "lib/runtime.lua")
   local Debug = loadLocal(mod, "lib/debug.lua")
