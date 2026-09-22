@@ -11,11 +11,11 @@ Items.FAMILY = { OAK_PALLET=true, SILPH_CO=true, CINNABAR_LAB=true, SAFARI_ZONE=
 Items.EFFECT_KIND = { FIELD_EFFECT=true, TOOL=true, TRAINER=true, CAPTURE=true, BATTLE=true, POKEMON=true, TRAVEL=true }
 
 Items.all = {
-  { key="prism_scent", itemId="DS_PRISM_SCENT", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_PRISM_SCENT_EFFECT" },
-  { key="elusive_scent", itemId="DS_ELUSIVE_SCENT", name="ELUSIVE SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_ELUSIVE_SCENT_EFFECT" },
+  { key="prism_scent", itemId="DS_PRISM_SCENT", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_PRISM_SCENT_EFFECT", implemented=true },
+  { key="elusive_scent", itemId="DS_ELUSIVE_SCENT", name="ELUSIVE SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_ELUSIVE_SCENT_EFFECT", implemented=true },
   { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
-  { key="silph_tracker", name="SILPH TRACKER", ownership="PERMANENT", family="SILPH_CO", effectKind="TOOL" },
+  { key="silph_tracker", name="SILPH TRACKER", ownership="PERMANENT", family="SILPH_CO", effectKind="TOOL", implemented=true },
   { key="treasure_detector", name="TREASURE DET.", ownership="PERMANENT", family="EXPLORATION", effectKind="TOOL" },
   { key="trainer_beacon", itemId="DS_TRAINER_BEACON", name="TRAINER BEACON", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAINER" },
   { key="prototype_ball", itemId="DS_PROTOTYPE_BALL", name="PROTO BALL", ownership="CONSUMABLE", family="SILPH_CO", effectKind="CAPTURE" },
@@ -59,17 +59,22 @@ function Items.registerBagItems(mod)
   end
 end
 
-function Items.permanent()
+function Items.permanent(implementedOnly)
   local out = {}
   for _, item in ipairs(Items.all) do
-    if item.ownership == "PERMANENT" or item.ownership == "REUSABLE" then out[#out+1] = item end
+    if (item.ownership == "PERMANENT" or item.ownership == "REUSABLE")
+        and (not implementedOnly or item.implemented) then
+      out[#out+1] = item
+    end
   end
   return out
 end
 
-function Items.consumables()
+function Items.consumables(implementedOnly)
   local out = {}
-  for _, item in ipairs(Items.all) do if item.itemId then out[#out+1] = item end end
+  for _, item in ipairs(Items.all) do
+    if item.itemId and (not implementedOnly or item.implemented) then out[#out+1] = item end
+  end
   return out
 end
 
