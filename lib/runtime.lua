@@ -5,7 +5,7 @@
 local Runtime = {}
 Runtime.__index = Runtime
 
-Runtime.SCHEMA_VERSION = 1
+Runtime.SCHEMA_VERSION = 2
 Runtime.RESULT = {
   APPLIED = "applied",
   CANCELLED = "cancelled",
@@ -13,6 +13,9 @@ Runtime.RESULT = {
   CONFLICT = "conflict",
   FAILED = "failed",
 }
+
+local FIELD_ID_KEY = "active_field_effect"
+local FIELD_STEPS_KEY = "active_field_steps"
 
 local function positiveInteger(value)
   return type(value) == "number" and value > 0 and value % 1 == 0
@@ -26,13 +29,21 @@ function Runtime.new(save)
   if version < Runtime.SCHEMA_VERSION then
     save:set("schema_version", Runtime.SCHEMA_VERSION)
   end
-  self:resetRuntime()
+  self:reloadPersistentState()
   return self
 end
 
-function Runtime:resetRuntime()
-  self.activeFieldEffect = nil
-  self.remainingSteps = 0
+function Runtime:_persistFieldEffect()
+  if self.activeFieldEffect and positiveInteger(self.remainingSteps) then
+    self.save:set(FIELD_ID_KEY, self.activeFieldEffect)
+    self.save:set(FIELD_STEPS_KEY, self.remainingSteps)
+  else
+    self.save:set(FIELD_ID_KEY, nil)
+    self.save:set(FIELD_STEPS_KEY, nil)
+  end
+end
+
+function Runtime:_resetTransient()
   self.selectedSpecies = nil
   self.pendingExpMultiplier = nil
   self.pendingNaturalEncounter = false
@@ -41,6 +52,29 @@ function Runtime:resetRuntime()
   self.debugReturn = nil
   self.debugRolls = 0
   self.debugSuccesses = 0
+end
+
+function Runtime:reloadPersistentState()
+  self:_resetTransient()
+  local effect = self.save:get(FIELD_ID_KEY, nil)
+  local steps = tonumber(self.save:get(FIELD_STEPS_KEY, 0)) or 0
+  if type(effect) == "string" and effect ~= "" and positiveInteger(steps) then
+    self.activeFieldEffect = effect
+    self.remainingSteps = steps
+  else
+    self.activeFieldEffect = nil
+    self.remainingSteps = 0
+    self:_persistFieldEffect()
+  end
+end
+
+-- Reset runtime-only state while preserving the currently persisted field
+-- effect. Debug tooling has clearFieldEffect() for explicitly removing it.
+function Runtime:resetRuntime()
+  local effect, steps = self.activeFieldEffect, self.remainingSteps
+  self:_resetTransient()
+  self.activeFieldEffect = effect
+  self.remainingSteps = steps
 end
 
 function Runtime:activateFieldEffect(effectId, duration, replace)
@@ -55,6 +89,7 @@ function Runtime:activateFieldEffect(effectId, duration, replace)
   self.remainingSteps = duration
   self.selectedSpecies = nil
   self.pendingFieldReplacement = nil
+  self:_persistFieldEffect()
   return true, Runtime.RESULT.APPLIED, current
 end
 
@@ -64,18 +99,17 @@ function Runtime:clearFieldEffect()
   self.remainingSteps = 0
   self.selectedSpecies = nil
   self.pendingFieldReplacement = nil
+  self:_persistFieldEffect()
   return old
 end
 
 function Runtime:onEligibleStep()
-  -- A replacement confirmation is intentionally short-lived: walking away
-  -- from the bag cancels it, so a later use cannot accidentally replace an
-  -- effect the player forgot they had been asked about.
   self.pendingFieldReplacement = nil
   if not self.activeFieldEffect then return nil end
   if self.remainingSteps <= 0 then return self:clearFieldEffect() end
   self.remainingSteps = self.remainingSteps - 1
   if self.remainingSteps <= 0 then return self:clearFieldEffect() end
+  self:_persistFieldEffect()
   return nil
 end
 
@@ -125,6 +159,10 @@ function Runtime:resetPersistent(itemKeys)
   self.save:set("placed_beacon_map", nil)
   self.save:set("placed_beacon_x", nil)
   self.save:set("placed_beacon_y", nil)
+  self.activeFieldEffect = nil
+  self.remainingSteps = 0
+  self:_persistFieldEffect()
+  self:_resetTransient()
 end
 
 function Runtime:snapshot(itemKeys)

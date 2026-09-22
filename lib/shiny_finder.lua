@@ -1,19 +1,21 @@
--- Shiny Finder vertical slice.
+-- Prism Scent: a timed Gen 1 shiny-encounter field effect.
 --
 -- Gen 1 has no stored shiny flag. Gen1Recomp's public Stats.isShiny predicate
--- defines a virtual shiny from DVs, so successful Finder rolls replace only a
--- newly-created natural wild Pokemon's DVs with a predicate-valid set.
+-- defines a virtual shiny from DVs, so successful Prism Scent rolls assign a
+-- valid shiny DV set to eligible natural wild Pokemon.
 
-local ShinyFinder = {}
+local PrismScent = {}
 
-ShinyFinder.EFFECT_ID = "shiny_finder"
-ShinyFinder.ITEM_EFFECT_ID = "DS_SHINY_FINDER_EFFECT"
-ShinyFinder.DURATION_STEPS = 250
-ShinyFinder.CHANCE_NUMERATOR = 1
-ShinyFinder.CHANCE_DENOMINATOR = 100
-ShinyFinder.CHANCE_OPTION = "shiny_finder_chance"
-ShinyFinder.STEPS_OPTION = "shiny_finder_steps"
+-- Keep the original internal ids/option keys for save and config compatibility.
+PrismScent.EFFECT_ID = "shiny_finder"
+PrismScent.ITEM_EFFECT_ID = "DS_SHINY_FINDER_EFFECT"
+PrismScent.DURATION_STEPS = 250
+PrismScent.CHANCE_NUMERATOR = 1
+PrismScent.CHANCE_DENOMINATOR = 100
+PrismScent.CHANCE_OPTION = "shiny_finder_chance"
+PrismScent.STEPS_OPTION = "shiny_finder_steps"
 
+local WILDS_ID = "overworld_wild_spawns"
 local VALID_CHANCES = { [1] = true, [10] = true, [100] = true, [1000] = true }
 local VALID_DURATIONS = {
   [50] = true, [100] = true, [250] = true,
@@ -29,20 +31,31 @@ local function hpDV(dvs)
     + (dvs.speed % 2) * 2 + (dvs.special % 2)
 end
 
-function ShinyFinder.resolveChanceDenominator(value)
+local function copyDVs(dvs)
+  if type(dvs) ~= "table" then return nil end
+  return {
+    attack = dvs.attack,
+    defense = dvs.defense,
+    speed = dvs.speed,
+    special = dvs.special,
+    hp = dvs.hp,
+  }
+end
+
+function PrismScent.resolveChanceDenominator(value)
   local parsed = tonumber(value)
   if parsed and VALID_CHANCES[parsed] then return parsed end
-  return ShinyFinder.CHANCE_DENOMINATOR
+  return PrismScent.CHANCE_DENOMINATOR
 end
 
-function ShinyFinder.resolveDuration(value)
+function PrismScent.resolveDuration(value)
   local parsed = tonumber(value)
   if parsed and VALID_DURATIONS[parsed] then return parsed end
-  return ShinyFinder.DURATION_STEPS
+  return PrismScent.DURATION_STEPS
 end
 
-function ShinyFinder.makeShinyDVs(rng)
-  assert(type(rng) == "function", "Shiny Finder RNG is required")
+function PrismScent.makeShinyDVs(rng)
+  assert(type(rng) == "function", "Prism Scent RNG is required")
   local dvs = {
     attack = SHINY_ATTACK[rng(1, #SHINY_ATTACK)],
     defense = 10,
@@ -53,20 +66,30 @@ function ShinyFinder.makeShinyDVs(rng)
   return dvs
 end
 
-function ShinyFinder.isKnownShinyShape(dvs)
+function PrismScent.isKnownShinyShape(dvs)
   return type(dvs) == "table"
     and dvs.defense == 10 and dvs.speed == 10 and dvs.special == 10
     and SHINY_ATTACK_SET[dvs.attack] == true
     and dvs.hp == hpDV(dvs)
 end
 
-function ShinyFinder.rollSucceeds(rng, numerator, denominator)
-  numerator = numerator or ShinyFinder.CHANCE_NUMERATOR
-  denominator = denominator or ShinyFinder.CHANCE_DENOMINATOR
+function PrismScent.rollSucceeds(rng, numerator, denominator)
+  numerator = numerator or PrismScent.CHANCE_NUMERATOR
+  denominator = denominator or PrismScent.CHANCE_DENOMINATOR
   assert(type(rng) == "function" and type(numerator) == "number"
     and type(denominator) == "number" and denominator > 0
-    and numerator > 0 and numerator <= denominator, "invalid shiny roll")
+    and numerator > 0 and numerator <= denominator, "invalid Prism Scent roll")
   return rng(1, denominator) <= numerator
+end
+
+function PrismScent.markVisibleSpawn(target, dvs)
+  if type(target) ~= "table" or not PrismScent.isKnownShinyShape(dvs) then
+    return false
+  end
+  target.dscretePrismDVs = copyDVs(dvs)
+  target.isShiny = true
+  target.shiny = true
+  return true
 end
 
 local function sameNaturalEncounter(pending, ev)
@@ -76,45 +99,126 @@ local function sameNaturalEncounter(pending, ev)
     and (ev.kind == "wild" or ev.kind == "safari")
 end
 
-function ShinyFinder.install(mod, runtime)
+local function sameWildsBattle(pending, ev)
+  return type(pending) == "table" and pending.dscretePrismDVs
+    and ev and pending.species == ev.species and pending.level == ev.level
+    and (ev.kind == "wild" or ev.kind == "safari")
+end
+
+function PrismScent.install(mod, runtime)
   local Stats = require("src.pokemon.Stats") -- public/sandbox-supported helper
   local rng = function(lo, hi) return love.math.random(lo, hi) end
   local liveGame, logicTick, lastCountedTick = nil, 0, -1
+  local wildsWrapped = false
 
   local function configuredDuration()
-    return ShinyFinder.resolveDuration(mod.options:get(ShinyFinder.STEPS_OPTION))
+    return PrismScent.resolveDuration(mod.options:get(PrismScent.STEPS_OPTION))
   end
 
   local function configuredChanceDenominator()
-    return ShinyFinder.resolveChanceDenominator(
-      mod.options:get(ShinyFinder.CHANCE_OPTION))
+    return PrismScent.resolveChanceDenominator(
+      mod.options:get(PrismScent.CHANCE_OPTION))
   end
 
-  mod.content.item_effects:register(ShinyFinder.ITEM_EFFECT_ID, {
+  local function applyDVs(ev, dvs)
+    local battle = ev and ev.battle
+    local mon = battle and battle.enemy and battle.enemy.mon
+    if not (mon and mon.species and mon.level and PrismScent.isKnownShinyShape(dvs)) then
+      return false
+    end
+    if not Stats.isShiny(dvs) then return false end
+    local def = battle.data and battle.data.pokemon
+      and battle.data.pokemon[mon.species]
+    if not def then return false end
+    local wasAtFull = mon.stats and mon.hp == mon.stats.hp
+    mon.dvs = copyDVs(dvs)
+    mon.stats = Stats.calc(def, mon.level, mon.dvs, mon.statExp)
+    if wasAtFull or mon.hp == nil then
+      mon.hp = mon.stats.hp
+    else
+      mon.hp = math.max(1, math.min(mon.hp, mon.stats.hp))
+    end
+    return true
+  end
+
+  local function wildsExports()
+    if type(mod.find) ~= "function" then return nil end
+    local found = mod.find(WILDS_ID)
+    return found and found.exports or nil
+  end
+
+  local function installWildsCompatibility()
+    if wildsWrapped then return true end
+    local exports = wildsExports()
+    local render = exports and exports.render
+    if not (render and type(render.makeEntity) == "function") then return false end
+    if render._dscretePrismScentWrapped then
+      wildsWrapped = true
+      return true
+    end
+
+    local original = render.makeEntity
+    render.makeEntity = function(self, game, record)
+      if type(record) == "table" and not record.testSpawn
+          and runtime:isActive(PrismScent.EFFECT_ID)
+          and not record.dscretePrismRolled then
+        record.dscretePrismRolled = true
+        runtime.debugRolls = runtime.debugRolls + 1
+        local denominator = configuredChanceDenominator()
+        if PrismScent.rollSucceeds(
+            rng, PrismScent.CHANCE_NUMERATOR, denominator) then
+          local dvs = PrismScent.makeShinyDVs(rng)
+          if Stats.isShiny(dvs) then
+            PrismScent.markVisibleSpawn(record, dvs)
+            runtime.debugSuccesses = runtime.debugSuccesses + 1
+          end
+        end
+      end
+
+      local entity = original(self, game, record)
+      if entity and record and record.dscretePrismDVs then
+        PrismScent.markVisibleSpawn(entity, record.dscretePrismDVs)
+      end
+      return entity
+    end
+    render._dscretePrismScentWrapped = true
+    wildsWrapped = true
+    return true
+  end
+
+  local function pendingWildsSpawn()
+    local exports = wildsExports()
+    local logic = exports and exports.logic
+    local pending = logic and logic.pendingBattle
+    if type(pending) == "table" and pending.dscretePrismDVs then return pending end
+    return nil
+  end
+
+  mod.content.item_effects:register(PrismScent.ITEM_EFFECT_ID, {
     needsTarget = false,
     field = true,
     battle = false,
     use = function()
-      if runtime.activeFieldEffect == ShinyFinder.EFFECT_ID then
-        return "failed", { "The SHINY FINDER\nis already searching." }
+      if runtime.activeFieldEffect == PrismScent.EFFECT_ID then
+        return "failed", { "PRISM SCENT is\nalready in the air." }
       end
       local replace = false
       if runtime.activeFieldEffect then
-        replace = runtime:requestFieldReplacement(ShinyFinder.EFFECT_ID)
+        replace = runtime:requestFieldReplacement(PrismScent.EFFECT_ID)
         if not replace then
           return "failed", {
-            "Another field effect\nis already active.\fUse SHINY FINDER\nagain to replace it.",
+            "Another field effect\nis already active.\fUse PRISM SCENT\nagain to replace it.",
           }
         end
       end
       local duration = configuredDuration()
       local ok = runtime:activateFieldEffect(
-        ShinyFinder.EFFECT_ID, duration, replace)
+        PrismScent.EFFECT_ID, duration, replace)
       if not ok then
-        return "failed", { "The SHINY FINDER\nfailed to start." }
+        return "failed", { "The PRISM SCENT\nfailed to spread." }
       end
       return "consumed", {
-        ("SHINY FINDER is\nsearching!\fIt will run for\n%d steps.")
+        ("PRISM SCENT drifts\nthrough the area!\fIt will last for\n%d steps.")
           :format(duration),
       }, { useJingle = true }
     end,
@@ -145,41 +249,32 @@ function ShinyFinder.install(mod, runtime)
   end)
 
   mod.events:on("battle.started", function(ev)
+    -- Wilds of Kanto compatibility: a visible spawn rolls when it is created,
+    -- so its overworld presentation and eventual battle use the same shiny DVs.
+    -- This path is optional and only exists when Wilds publishes its exports.
+    local wildsPending = pendingWildsSpawn()
+    if sameWildsBattle(wildsPending, ev) then
+      if applyDVs(ev, wildsPending.dscretePrismDVs) then return end
+    end
+
     local pending = runtime.pendingNaturalEncounter
     runtime.pendingNaturalEncounter = false
-    if not runtime:isActive(ShinyFinder.EFFECT_ID) then return end
+    if not runtime:isActive(PrismScent.EFFECT_ID) then return end
     if not sameNaturalEncounter(pending, ev) then return end
-    local battle = ev and ev.battle
-    local mon = battle and battle.enemy and battle.enemy.mon
-    if not (mon and mon.species and mon.level) then return end
 
     runtime.debugRolls = runtime.debugRolls + 1
     local denominator = configuredChanceDenominator()
-    if not ShinyFinder.rollSucceeds(rng, ShinyFinder.CHANCE_NUMERATOR, denominator) then
+    if not PrismScent.rollSucceeds(
+        rng, PrismScent.CHANCE_NUMERATOR, denominator) then
       return
     end
 
-    local dvs = ShinyFinder.makeShinyDVs(rng)
-    -- Fail closed if the pinned engine ever changes its shiny predicate.
-    if not Stats.isShiny(dvs) then return end
-
-    local def = battle.data and battle.data.pokemon
-      and battle.data.pokemon[mon.species]
-    if not def then return end
-    local wasAtFull = mon.stats and mon.hp == mon.stats.hp
-    mon.dvs = dvs
-    mon.stats = Stats.calc(def, mon.level, dvs, mon.statExp)
-    if wasAtFull or mon.hp == nil then
-      mon.hp = mon.stats.hp
-    else
-      mon.hp = math.max(1, math.min(mon.hp, mon.stats.hp))
+    local dvs = PrismScent.makeShinyDVs(rng)
+    if applyDVs(ev, dvs) then
+      runtime.debugSuccesses = runtime.debugSuccesses + 1
     end
-    runtime.debugSuccesses = runtime.debugSuccesses + 1
   end)
 
-  -- input.step gives us the live public game argument. The hook runs just
-  -- before Input:step; movement.collision runs later in that same logic tick,
-  -- when wasPressed/isDown represent the actual movement intent.
   mod.hooks:wrap("input.step", function(next, game, dt)
     liveGame = game
     logicTick = logicTick + 1
@@ -189,17 +284,12 @@ function ShinyFinder.install(mod, runtime)
       if busy == nil then
         runtime.pendingExpirationNotice = nil
         game.stack:push(mod.ui.TextBox.new(game,
-          "The SHINY FINDER\nstopped searching."))
+          "The PRISM SCENT\nfaded away."))
       end
     end
     return result
   end)
 
-  -- movement.collision is also queried by a few read-only world checks, so a
-  -- legal collision result alone is not enough. Require the current player
-  -- origin, a real held/pressed direction and at most one count per logic tick.
-  -- Wall bumps are false, warps do not use this path, and scriptMove does not
-  -- synthesize a player's directional input.
   mod.hooks:wrap("movement.collision", function(next, allowed, ctx)
     local result = next(allowed, ctx)
     if not (result and runtime.activeFieldEffect and liveGame and liveGame.input) then
@@ -217,11 +307,18 @@ function ShinyFinder.install(mod, runtime)
     return result
   end)
 
-  -- Runtime-only effects deliberately do not survive loading/restarting a run.
-  mod.events:on("game.ready", function()
-    runtime:resetRuntime()
+  local function reloadPersistentEffect()
+    runtime:reloadPersistentState()
     liveGame, logicTick, lastCountedTick = nil, 0, -1
-  end)
+    installWildsCompatibility()
+  end
+
+  -- game.ready starts with the boot save; save.loaded is the authoritative
+  -- restore point when CONTINUE adopts an existing save slot.
+  mod.events:on("game.ready", reloadPersistentEffect)
+  mod.events:on("save.loaded", reloadPersistentEffect)
+  mod.events:on("save.created", reloadPersistentEffect)
+  mod.events:on("mods.loaded", installWildsCompatibility)
 end
 
-return ShinyFinder
+return PrismScent

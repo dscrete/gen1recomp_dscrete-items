@@ -59,13 +59,13 @@ function Debug.install(mod, Items, runtime)
 
   local function grantMenu(ctx)
     local action = choose(ctx, "GET ITEMS", {
-      { label="SHINY FINDER", value="shiny" },
+      { label="PRISM SCENT", value="prism" },
       { label="ALL TEST ITEMS", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
       { label="BACK", value="back" },
     })
-    if action == "shiny" then
+    if action == "prism" then
       giveItem(ctx, Items.byKey.shiny_finder.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables()) do
@@ -123,7 +123,7 @@ function Debug.install(mod, Items, runtime)
     local effect = state.activeFieldEffect or "none"
     local selected = state.selectedSpecies or "none"
     local exp = state.pendingExpMultiplier or "none"
-    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fEXP MOD %s\nSHINY %d/%d\fUNLOCKED:\n%s")
+    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fEXP MOD %s\nPRISM %d/%d\fUNLOCKED:\n%s")
       :format(tostring(mod.version), tostring(state.schemaVersion), tostring(effect),
         tonumber(state.remainingSteps) or 0, tostring(selected), tostring(exp),
         tonumber(state.debugSuccesses) or 0, tonumber(state.debugRolls) or 0, unlocked)
@@ -184,9 +184,6 @@ function Debug.install(mod, Items, runtime)
     end,
   })
 
-  -- Pallet Town has three vanilla object events; index 4 is therefore stable
-  -- for this appended developer-only object. The tile is in the open central
-  -- area and the map patch preserves every vanilla object through __append.
   mod.content.maps:patch("PALLET_TOWN", {
     objects = { __append = {
       { index=4, name="DSCRETE_DEBUG_NPC", sprite="SPRITE_OAK",
