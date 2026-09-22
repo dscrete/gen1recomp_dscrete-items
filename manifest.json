@@ -1,0 +1,18 @@
+{
+  "id": "gen1recomp_dscrete_items",
+  "name": "DScrete Items",
+  "version": "0.1.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "GAMEPLAY",
+  "games": ["gen1"],
+  "game_version": ">=0.2.74 <0.3.0",
+  "priority": 100,
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "permissions": [],
+  "description": "Gen 1-style experimental gadgets and items for Gen1Recomp.",
+  "github": "dwyschwikkard-alt/gen1recomp_dscrete-items"
+}

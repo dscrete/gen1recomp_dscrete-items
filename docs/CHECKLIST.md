@@ -6,29 +6,41 @@ code ownership; they do not decide how players obtain an item.
 
 ## 0. Groundwork
 
-- [ ] Pin and document the supported Gen1Recomp revision.
-- [ ] Add a reproducible build and a minimal in-game smoke-test target.
-- [ ] Audit item-use, step, wild-table, DV-generation, capture, EXP, evolution,
-      save, trainer-defeat, hidden-item, PC, map-transition, and menu hooks.
-- [ ] Define item IDs, permanent unlock IDs, category metadata, and validation that
+- [x] Pin and document the supported Gen1Recomp revision.
+- [x] Add a reproducible standalone build/package target.
+- [ ] Complete the pinned-engine in-game smoke matrix.
+- [ ] Finish the full audit of item-use, wild-table, capture, EXP, evolution,
+      trainer-defeat, hidden-item, PC, map-transition, and menu hooks as later
+      catalogue items reach those systems.
+- [x] Define item IDs, ownership/category metadata, and standalone validation that
       rejects duplicate or invalid definitions.
-- [ ] Allocate a versioned save block and implement fresh-save defaults, migration,
-      bounds checks, and runtime-state reset on load.
-- [ ] Implement transactional consumable use: validate, apply, then consume exactly
-      one item only after success.
-- [ ] Implement the shared timed field-effect lifecycle, replacement prompt, step
-      countdown, expiration message, and safe map-transition behavior.
-- [ ] Add deterministic test helpers and seeded encounter simulations.
+- [x] Allocate a versioned `mod.save` namespace and clear runtime-only state on
+      `game.ready`.
+- [ ] Add explicit migrations when the first persisted schema change is introduced.
+- [x] Implement transactional consumable use: validate/apply first, consume exactly
+      one item only after successful activation.
+- [x] Implement the shared timed field-effect lifecycle, replacement confirmation,
+      eligible-step countdown, and one-time expiration.
+- [x] Add deterministic test helpers and seeded probability simulations.
+
+## Developer harness
+
+- [x] Add a developer-only Pallet Town NPC.
+- [x] Add **GET ITEMS**, **WARP**, **INSPECT**, and **RESET** flows.
+- [x] Route test item grants through the engine's real inventory/script path.
+- [x] Keep the harness absent from ordinary player mode.
+- [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
 
-- [ ] **Shiny Finder** — Encounters
-  - [ ] Register the consumable and activation/expiration text.
-  - [ ] Apply its configured chance only at eligible wild DV generation.
-  - [ ] Select only DV combinations accepted by Gen1Recomp's shiny predicate.
-  - [ ] Exclude gifts, trades, static encounters, owned Pokemon, and trainer parties.
-  - [ ] Test item transactions, duration, save/load, and shiny-safe DV generation.
-  - [ ] Run a seeded statistical check against the initial 1-in-100 target.
+- [x] **Shiny Finder** — Encounters
+  - [x] Register the consumable and activation behavior through the public item API.
+  - [x] Apply its configured chance only to marked natural wild encounters.
+  - [x] Generate only DV combinations accepted by Gen1Recomp's shiny predicate.
+  - [x] Exclude gifts, trades, static encounters, owned Pokemon, and trainer parties.
+  - [x] Test transaction, duration, replacement, expiration, and shiny-safe DV rules.
+  - [x] Run a seeded statistical check against the initial 1-in-100 target.
+  - [ ] Complete the pinned-engine/in-game smoke matrix.
 
 ## 2. Encounter foundation — Encounters
 
@@ -45,7 +57,7 @@ code ownership; they do not decide how players obtain an item.
 
 ## 3. Detection tools — Detection
 
-- [ ] Build the permanent **GADGETS** menu and unlock-bit handling.
+- [ ] Build the permanent **GADGETS** menu and unlock handling.
 - [ ] **Treasure Detector** — scale feedback by distance to an uncollected hidden item.
 - [ ] **Pokedex Chip** — display encounter statistics in Pokedex information.
 - [ ] **Rocket Decoder** — detect and decode authored temporary incidents.
@@ -80,6 +92,15 @@ code ownership; they do not decide how players obtain an item.
       applicable.
 - [ ] Cover every item with deterministic rules tests plus save/load and transition
       tests.
-- [ ] Validate all item definitions at build time.
+- [ ] Validate all item definitions at build time against the pinned engine as well
+      as standalone metadata rules.
 - [ ] Balance durations, odds, modifiers, and limits through data rather than code.
 - [ ] Decide player-facing sources and progression only after item behavior is stable.
+
+## Build delivery
+
+- [x] `make package` creates a minimal `dist/dscrete-items-dev.zip` with the mod
+      manifest/entrypoint at the archive root.
+- [x] GitHub Actions runs standalone tests and uploads the ZIP as the
+      **dscrete-items-dev** artifact on pushes and pull requests.
+- [ ] Add versioned release assets when tagged releases are introduced.

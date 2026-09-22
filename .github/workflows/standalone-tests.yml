@@ -1,0 +1,28 @@
+name: Standalone tests and package
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit zip
+
+      - name: Run standalone tests
+        run: make test
+
+      - name: Build testable mod ZIP
+        run: make package
+
+      - name: Upload mod ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: dscrete-items-dev
+          path: dist/dscrete-items-dev.zip
+          if-no-files-found: error
+          retention-days: 30

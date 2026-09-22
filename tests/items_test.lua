@@ -1,0 +1,30 @@
+local Items = dofile("lib/items.lua")
+
+test("catalogue has unique valid metadata", function()
+  local keys, ids = {}, {}
+  check(#Items.all >= 20, "expected the base gadget catalogue")
+  for _, item in ipairs(Items.all) do
+    check(not keys[item.key], "duplicate key " .. item.key)
+    keys[item.key] = true
+    check(Items.OWNERSHIP[item.ownership], "bad ownership " .. item.key)
+    check(Items.FAMILY[item.family], "bad family " .. item.key)
+    check(Items.EFFECT_KIND[item.effectKind], "bad effect kind " .. item.key)
+    if item.itemId then
+      check(not ids[item.itemId], "duplicate item id " .. item.itemId)
+      ids[item.itemId] = true
+    end
+  end
+end)
+
+test("permanent gadgets do not occupy bag slots", function()
+  for _, item in ipairs(Items.permanent()) do
+    eq(item.itemId, nil, item.key .. " should not be a bag item")
+  end
+end)
+
+test("Shiny Finder is a consumable field effect", function()
+  local item = Items.byKey.shiny_finder
+  eq(item.itemId, "DS_SHINY_FINDER")
+  eq(item.ownership, "CONSUMABLE")
+  eq(item.effectKind, "FIELD_EFFECT")
+end)

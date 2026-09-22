@@ -1,245 +1,224 @@
-# Implementation plan
+# DScrete Items implementation status and contracts
 
-This document translates the design into integration boundaries for Gen1Recomp.
-Exact symbol names should be bound to the target revision during integration; the
-contracts below deliberately avoid inventing upstream API names.
+Target: Gen1Recomp **v0.2.74**, commit
+`9545ebbb839a8a7ea28472b626681154ab222623`, Mod API 2, Gen 1.
 
-## 1. Shared runtime model
+The ordered backlog lives in [CHECKLIST.md](CHECKLIST.md). This document records
+what is implemented now plus the behavioral contracts later items should reuse.
 
-The gadget framework owns four kinds of state:
+## Current status
 
-```text
-GadgetSaveData
-  schema_version
-  permanent_unlock_bits
-  encounter_statistics
-  trainer_rematch_state
-  placed_beacon
+### Phase 1 — Manifest and compatibility
 
-GadgetRuntimeState (not serialized)
-  active_field_effect
-  remaining_steps
-  selected_species
-  pending_exp_multiplier
-  temporary_context
-```
+- [x] Complete loadable API-2 manifest with ID, display name, semantic version,
+  entrypoint, profile/category, Gen 1 target and engine range.
+- [x] Root `main.lua` entrypoint.
+- [x] Standalone manifest sanity tests based on fields verified against v0.2.74.
+- [ ] Run authoritative `modkit.py validate` in the external pinned engine checkout
+  before a release is considered validated.
 
-Serializable records use fixed-width fields and explicit bounds. Runtime pointers,
-menu cursors, cached encounter-table addresses, and temporary callbacks must never
-enter the save. Loading clears runtime-only state unless an effect explicitly has a
-serialized counterpart and a migration rule.
+### Phase 2 — Test layers
 
-### Field-effect contract
+- [x] Pure-Lua standalone tests for item metadata, field-effect state,
+  replacement/expiration and Shiny Finder probability/DV generation.
+- [x] Python retained only for static repository/manifest/upstream-revision checks.
+- [x] Separate `make test` and `make test-integration` targets.
+- [x] Integration target verifies the exact upstream commit before invoking modkit.
+- [x] Engine smoke matrix documented in `integration_tests/README.md`.
+- [x] `make package` builds a minimal installable mod ZIP.
+- [x] GitHub Actions runs standalone tests and uploads that ZIP as an artifact.
+- [ ] Add engine regression drivers for individual items as the catalogue grows.
 
-Encounter gadgets implement a common definition:
+### Phase 3 — Shared item runtime
+
+- [x] Canonical Lua item catalogue with ownership/category metadata.
+- [x] Real bag registration for consumables; permanent/reusable gadgets do not use
+  bag slots.
+- [x] Versioned `mod.save` namespace for persistent unlock/reusable state.
+- [x] Runtime-only field-effect, selected-species, pending EXP, beacon/debug and
+  encounter state.
+- [x] One-active-field-effect policy with explicit replacement confirmation.
+- [x] Replacement confirmation expires when the player walks away.
+- [x] Eligible-step countdown and one-time expiration.
+- [x] Runtime and persistent reset/inspection surfaces for developer tooling.
+
+### Phase 4 — Developer-only Pallet Town harness
+
+Registered only when `mod.developer` is true.
+
+- [x] Appended Pallet Town NPC through public content registration.
+- [x] Public map-script/custom-command dispatch.
+- [x] **GET ITEMS**: Shiny Finder, all consumables, gadget unlocks, test-item removal.
+- [x] Grants use the engine's real `give_item` path and obey real bag capacity and
+  stack rules.
+- [x] Curated **WARP** menu using `mod.world:warpTo`, with a runtime return point.
+- [x] **INSPECT** for version/schema/effect/steps/pending state/telemetry/unlocks.
+- [x] **RESET** for field effect, runtime, DScrete save, inventory, unlocks and telemetry.
+- [x] No debug NPC/commands are registered in ordinary player mode.
+- [ ] Visually smoke-test NPC placement and every curated landing coordinate.
+
+### Phase 5 — Shiny Finder
+
+- [x] Real bag item + public custom item effect.
+- [x] 250 eligible steps; initial force chance 1/100.
+- [x] Consume only when activation succeeds.
+- [x] Existing same effect refuses without consumption.
+- [x] A conflicting effect requires a second use to confirm replacement; only the
+  confirmed use consumes the Finder.
+- [x] Successful manual moves decrement; wall bumps, warps and menu frames do not.
+- [x] Natural grass/water/fishing encounters are marked through public encounter
+  hooks; static/gift/trade/trainer Pokemon are not.
+- [x] Successful rolls generate valid Gen-1 virtual-shiny DVs and verify them with
+  the engine's own `Stats.isShiny` predicate before applying.
+- [x] Species, level and moves are preserved; stats and HP are recalculated.
+- [x] Runtime-only Finder state clears at `game.ready` instead of leaking across a
+  loaded/restarted run.
+- [x] Deterministic DV/chance tests plus a seeded statistical rate test.
+- [ ] Complete the in-game smoke matrix against the pinned engine build.
+
+## Shared runtime contract
+
+The framework separates persistent and runtime state. Persistent values belong in
+`mod.save`; temporary callbacks, menu state, active encounter candidates, and other
+live references must never be serialized.
+
+A timed field effect has one common lifecycle:
 
 ```text
 id
 duration_steps
 can_activate(context) -> reason
-transform_encounter_table(context, scratch_table)
-on_encounter_generated(context, encounter)
+on_activate(context)
 on_step(context)
+on_encounter(context, encounter)
 on_expire(context)
 ```
 
-The original encounter table is copied to scratch storage before transformation.
-Weights are normalized after every modifier, zero-weight slots stay unreachable,
-and the vanilla table is never modified in place. A map transition re-evaluates the
-effect against the new map; it does not reset the step counter.
+Only successful eligible overworld movement decrements duration. Menu movement,
+wall bumps, warps, forced/scripted movement, and battle turns do not. Map changes do
+not silently reset an active duration. Expiration must occur once and leave no stale
+replacement or encounter state behind.
 
-Only successful overworld steps decrement duration. Menu movement, wall bumps,
-warps, forced movement, and battle turns do not. Expiration is announced once in a
-safe overworld text context.
+Only one encounter-modifying field effect may be active at once. Replacing one is
+an explicit player decision and the new consumable is not removed until replacement
+has actually committed.
 
-## 2. Encounter behavior
+## Consumable transaction contract
+
+Every consumable follows the same order:
+
+1. Validate context and target/selection requirements.
+2. Preview irreversible consequences where appropriate.
+3. Apply the effect.
+4. Consume exactly one item only after successful application.
+5. Return through the normal Gen1Recomp item-use path.
+
+Cancellation, invalid targets, failed context checks, full-party edge cases, unsafe
+warps, and closed menus consume nothing.
+
+## Encounter contracts
 
 ### Rare Lure
 
-1. Group the current table's nonzero slots by species.
+1. Group nonzero encounter slots by species.
 2. Sum duplicate-slot weights for each species.
-3. Identify the lowest nonzero total weight (ties are all considered rare).
-4. Multiply those species' slot weights by the configured factor.
-5. Normalize with a largest-remainder allocation so the total remains exact.
+3. Identify the lowest nonzero combined weight (including ties).
+4. Multiply those species' slot weights by a configured factor.
+5. Normalize without reviving zero-weight slots.
 
-The lure changes relative species weights, not encounter frequency, levels, or the
-set of species. An area without a valid wild table consumes no item and explains
-why it cannot be used.
+It changes relative species odds only: not encounter frequency, level, or the set of
+native species.
 
 ### Mystery Lure
 
-Mystery candidates are authored by habitat ID, with species, level range, weight,
-and progression requirements. The modifier reserves a small configured share of
-the table, then normalizes native entries into the remaining share. There is no
-global fallback pool: a habitat with no curated candidates rejects activation.
+Candidates are curated by habitat with explicit progression requirements. A small
+configured share of the table is reserved for valid candidates and native entries
+are normalized into the remainder. There is no global fallback pool.
 
 ### Species Whistle and Silph Tracker
 
-Both use the same compatibility index. A species is compatible with an area when it
-is native to that table or appears in the area's curated habitat pool and its gate
-is satisfied. The whistle increases existing combined weight but never inserts an
-incompatible species.
-
-The tracker reports coarse bands rather than exact odds:
-
-| Combined weight | Reading |
-| --- | --- |
-| 0 | NO SIGNAL |
-| lowest populated band | FAINT SIGNAL |
-| middle bands | SIGNAL FOUND |
-| highest populated band | STRONG SIGNAL |
-
-Thresholds are defined centrally and tested against duplicate species slots.
+Both should consume one shared compatibility/combined-weight view. The Whistle
+boosts a compatible selected species; the Tracker reports coarse signal bands rather
+than exact percentages. Detection logic must not duplicate encounter normalization.
 
 ### Shiny Finder
 
-At wild DV generation, roll the configured shiny chance (initial target: 1/100).
-On success, choose uniformly from the set of DV combinations recognized as shiny
-by Gen1Recomp. Preserve normal species, level, moves, and encounter flow. The finder
-does not affect gifts, trades, static encounters, owned Pokemon, or trainer parties
-unless a future definition opts those encounter classes in.
+The Finder changes only eligible natural wild Pokemon after creation by replacing
+DVs with a valid Gen-1 virtual-shiny combination on a successful roll. It preserves
+species, level, moves, encounter selection, and normal battle flow. Gifts, trades,
+static encounters, trainer parties, and already-owned Pokemon are outside its scope.
 
-## 3. Item-use transaction
+## Category boundaries
 
-Every consumable follows a two-phase transaction:
+Each item belongs to one implementation category:
 
-1. Validate context and display any selection menus.
-2. Preview irreversible consequences when relevant.
-3. Apply the effect.
-4. Consume exactly one item only after successful application.
-5. Mark the save dirty and return through the normal item-use result path.
+- **Encounters:** wild tables, generated wild Pokemon, habitats, durations.
+- **Detection:** reusable information tools and overworld feedback.
+- **Battle:** capture, EXP, and trainer-rematch integration.
+- **Pokemon:** moves, evolution, fossils, and DV operations.
+- **Travel:** map, PC, warp, and safe-return behavior.
 
-Cancellation, invalid targets, full-party edge cases, failed map validation, and
-closed menus consume nothing. A save interruption cannot leave a consumed item with
-an unapplied effect.
+Cross-category dependencies should use explicit shared interfaces. For example,
+Detection may read the normalized encounter view from Encounters, but should not
+reimplement its weighting rules.
 
-The Link Cable accepts only Kadabra, Machoke, Graveler, and Haunter. Its transaction
-sets the same evolution result expected from a trade and invokes the existing trade
-presentation if that presentation can safely return to the bag flow. If not, the
-feature remains disabled until a dedicated transition wrapper exists; silently
-falling back to a plain text evolution is not the intended release behavior.
+## Specific future-item constraints
 
-## 4. Category boundaries
+- **Link Cable:** accepts only Kadabra, Machoke, Graveler, and Haunter. It should use
+  the existing trade/evolution presentation when that flow can return safely.
+- **Blank TM:** compatibility stays data-driven; knowing a move is not sufficient to
+  bypass recipient compatibility.
+- **Map Beacon / PC Transfer / Emergency Teleporter:** all use one shared unsafe-state
+  validator and fail without consumption in battles, link rooms, scripted movement,
+  invalid map states, and other unsafe contexts.
+- **Trainer Beacon:** only explicitly eligible defeated trainers may be rematched;
+  story trainers are excluded unless they receive a purpose-built definition.
+- **DV modifiers:** must recalculate dependent stats/HP correctly and document how
+  shiny-valid combinations are preserved or intentionally changed.
 
-Every item definition has exactly one implementation category. Categories keep
-hooks and shared behavior together without coupling item behavior to a future reward
-or progression system:
-
-- **Encounters** owns table transforms, wild generation, habitats, and durations.
-- **Detection** owns reusable information tools and overworld feedback.
-- **Battle** owns capture, experience, and trainer-rematch integration.
-- **Pokemon** owns move, evolution, fossil, and DV operations.
-- **Travel** owns map, PC, warp, and safe-return operations.
-
-Cross-category dependencies use explicit interfaces. For example, Detection may
-read the normalized encounter view from Encounters, but it must not reproduce the
-normalization rules. Adding an item requires assigning a category before its item ID
-or save fields are accepted.
-
-## 5. Data definitions
-
-Content belongs in declarative tables wherever behavior can remain generic:
-
-- gadget metadata: item ID, type, category, duration, and text IDs;
-- habitat membership and Mystery Lure candidates;
-- tracker signal thresholds;
-- rematch eligibility and party-scaling policy;
-- Prototype Ball condition and modifier;
-- Blank TM move compatibility;
-- shiny-valid DV combinations; and
-- safe/unsafe context flags for travel gadgets.
-
-Build-time validation must reject duplicate IDs, unavailable text, missing or unknown
-categories, weights outside their storage type, empty Mystery Lure habitats, invalid
-species or move IDs, and permanent gadgets configured as consumables.
-
-## 6. Delivery order
-
-The checkbox status and complete ordering live in [CHECKLIST.md](CHECKLIST.md). This
-section summarizes the integration milestones and their exit criteria.
-
-### Phase 0 — integration audit
-
-- Pin the supported Gen1Recomp revision.
-- Locate item-use, step, wild-table, DV-generation, capture, EXP, evolution, save,
-  trainer-defeat, hidden-item, PC, map-transition, and menu extension points.
-- Record calling constraints and decide how mod save data is allocated.
-- Add a minimal build and smoke-test target before gameplay work.
-
-### Phase 1 — Shiny Finder vertical slice
-
-- Versioned save block and migrations.
-- Shared field-effect lifecycle.
-- Transactional consumable item use.
-- Shiny Finder activation, wild-DV hook, duration, and expiration.
-- Deterministic DV tests and a seeded statistical simulation.
-
-Exit criteria: a fresh or migrated save can use a Shiny Finder without premature
-consumption, produce only valid shiny DVs on successful rolls, preserve its state
-across save/load as designed, and expire safely.
-
-### Phase 2 — encounter foundation
-
-- Rare Lure and Silph Tracker.
-- Mystery Lure and Species Whistle.
-- Prototype Repel, Safari Bait / Pass, and Glitch Detector.
-
-### Phase 3 — detection and battle tools
-
-- Permanent GADGETS menu and unlock handling.
-- Treasure Detector, Pokedex Chip, and Rocket Decoder.
-- Prototype Ball, EXP Battery, and Trainer Beacon.
-
-### Phase 4 — Pokemon tools
-
-- Link Cable with trade presentation.
-- Move Recorder, fossil equipment, and bounded DV items.
-- Blank TM compatibility and recording flow.
-
-### Phase 5 — travel tools
-
-- Shared unsafe-context validation.
-- Emergency Teleporter and PC Transfer Unit.
-- Map Beacon placement and return.
-
-## 7. Test strategy
+## Test strategy
 
 ### Deterministic tests
 
-- Encounter normalization preserves the exact total and never revives zero slots.
-- Rare selection handles duplicate species, ties, and one-species tables.
-- Species compatibility agrees between Tracker and Whistle.
+- Encounter normalization preserves its exact total and never revives zero slots.
+- Rare selection handles duplicates, ties, and one-species tables.
+- Tracker and Whistle agree on species compatibility.
 - Step duration decrements only for eligible movement and expires once.
-- Item transactions consume once on success and never on cancellation or failure.
-- Counters saturate without wrapping.
-- Unlock and eligibility gates cannot be bypassed through stale menus.
+- Transactions consume once on success and never on cancellation/failure.
 - Save round trips preserve persistent state and clear runtime caches.
-- Every prior schema version migrates to the current schema.
-- Shiny-forced DVs pass the runtime's own shiny predicate.
+- Every introduced persisted schema version has a migration test.
+- Forced shiny DVs pass Gen1Recomp's own shiny predicate.
 
 ### Statistical tests
 
-Seeded simulations should compare observed encounter and shiny rates to expected
-distributions with tolerances selected before execution. They complement rather
-than replace deterministic weight and DV tests. A test must not fail merely because
-a finite sample did not contain a shiny.
+Seeded simulations compare observed encounter/shiny rates to expected distributions
+using tolerances selected before execution. They complement, rather than replace,
+deterministic tests.
 
 ### In-game smoke matrix
 
-Test item use from the overworld and bag, then around map transitions, blackout,
+Exercise item use from the bag and overworld around map transitions, blackout,
 save/load, evolution, full inventory, Safari entry/exit, scripted movement, and each
-explicitly unsafe context. Verify both Red/Blue-style and Yellow-specific encounter
-data where the supported runtime exposes them.
+explicitly unsafe context. Test Red/Blue-style and Yellow-specific behavior where the
+runtime differs.
 
-## 8. Definition of done for each gadget
+## Definition of done for each item
 
-A gadget implementation is complete only when it has:
+An item is complete only when it has:
 
 1. an item definition and implementation category;
-2. use, cancel, invalid-context, active, and expiration text;
+2. use/cancel/invalid-context/active/expiration text as applicable;
 3. explicit persistence and stacking behavior;
 4. data validation;
-5. deterministic tests for its rules;
-6. save/load and map-transition coverage;
-7. a documented balance knob; and
+5. deterministic rule tests;
+6. save/load and transition coverage where relevant;
+7. documented balance knobs; and
 8. no path that consumes it before its effect commits.
+
+## Next implementation order
+
+Extend the shared runtime rather than bypassing it. The recommended sequence is:
+Rare Lure -> Silph Tracker -> Mystery Lure -> Species Whistle -> Prototype Repel,
+then detection tools, battle/Pokemon tools, and finally trainer/travel items. Oak
+Research and other reward systems can consume the same catalogue later without
+changing item behavior.
