@@ -65,8 +65,9 @@ The minimum-version verifier targets tag `v0.2.5`. The ordered backlog lives in
 - Tracker uses the public effective-encounter preview when available, otherwise the
   merged encounter registry; active Elusive Scent rarity compression is reflected in
   either path.
-- Player-facing results use a persistent scrollable ListMenu with one species per row,
-  avoiding text auto-scroll/fast-forward readability problems.
+- Player-facing results use a dedicated opaque Tracker screen with manual scrolling.
+  Each entry uses two fixed lines (species name, then full signal label), avoiding
+  ListMenu clipping and dialogue/fast-forward readability problems.
 - Current development acquisition remains debug-only via UNLOCK GADGETS.
 
 ## Shared encounter-weight contract
@@ -148,14 +149,15 @@ preserving the area's species identity.
 Standalone deterministic tests cover metadata, implemented-only debug/gadget filters,
 runtime persistence/migration, field replacement and expiration, Prism Scent shiny
 rules, Elusive Scent rarity compression, weighting invariants, Pikachu-like uncommon
-share regression, and signal bands. GitHub Actions runs them on every push/PR.
+share regression, signal bands, and a Silph Tracker module-load smoke test. GitHub
+Actions runs them on every push/PR.
 
 Still required before treating these features as fully engine-validated:
 
 - `modkit.py validate` and in-game smoke at the minimum supported engine;
 - Elusive Scent grass/cave/surf/Safari behavior in play;
 - optional Wilds visible-spawn behavior with Elusive Scent;
-- GADGETS Start-menu navigation and Silph Tracker list readout in play;
+- GADGETS Start-menu navigation and the dedicated Silph Tracker screen in play;
 - Prism/Elusive replacement and expiration text in mixed-use sessions.
 
 ## Definition of done for each item
