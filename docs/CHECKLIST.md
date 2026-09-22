@@ -14,6 +14,8 @@ code ownership; they do not decide how players obtain an item.
       catalogue items reach those systems.
 - [x] Define item IDs, ownership/category metadata, and standalone validation that
       rejects duplicate or invalid definitions.
+- [x] Mark implemented catalogue entries explicitly so debug/player UIs do not expose
+      future placeholder items or gadgets.
 - [x] Allocate a versioned `mod.save` namespace; persist active timed field effects
       while clearing only transient runtime state on load/boot.
 - [x] Add explicit save migration support. Schema v3 migrates the legacy
@@ -34,9 +36,9 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add **GET ITEMS**, **WARP**, **INSPECT**, and **RESET** flows.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
-- [x] Rename the debug item grant and telemetry text to **Prism Scent**.
-- [x] Make Elusive Scent available through **ALL TEST ITEMS** and Silph Tracker
-      available through **UNLOCK GADGETS** for development testing.
+- [x] Add direct **PRISM SCENT** and **ELUSIVE SCENT** grants.
+- [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
+      inspection/reset helpers to implemented content only.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -91,6 +93,8 @@ code ownership; they do not decide how players obtain an item.
   - [x] Reflect active Elusive Scent weighting and newer public effective-encounter
         previews when available, with merged-registry fallback on older engines.
   - [x] Keep scope to the current map only.
+  - [x] Present scan results as a persistent scrollable list, one species per row, so
+        fast-forward cannot auto-scroll past earlier readings.
   - [ ] Complete minimum-engine and in-game UI/readout smoke testing.
 - [ ] **Mystery Lure** — reserve a configured share for curated habitat candidates.
 - [ ] **Species Whistle** — boost a selected compatible species without inserting an
@@ -105,9 +109,10 @@ code ownership; they do not decide how players obtain an item.
 ## 3. Detection tools — Detection
 
 - [x] Build the permanent **GADGETS** menu and unlock handling.
-  - [x] Add **GADGETS** to the Start menu only when at least one permanent/reusable
-        DScrete gadget is unlocked.
+  - [x] Add **GADGETS** to the Start menu only when at least one implemented
+        permanent/reusable DScrete gadget is unlocked.
   - [x] Route Silph Tracker through the GADGETS menu.
+  - [x] Hide unlocked-but-unimplemented catalogue gadgets from the player-facing menu.
   - [ ] Complete minimum-engine/in-game menu navigation smoke testing.
 - [ ] **Treasure Detector** — scale feedback by distance to an uncollected hidden item.
 - [ ] **Pokedex Chip** — display encounter statistics in Pokedex information.
@@ -115,7 +120,7 @@ code ownership; they do not decide how players obtain an item.
 
 ## 4. Battle tools — Battle
 
-- [ ] **Prototype Ball** — apply a documented condition to normal capture math.
+- [ ] **Prototype Ball** — apply a documented condition to the normal capture math.
 - [ ] **EXP Battery** — arm and consume a bonus on the next eligible EXP award.
 - [ ] **Trainer Beacon** — rematch only trainers in an explicit eligibility table.
 
