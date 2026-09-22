@@ -23,6 +23,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Implement the shared timed field-effect lifecycle, replacement confirmation,
       eligible-step countdown, persistence, and one-time expiration.
 - [x] Add deterministic test helpers and seeded probability simulations.
+- [x] Add shared encounter-weight helpers for rarity, weighting, signal bands, and
+      later encounter modifiers.
 - [x] Require completed work and changed requirements to update this checklist via
       repository instructions in `AGENTS.md`.
 
@@ -33,6 +35,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Rename the debug item grant and telemetry text to **Prism Scent**.
+- [x] Make Elusive Scent available through **ALL TEST ITEMS** and Silph Tracker
+      available through **UNLOCK GADGETS** for development testing.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -61,24 +65,50 @@ code ownership; they do not decide how players obtain an item.
 
 ## 2. Encounter foundation — Encounters
 
-- [ ] **Rare Lure** — reweight the rarest native species without changing frequency,
-      levels, or the set of species; use merged/public encounter data so visible-
-      encounter mods naturally observe the modified distribution.
-- [ ] **Silph Tracker** — report coarse local signal bands using the same combined
-      species weights consumed by encounter modifiers.
+- [x] **Elusive Scent** — reweight the rarest species already present locally.
+  - [x] Rename the planned Rare Lure to **Elusive Scent** with dedicated IDs and
+        options.
+  - [x] Boost all species tied for the lowest combined encounter weight equally.
+  - [x] Keep encounter frequency, species membership, and encounter levels unchanged.
+  - [x] Support configurable **MILD / STRONG / EXTREME** strengths (2x / 4x / 8x
+        rare-species weight).
+  - [x] Use the shared configurable 50 / 100 / 250 / 500 / 1000 / 2500 step presets.
+  - [x] Keep it mutually exclusive with Prism Scent through the shared field-effect
+        replacement flow.
+  - [x] Apply to grass, cave/indoor, surf/water, and Safari step encounters; do not
+        alter fishing.
+  - [x] Compose through the normal `encounter.roll` chain and merged encounter
+        registry data instead of replacing vanilla/other-mod logic wholesale.
+  - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
+  - [x] Add deterministic rarity/reweighting tests.
+  - [ ] Complete minimum-engine and in-game smoke testing, including Wilds and Safari.
+- [x] **Silph Tracker** — report coarse current-map signal bands.
+  - [x] Implement it as a permanent gadget with no bag slot.
+  - [x] Show every local species found by the current effective/merged encounter view.
+  - [x] Use **NO SIGNAL / FAINT / WEAK / STRONG / VERY STRONG** bands.
+  - [x] Replace unseen species names with **UNKNOWN** while preserving their signal
+        strength.
+  - [x] Reflect active Elusive Scent weighting and newer public effective-encounter
+        previews when available, with merged-registry fallback on older engines.
+  - [x] Keep scope to the current map only.
+  - [ ] Complete minimum-engine and in-game UI/readout smoke testing.
 - [ ] **Mystery Lure** — reserve a configured share for curated habitat candidates.
 - [ ] **Species Whistle** — boost a selected compatible species without inserting an
       incompatible one.
 - [ ] **Prototype Repel** — attract encounters at or above the lead Pokemon's level.
 - [ ] **Safari Bait / Pass** — alter one curated encounter set or stated Safari rule.
 - [ ] **Glitch Detector** — enable curated anomalies without corrupting game state.
-- [ ] For each encounter item, prefer public hook chaining/merged encounter views so
-      other encounter, overworld-spawn, and presentation mods remain optional and
-      composable rather than becoming dependencies.
+- [ ] For each future encounter item, prefer public hook chaining/merged encounter
+      views so other encounter, overworld-spawn, and presentation mods remain optional
+      and composable rather than becoming dependencies.
 
 ## 3. Detection tools — Detection
 
-- [ ] Build the permanent **GADGETS** menu and unlock handling.
+- [x] Build the permanent **GADGETS** menu and unlock handling.
+  - [x] Add **GADGETS** to the Start menu only when at least one permanent/reusable
+        DScrete gadget is unlocked.
+  - [x] Route Silph Tracker through the GADGETS menu.
+  - [ ] Complete minimum-engine/in-game menu navigation smoke testing.
 - [ ] **Treasure Detector** — scale feedback by distance to an uncollected hidden item.
 - [ ] **Pokedex Chip** — display encounter statistics in Pokedex information.
 - [ ] **Rocket Decoder** — detect and decode authored temporary incidents.
