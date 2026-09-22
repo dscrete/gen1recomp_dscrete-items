@@ -82,19 +82,46 @@ function SilphTracker.install(mod, runtime, Weights, ElusiveScent)
     return out, (#out == 0) and "NO LOCAL SIGNAL" or nil
   end
 
+  function SilphTracker.menuRows(game)
+    local rows, empty = SilphTracker.scan(game)
+    local out = {}
+    if #rows == 0 then
+      out[#out + 1] = { label=empty or "NO LOCAL SIGNAL", value="noop" }
+    else
+      for i, row in ipairs(rows) do
+        out[#out + 1] = {
+          label=("%s - %s"):format(row.name, row.band),
+          value="signal_" .. tostring(i),
+        }
+      end
+    end
+    out[#out + 1] = { label="CLOSE", value="close" }
+    return out
+  end
+
+  function SilphTracker.open(game)
+    local menu
+    menu = mod.ui.ListMenu.new(game, "SILPH TRACKER", SilphTracker.menuRows(game), {
+      pageJump=true,
+      onChoose=function(row)
+        if row and row.value == "close" and menu then menu:close() end
+      end,
+      onCancel=function()
+        if menu then menu:close() end
+      end,
+    })
+    game.stack:push(menu)
+  end
+
+  -- Retained for debugging/external consumers; the player-facing UI uses open().
   function SilphTracker.text(game)
     local rows, empty = SilphTracker.scan(game)
     if #rows == 0 then return "SILPH TRACKER\n" .. (empty or "NO LOCAL SIGNAL") end
-    local pages, page = {}, {}
+    local lines = { "SILPH TRACKER" }
     for _, row in ipairs(rows) do
-      page[#page + 1] = ("%s\n%s SIGNAL"):format(row.name, row.band)
-      if #page == 2 then
-        pages[#pages + 1] = table.concat(page, "\n")
-        page = {}
-      end
+      lines[#lines + 1] = ("%s - %s"):format(row.name, row.band)
     end
-    if #page > 0 then pages[#pages + 1] = table.concat(page, "\n") end
-    return "SILPH TRACKER\f" .. table.concat(pages, "\f")
+    return table.concat(lines, "\n")
   end
 
   return SilphTracker
