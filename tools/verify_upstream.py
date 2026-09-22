@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify an external Gen1Recomp checkout before integration testing."""
+"""Verify a minimum-supported Gen1Recomp checkout before integration testing."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 
-EXPECTED_COMMIT = "9545ebbb839a8a7ea28472b626681154ab222623"
+EXPECTED_COMMIT = "74e04cb086d223bb84b52a4631cb6a6c10e0a948"
 ROOT_VARIABLE = "GEN1RECOMP_ROOT"
 
 
@@ -21,7 +21,7 @@ def fail(message: str) -> int:
 def main() -> int:
     configured_root = os.environ.get(ROOT_VARIABLE)
     if not configured_root:
-        return fail(f"set {ROOT_VARIABLE} to the external Gen1Recomp v0.2.74 checkout")
+        return fail(f"set {ROOT_VARIABLE} to the external Gen1Recomp v0.2.5 checkout")
 
     root = Path(configured_root).expanduser().resolve()
     if not root.is_dir():
@@ -42,9 +42,9 @@ def main() -> int:
         return fail(f"cannot read the checkout revision: {error}")
 
     if commit != EXPECTED_COMMIT:
-        return fail(f"expected commit {EXPECTED_COMMIT}, found {commit}")
+        return fail(f"expected minimum-version commit {EXPECTED_COMMIT}, found {commit}")
 
-    print(f"verified Gen1Recomp v0.2.74 at {commit}")
+    print(f"verified Gen1Recomp v0.2.5 at {commit}")
     print(f"public Mod API documentation: {documentation}")
     return 0
 
