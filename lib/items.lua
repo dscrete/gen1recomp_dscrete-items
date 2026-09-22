@@ -6,34 +6,12 @@
 
 local Items = {}
 
-Items.OWNERSHIP = {
-  PERMANENT = true,
-  REUSABLE = true,
-  CONSUMABLE = true,
-  CONSUMABLE_PAIR = true,
-}
-
-Items.FAMILY = {
-  OAK_PALLET = true,
-  SILPH_CO = true,
-  CINNABAR_LAB = true,
-  SAFARI_ZONE = true,
-  ROCKET = true,
-  EXPLORATION = true,
-}
-
-Items.EFFECT_KIND = {
-  FIELD_EFFECT = true,
-  TOOL = true,
-  TRAINER = true,
-  CAPTURE = true,
-  BATTLE = true,
-  POKEMON = true,
-  TRAVEL = true,
-}
+Items.OWNERSHIP = { PERMANENT=true, REUSABLE=true, CONSUMABLE=true, CONSUMABLE_PAIR=true }
+Items.FAMILY = { OAK_PALLET=true, SILPH_CO=true, CINNABAR_LAB=true, SAFARI_ZONE=true, ROCKET=true, EXPLORATION=true }
+Items.EFFECT_KIND = { FIELD_EFFECT=true, TOOL=true, TRAINER=true, CAPTURE=true, BATTLE=true, POKEMON=true, TRAVEL=true }
 
 Items.all = {
-  { key="shiny_finder", itemId="DS_SHINY_FINDER", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_SHINY_FINDER_EFFECT" },
+  { key="prism_scent", itemId="DS_PRISM_SCENT", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_PRISM_SCENT_EFFECT" },
   { key="rare_lure", itemId="DS_RARE_LURE", name="RARE LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
@@ -58,8 +36,7 @@ Items.all = {
   { key="pokedex_chip", name="POKEDEX CHIP", ownership="PERMANENT", family="OAK_PALLET", effectKind="TOOL" },
 }
 
-Items.byKey = {}
-Items.byItemId = {}
+Items.byKey, Items.byItemId = {}, {}
 for _, item in ipairs(Items.all) do
   assert(not Items.byKey[item.key], "duplicate DScrete item key: " .. item.key)
   assert(Items.OWNERSHIP[item.ownership], "invalid ownership: " .. tostring(item.ownership))
@@ -75,13 +52,7 @@ end
 function Items.registerBagItems(mod)
   for _, item in ipairs(Items.all) do
     if item.itemId then
-      local def = {
-        id = item.itemId,
-        name = item.name,
-        price = 0,
-        keyItem = false,
-        tossable = true,
-      }
+      local def = { id=item.itemId, name=item.name, price=0, keyItem=false, tossable=true }
       if item.effect then def.effect = item.effect end
       mod.content.items:register(item.itemId, def)
     end
@@ -91,18 +62,14 @@ end
 function Items.permanent()
   local out = {}
   for _, item in ipairs(Items.all) do
-    if item.ownership == "PERMANENT" or item.ownership == "REUSABLE" then
-      out[#out + 1] = item
-    end
+    if item.ownership == "PERMANENT" or item.ownership == "REUSABLE" then out[#out+1] = item end
   end
   return out
 end
 
 function Items.consumables()
   local out = {}
-  for _, item in ipairs(Items.all) do
-    if item.itemId then out[#out + 1] = item end
-  end
+  for _, item in ipairs(Items.all) do if item.itemId then out[#out+1] = item end end
   return out
 end
 
