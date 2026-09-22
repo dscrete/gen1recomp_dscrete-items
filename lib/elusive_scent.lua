@@ -25,21 +25,17 @@ function ElusiveScent.resolveDuration(value)
 end
 
 function ElusiveScent.install(mod, runtime, Weights)
-  local liveGame, logicTick, lastCountedTick = nil, 0, -1
   local wildsWrapped = false
 
   local function configuredDuration()
     return ElusiveScent.resolveDuration(mod.options:get(ElusiveScent.STEPS_OPTION))
   end
-
   local function configuredFactor()
     return ElusiveScent.resolveStrength(mod.options:get(ElusiveScent.STRENGTH_OPTION))
   end
-
   local function eligibleTerrain(terrain)
     return terrain == "grass" or terrain == "indoor" or terrain == "water"
   end
-
   local function mergedEncounterDef(mapId)
     local registry = mod.content and mod.content.encounters
     if registry and type(registry.get) == "function" then
@@ -48,7 +44,6 @@ function ElusiveScent.install(mod, runtime, Weights)
     end
     return nil
   end
-
   local function pickSlot(tableDef)
     local rows = Weights.slotWeights(tableDef)
     if #rows == 0 then return nil end
@@ -93,8 +88,9 @@ function ElusiveScent.install(mod, runtime, Weights)
     end,
   })
 
-  -- Reweight the definition passed down the normal roll chain. This preserves
-  -- encounter frequency and lets wrappers on either side continue composing.
+  -- The shared timed-field movement hook is installed by Prism Scent and
+  -- decrements whichever single field effect is active. This hook only changes
+  -- the species distribution handed to the rest of the normal roll chain.
   mod.hooks:wrap("encounter.roll", function(next, encDef, ctx)
     if not runtime:isActive(ElusiveScent.EFFECT_ID)
         or not (ctx and eligibleTerrain(ctx.terrain)) then
@@ -104,15 +100,12 @@ function ElusiveScent.install(mod, runtime, Weights)
     return next(boosted, ctx)
   end)
 
-  -- Optional Wilds of Kanto integration. Wilds is never required: if its
-  -- published logic export is absent, normal encounter behavior is untouched.
   local function installWildsCompatibility()
     if wildsWrapped or type(mod.find) ~= "function" then return wildsWrapped end
     local found = mod.find(WILDS_ID)
     local logic = found and found.exports and found.exports.logic
     if not (logic and type(logic.trySpawn) == "function") then return false end
     if logic._dscreteElusiveScentWrapped then wildsWrapped = true return true end
-
     local original = logic.trySpawn
     logic.trySpawn = function(self, game, opts)
       opts = opts or {}
@@ -140,9 +133,9 @@ function ElusiveScent.install(mod, runtime, Weights)
     return true
   end
 
+  -- Prism's shared step hook records the expired effect id; only consume the
+  -- notice when it belongs to Elusive Scent.
   mod.hooks:wrap("input.step", function(next, game, dt)
-    liveGame = game
-    logicTick = logicTick + 1
     local result = next(game, dt)
     if runtime.pendingExpirationNotice == ElusiveScent.EFFECT_ID then
       local _, busy = mod.world:availableFieldActions()
@@ -150,22 +143,6 @@ function ElusiveScent.install(mod, runtime, Weights)
         runtime.pendingExpirationNotice = nil
         game.stack:push(mod.ui.TextBox.new(game, "The ELUSIVE SCENT\nfaded away."))
       end
-    end
-    return result
-  end)
-
-  mod.hooks:wrap("movement.collision", function(next, allowed, ctx)
-    local result = next(allowed, ctx)
-    if not (result and runtime:isActive(ElusiveScent.EFFECT_ID)
-        and liveGame and liveGame.input) then return result end
-    local current = mod.world:current()
-    local input = liveGame.input
-    local manual = ctx.dir and (input:isDown(ctx.dir) or input:wasPressed(ctx.dir))
-    if current and manual and lastCountedTick ~= logicTick
-        and current.x == ctx.fromX and current.y == ctx.fromY then
-      lastCountedTick = logicTick
-      local expired = runtime:onEligibleStep()
-      if expired then runtime.pendingExpirationNotice = expired end
     end
     return result
   end)
