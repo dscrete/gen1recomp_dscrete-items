@@ -4,8 +4,7 @@ GlitchDetector.EFFECT_ID = "glitch_detector"
 GlitchDetector.ITEM_EFFECT_ID = "DS_GLITCH_DETECTOR_EFFECT"
 GlitchDetector.RATE_OPTION = "glitch_detector_rate"
 GlitchDetector.STEPS_OPTION = "glitch_detector_steps"
-GlitchDetector.TILES_KEY = "glitch_detector_tiles"
-GlitchDetector.MAP_KEY = "glitch_detector_map"
+GlitchDetector.STATE_KEY = "glitch_detector"
 
 local RATES = { mild=0.20, strong=0.40, extreme=0.60 }
 local DURATIONS = { [50]=true,[100]=true,[250]=true,[500]=true,[1000]=true,[2500]=true }
@@ -29,6 +28,18 @@ function GlitchDetector.decodeTiles(s)
     if x and y then out[#out+1]={x=tonumber(x),y=tonumber(y)} end
   end
   return out
+end
+
+function GlitchDetector.encodeState(mapId,tiles)
+  if not mapId then return nil end
+  return tostring(mapId).."|"..GlitchDetector.encodeTiles(tiles)
+end
+
+function GlitchDetector.decodeState(s)
+  if type(s)~="string" or s=="" then return nil,{} end
+  local mapId,encoded=s:match("^([^|]+)|?(.*)$")
+  if not mapId or mapId=="" then return nil,{} end
+  return mapId,GlitchDetector.decodeTiles(encoded)
 end
 
 local function key(x,y) return tostring(x)..","..tostring(y) end
@@ -79,20 +90,13 @@ function GlitchDetector.kantoPool(pokemon)
 end
 
 function GlitchDetector.install(mod,runtime,fx)
-  local currentTiles={}
-  local currentMap=nil
+  local currentMap,currentTiles=GlitchDetector.decodeState(
+    runtime:getReusableState(GlitchDetector.STATE_KEY,nil))
 
   local function persist(mapId,tiles)
     currentMap=mapId; currentTiles=tiles or {}
-    runtime:setReusableState(GlitchDetector.MAP_KEY,mapId)
-    runtime:setReusableState(GlitchDetector.TILES_KEY,GlitchDetector.encodeTiles(currentTiles))
+    runtime:setReusableState(GlitchDetector.STATE_KEY,GlitchDetector.encodeState(mapId,currentTiles))
   end
-
-  local function restore()
-    currentMap=runtime:getReusableState(GlitchDetector.MAP_KEY,nil)
-    currentTiles=GlitchDetector.decodeTiles(runtime:getReusableState(GlitchDetector.TILES_KEY,""))
-  end
-  restore()
 
   local function ensureTiles()
     if not runtime:isActive(GlitchDetector.EFFECT_ID) then return {} end
