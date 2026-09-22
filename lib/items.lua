@@ -18,7 +18,7 @@ Items.all = {
   { key="prototype_resonator", itemId="DS_PROTOTYPE_RESONATOR", name="PROTO RESONATOR", ownership="CONSUMABLE", family="SILPH_CO", effectKind="FIELD_EFFECT", effect="DS_PROTOTYPE_RESONATOR_EFFECT", implemented=true },
   { key="safari_kit", itemId="DS_SAFARI_KIT", name="SAFARI KIT", ownership="CONSUMABLE", family="SAFARI_ZONE", effectKind="FIELD_EFFECT", effect="DS_SAFARI_KIT_EFFECT", implemented=true },
   { key="silph_tracker", name="SILPH TRACKER", ownership="PERMANENT", family="SILPH_CO", effectKind="TOOL", implemented=true },
-  { key="treasure_detector", name="TREASURE DET.", ownership="PERMANENT", family="EXPLORATION", effectKind="TOOL" },
+  { key="treasure_detector", name="TREASURE DET.", ownership="PERMANENT", family="EXPLORATION", effectKind="TOOL", implemented=true },
   { key="trainer_beacon", itemId="DS_TRAINER_BEACON", name="TRAINER BEACON", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAINER" },
   { key="prototype_ball", itemId="DS_PROTOTYPE_BALL", name="PROTO BALL", ownership="CONSUMABLE", family="SILPH_CO", effectKind="CAPTURE" },
   { key="exp_battery", itemId="DS_EXP_BATTERY", name="EXP BATTERY", ownership="CONSUMABLE", family="SILPH_CO", effectKind="BATTLE" },
@@ -31,7 +31,7 @@ Items.all = {
   { key="fossil_catalyst", itemId="DS_FOSSIL_CATALYST", name="FOSSIL CAT.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON" },
   { key="dna_stabilizer", itemId="DS_DNA_STABILIZER", name="DNA STABILIZER", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON" },
   { key="mutation_capsule", itemId="DS_MUTATION_CAPSULE", name="MUTATE CAP.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON" },
-  { key="glitch_detector", itemId="DS_GLITCH_DETECTOR", name="GLITCH DET.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="FIELD_EFFECT" },
+  { key="glitch_detector", itemId="DS_GLITCH_DETECTOR", name="GLITCH DET.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="FIELD_EFFECT", effect="DS_GLITCH_DETECTOR_EFFECT", implemented=true },
   { key="rocket_decoder", name="ROCKET DECODER", ownership="PERMANENT", family="ROCKET", effectKind="TOOL" },
   { key="pokedex_chip", name="POKEDEX CHIP", ownership="PERMANENT", family="OAK_PALLET", effectKind="TOOL" },
 }
