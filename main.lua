@@ -16,10 +16,8 @@ return function(mod)
       type = "choice",
       default = "100",
       choices = {
-        { "1 / 1", "1" },
-        { "1 / 10", "10" },
-        { "1 / 100", "100" },
-        { "1 / 1000", "1000" },
+        { "1 / 1", "1" }, { "1 / 10", "10" },
+        { "1 / 100", "100" }, { "1 / 1000", "1000" },
       },
     },
     {
@@ -28,12 +26,27 @@ return function(mod)
       type = "choice",
       default = "250",
       choices = {
-        { "50", "50" },
-        { "100", "100" },
-        { "250", "250" },
-        { "500", "500" },
-        { "1000", "1000" },
-        { "2500", "2500" },
+        { "50", "50" }, { "100", "100" }, { "250", "250" },
+        { "500", "500" }, { "1000", "1000" }, { "2500", "2500" },
+      },
+    },
+    {
+      key = "elusive_scent_strength",
+      label = "ELUSIVE POWER",
+      type = "choice",
+      default = "mild",
+      choices = {
+        { "MILD", "mild" }, { "STRONG", "strong" }, { "EXTREME", "extreme" },
+      },
+    },
+    {
+      key = "elusive_scent_steps",
+      label = "ELUSIVE STEPS",
+      type = "choice",
+      default = "250",
+      choices = {
+        { "50", "50" }, { "100", "100" }, { "250", "250" },
+        { "500", "500" }, { "1000", "1000" }, { "2500", "2500" },
       },
     },
   })
@@ -41,19 +54,32 @@ return function(mod)
   local Items = loadLocal(mod, "lib/items.lua")
   local Runtime = loadLocal(mod, "lib/runtime.lua")
   local Debug = loadLocal(mod, "lib/debug.lua")
+  local Weights = loadLocal(mod, "lib/encounter_weights.lua")
   local PrismScent = loadLocal(mod, "lib/shiny_finder.lua")
+  local ElusiveScent = loadLocal(mod, "lib/elusive_scent.lua")
+  local SilphTracker = loadLocal(mod, "lib/silph_tracker.lua")
+  local Gadgets = loadLocal(mod, "lib/gadgets.lua")
   local runtime = Runtime.new(mod.save)
 
   Items.registerBagItems(mod)
   PrismScent.install(mod, runtime)
+  ElusiveScent.install(mod, runtime, Weights)
+  local tracker = SilphTracker.install(mod, runtime, Weights, ElusiveScent)
+  local gadgets = Gadgets.install(mod, Items, runtime, {
+    silph_tracker = function(game)
+      game.stack:push(mod.ui.TextBox.new(game, tracker.text(game)))
+    end,
+  })
   Debug.install(mod, Items, runtime)
 
-  -- Stable public surface for later DScrete systems (Oak Research, Safari
-  -- ecology, etc.) without requiring them to reach into this mod's files.
   mod.exports.version = mod.version
   mod.exports.items = Items
   mod.exports.runtime = runtime
+  mod.exports.encounterWeights = Weights
   mod.exports.prismScent = PrismScent
+  mod.exports.elusiveScent = ElusiveScent
+  mod.exports.silphTracker = tracker
+  mod.exports.gadgets = gadgets
   -- Compatibility alias for anything already consuming the early dev export.
   mod.exports.shinyFinder = PrismScent
 end
