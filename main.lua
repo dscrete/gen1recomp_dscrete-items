@@ -66,9 +66,7 @@ return function(mod)
   ElusiveScent.install(mod, runtime, Weights)
   local tracker = SilphTracker.install(mod, runtime, Weights, ElusiveScent)
   local gadgets = Gadgets.install(mod, Items, runtime, {
-    silph_tracker = function(game)
-      game.stack:push(mod.ui.TextBox.new(game, tracker.text(game)))
-    end,
+    silph_tracker = function(game) tracker.open(game) end,
   })
   Debug.install(mod, Items, runtime)
 
@@ -80,6 +78,5 @@ return function(mod)
   mod.exports.elusiveScent = ElusiveScent
   mod.exports.silphTracker = tracker
   mod.exports.gadgets = gadgets
-  -- Compatibility alias for anything already consuming the early dev export.
   mod.exports.shinyFinder = PrismScent
 end
