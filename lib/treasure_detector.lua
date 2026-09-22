@@ -2,8 +2,7 @@ local TreasureDetector = {}
 
 TreasureDetector.KEY = "treasure_detector"
 TreasureDetector.ENABLED_KEY = TreasureDetector.KEY
-TreasureDetector.SOUND_PRIMARY = "Tink"
-TreasureDetector.SOUND_FALLBACK = "Press_AB"
+TreasureDetector.SOUND_FALLBACK = "Switch"
 
 local BANDS = {
   { max=0, name="DIRECTLY HERE", rank=5 },
@@ -11,6 +10,17 @@ local BANDS = {
   { max=3, name="STRONG", rank=3 },
   { max=6, name="SIGNAL", rank=2 },
   { max=10, name="FAINT", rank=1 },
+}
+
+-- Distinct electronic signatures instead of reusing a common overworld SFX.
+-- Frequency rises with proximity and the rhythm becomes denser. Rank 5 uses
+-- an alternating high pair so standing directly on the item is unmistakable.
+local PATTERNS = {
+  [1]={ tones={390}, spacing=0.30 },
+  [2]={ tones={500,500}, spacing=0.25 },
+  [3]={ tones={620,760}, spacing=0.17 },
+  [4]={ tones={780,930,780}, spacing=0.12 },
+  [5]={ tones={1050,1320,1050,1320}, spacing=0.09 },
 }
 
 function TreasureDetector.bandForDistance(distance)
@@ -32,20 +42,12 @@ function TreasureDetector.nearestHidden(overview,x,y)
   return best
 end
 
--- Audio-only strength language.  The strongest bands get a short cluster,
--- while pitch rises with rank.  Both are deliberately bounded so walking onto
--- an item never turns into a long blocking jingle.
-function TreasureDetector.beepCount(rank)
-  rank=tonumber(rank) or 0
-  if rank>=5 then return 3 end
-  if rank>=3 then return 2 end
-  if rank>=1 then return 1 end
-  return 0
-end
-
-function TreasureDetector.beepPitch(rank)
-  rank=math.max(1,math.min(5,tonumber(rank) or 1))
-  return 0.78+(rank-1)*0.14
+function TreasureDetector.patternForRank(rank)
+  rank=math.floor(tonumber(rank) or 0)
+  local p=PATTERNS[rank]
+  if not p then return {tones={},spacing=0.30} end
+  local tones={}; for i,v in ipairs(p.tones) do tones[i]=v end
+  return { tones=tones, spacing=p.spacing }
 end
 
 local function now()
@@ -53,9 +55,49 @@ local function now()
   return os.clock()
 end
 
+local toneCache={}
+
+local function sfxVolume(game)
+  local options=game and game.save and game.save.options
+  local v=tonumber(options and options.sfxVol)
+  if v==nil then return 0.42 end
+  v=math.max(0,math.min(7,v))
+  return 0.42*(v/7)
+end
+
+local function buildTone(hz)
+  if not (love and love.sound and love.sound.newSoundData
+      and love.audio and love.audio.newSource) then return nil end
+  hz=math.floor(tonumber(hz) or 500)
+  local cached=toneCache[hz]
+  if cached then return cached end
+
+  local sampleRate=22050
+  local duration=0.065
+  local frames=math.max(1,math.floor(sampleRate*duration))
+  local ok,data=pcall(love.sound.newSoundData,frames,sampleRate,16,2)
+  if not ok or not data then return nil end
+
+  for i=0,frames-1 do
+    local t=i/sampleRate
+    local phase=(t*hz)%1
+    local attack=math.min(1,i/math.max(1,math.floor(sampleRate*0.004)))
+    local release=math.min(1,(frames-i)/math.max(1,math.floor(sampleRate*0.018)))
+    local envelope=math.min(attack,release)
+    local sample=(phase<0.5 and 1 or -1)*0.32*envelope
+    data:setSample(i,1,sample)
+    data:setSample(i,2,sample)
+  end
+
+  local made,src=pcall(love.audio.newSource,data,"static")
+  if not made or not src then return nil end
+  toneCache[hz]=src
+  return src
+end
+
 function TreasureDetector.install(mod,runtime,_fx)
   local lastMap,lastX,lastY,lastRank=nil,nil,nil,0
-  local pendingBeeps,pendingRank,nextBeepAt=0,0,0
+  local pendingTones,pendingIndex,nextBeepAt={},1,0
   local lastSoundStatus="NEVER"
   local lastTriggerBand="NONE"
 
@@ -78,48 +120,60 @@ function TreasureDetector.install(mod,runtime,_fx)
     return TreasureDetector.bandForDistance(d),d
   end
 
-  local function playOne(game,rank)
-    local ok,Sound=pcall(require,"src.core.Sound")
-    if not (ok and Sound and game and game.data and type(Sound.play)=="function") then
-      lastSoundStatus="NO SOUND API"
-      return false
-    end
-
-    -- The previous build asked for the Gen 2 label
-    -- Sfx_SecondPartOfItemfinder.  Red/Blue/Yellow do not expose that label,
-    -- so the defensive existence check correctly (but silently) skipped it.
-    -- Tink is a real Gen 1 field SFX; Press_AB is the guaranteed shared fallback.
-    for _,name in ipairs({TreasureDetector.SOUND_PRIMARY,TreasureDetector.SOUND_FALLBACK}) do
-      local played,src=pcall(Sound.play,game.data,name)
-      if played and src then
-        if type(src.setPitch)=="function" then
-          pcall(src.setPitch,src,TreasureDetector.beepPitch(rank))
-        end
-        lastSoundStatus=name
+  local function playOne(game,hz)
+    local src=buildTone(hz)
+    if src then
+      pcall(src.stop,src)
+      pcall(src.setVolume,src,sfxVolume(game))
+      local ok=pcall(src.play,src)
+      if ok then
+        lastSoundStatus=("TONE %dHZ"):format(hz)
         return true
       end
     end
+
+    local ok,Sound=pcall(require,"src.core.Sound")
+    if ok and Sound and game and game.data and type(Sound.play)=="function" then
+      local played,fallback=pcall(Sound.play,game.data,TreasureDetector.SOUND_FALLBACK)
+      if played and fallback then
+        if type(fallback.setPitch)=="function" then
+          pcall(fallback.setPitch,fallback,math.max(0.65,math.min(1.8,hz/620)))
+        end
+        lastSoundStatus=TreasureDetector.SOUND_FALLBACK
+        return true
+      end
+    end
+
     lastSoundStatus="UNAVAILABLE"
     return false
   end
 
-  local function queueBeeps(band)
-    pendingRank=band.rank
-    pendingBeeps=TreasureDetector.beepCount(band.rank)
+  local function queuePattern(band)
+    local p=TreasureDetector.patternForRank(band.rank)
+    pendingTones=p.tones
+    pendingIndex=1
     nextBeepAt=0
     lastTriggerBand=band.name
   end
 
   local function serviceBeeps(game)
-    if pendingBeeps<=0 then return end
+    if pendingIndex>#pendingTones then return end
     local t=now()
     if t<nextBeepAt then return end
-    if not playOne(game,pendingRank) then
-      pendingBeeps=0
+    local band=TreasureDetector.bandForDistance(nil)
+    local rank=0
+    for _,b in ipairs(BANDS) do
+      local p=PATTERNS[b.rank]
+      if p and #p.tones==#pendingTones then rank=b.rank end
+    end
+    local hz=pendingTones[pendingIndex]
+    if not playOne(game,hz) then
+      pendingIndex=#pendingTones+1
       return
     end
-    pendingBeeps=pendingBeeps-1
-    nextBeepAt=t+0.18
+    local spacing=(PATTERNS[rank] and PATTERNS[rank].spacing) or 0.16
+    pendingIndex=pendingIndex+1
+    nextBeepAt=t+spacing
   end
 
   local function passiveStep(game)
@@ -131,7 +185,7 @@ function TreasureDetector.install(mod,runtime,_fx)
     if mapChanged then lastRank=0 end
     lastMap,lastX,lastY=pos.mapId,pos.x,pos.y
     local band=reading()
-    if band.rank>lastRank and band.rank>0 then queueBeeps(band) end
+    if band.rank>lastRank and band.rank>0 then queuePattern(band) end
     lastRank=band.rank
   end
 
