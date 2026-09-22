@@ -12,7 +12,7 @@ Items.EFFECT_KIND = { FIELD_EFFECT=true, TOOL=true, TRAINER=true, CAPTURE=true, 
 
 Items.all = {
   { key="prism_scent", itemId="DS_PRISM_SCENT", name="PRISM SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_PRISM_SCENT_EFFECT" },
-  { key="rare_lure", itemId="DS_RARE_LURE", name="RARE LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
+  { key="elusive_scent", itemId="DS_ELUSIVE_SCENT", name="ELUSIVE SCENT", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_ELUSIVE_SCENT_EFFECT" },
   { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="silph_tracker", name="SILPH TRACKER", ownership="PERMANENT", family="SILPH_CO", effectKind="TOOL" },
