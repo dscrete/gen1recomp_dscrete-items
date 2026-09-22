@@ -29,8 +29,9 @@ local function itemKeys(Items)
   return out
 end
 
-function Debug.install(mod, Items, runtime)
+function Debug.install(mod, Items, runtime, diagnostics)
   if not mod.developer then return end
+  diagnostics=diagnostics or {}
 
   local giveItem = commandFn(mod, "give_item")
   local takeItem = commandFn(mod, "take_item")
@@ -129,11 +130,39 @@ function Debug.install(mod, Items, runtime)
     local unlocked = #state.unlocked > 0 and table.concat(state.unlocked, ", ") or "none"
     local effect = state.activeFieldEffect or "none"
     local selected = runtime:getReusableState("species_whistle_target", nil) or state.selectedSpecies or "none"
-    local safari = runtime:getReusableState("safari_kit_session", nil) or "none"
+    -- Safari Kit session state is persisted under the catalogue key itself.
+    local safari = runtime:getReusableState("safari_kit", nil) or "none"
     local exp = state.pendingExpMultiplier or "none"
-    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fSAFARI %s\nEXP MOD %s\fPRISM %d/%d\fUNLOCKED:\n%s")
+
+    local treasureBand,treasureDistance,treasureSound,treasureLast="n/a","n/a","n/a","n/a"
+    local treasure=diagnostics.treasure
+    if treasure and type(treasure.reading)=="function" then
+      local ok,band,d=pcall(treasure.reading)
+      if ok and type(band)=="table" then
+        treasureBand=tostring(band.name or "?")
+        treasureDistance=d~=nil and tostring(d) or "none"
+      end
+      if type(treasure.lastSoundStatus)=="function" then
+        local sok,s=pcall(treasure.lastSoundStatus)
+        if sok then treasureSound=tostring(s) end
+      end
+      if type(treasure.lastTriggerBand)=="function" then
+        local bok,b=pcall(treasure.lastTriggerBand)
+        if bok then treasureLast=tostring(b) end
+      end
+    end
+
+    local glitchTiles=0
+    local glitch=diagnostics.glitch
+    if glitch and type(glitch.tiles)=="function" then
+      local ok,tiles=pcall(glitch.tiles)
+      if ok and type(tiles)=="table" then glitchTiles=#tiles end
+    end
+
+    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fSAFARI %s\nEXP MOD %s\fTREASURE %s\nDIST %s\nLAST %s\nSOUND %s\fGLITCH TILES %d\nPRISM %d/%d\fUNLOCKED:\n%s")
       :format(tostring(mod.version), tostring(state.schemaVersion), tostring(effect),
         tonumber(state.remainingSteps) or 0, tostring(selected), tostring(safari), tostring(exp),
+        treasureBand,treasureDistance,treasureLast,treasureSound,glitchTiles,
         tonumber(state.debugSuccesses) or 0, tonumber(state.debugRolls) or 0, unlocked)
     showText(ctx, text)
   end
