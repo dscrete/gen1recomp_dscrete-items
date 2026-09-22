@@ -1,5 +1,6 @@
 local GlitchDetector=dofile("lib/glitch_detector.lua")
 local TreasureDetector=dofile("lib/treasure_detector.lua")
+local OverworldFx=dofile("lib/overworld_fx.lua")
 
 test("Glitch Detector presets resolve safely", function()
   eq(GlitchDetector.resolveRate("mild"),0.20)
@@ -48,6 +49,17 @@ test("Glitch Detector Kanto pool excludes legends and later dex numbers", functi
   eq(#pool,2)
   eq(pool[1],"CHANSEY")
   eq(pool[2],"PIDGEY")
+end)
+
+test("detector overlays use live camera world coordinates", function()
+  local ow={camera={x=32,y=48}}
+  local x,y=OverworldFx.worldCellToScreen(ow,5,6)
+  eq(x,48)
+  eq(y,48)
+  ow.camera.x=40
+  local movedX,movedY=OverworldFx.worldCellToScreen(ow,5,6)
+  eq(movedX,40)
+  eq(movedY,48)
 end)
 
 test("Treasure Detector finds nearest uncollected hidden marker", function()
