@@ -98,8 +98,9 @@ code ownership; they do not decide how players obtain an item.
         encounter previews when available, with merged-registry fallback on older
         engines.
   - [x] Keep scope to the current map only.
-  - [x] Present scan results as a persistent scrollable list, one species per row, so
-        fast-forward cannot auto-scroll past earlier readings.
+  - [x] Use a dedicated manual-scrolling Tracker screen rather than dialogue or a
+        generic ListMenu; render the species name and full signal on separate fixed
+        lines so long combinations such as **VERY STRONG** cannot be clipped.
   - [ ] Complete minimum-engine and in-game UI/readout smoke testing.
 - [ ] **Mystery Lure** — reserve a configured share for curated habitat candidates.
 - [ ] **Species Whistle** — boost a selected compatible species without inserting an
