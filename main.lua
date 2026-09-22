@@ -12,9 +12,11 @@ return function(mod)
   local Items = loadLocal(mod, "lib/items.lua")
   local Runtime = loadLocal(mod, "lib/runtime.lua")
   local Debug = loadLocal(mod, "lib/debug.lua")
+  local ShinyFinder = loadLocal(mod, "lib/shiny_finder.lua")
   local runtime = Runtime.new(mod.save)
 
   Items.registerBagItems(mod)
+  ShinyFinder.install(mod, runtime)
   Debug.install(mod, Items, runtime)
 
   -- Stable public surface for later DScrete systems (Oak Research, Safari
@@ -22,4 +24,5 @@ return function(mod)
   mod.exports.version = mod.version
   mod.exports.items = Items
   mod.exports.runtime = runtime
+  mod.exports.shinyFinder = ShinyFinder
 end

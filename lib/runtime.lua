@@ -24,8 +24,6 @@ function Runtime.new(save)
   local self = setmetatable({ save = save }, Runtime)
   local version = tonumber(save:get("schema_version", 0)) or 0
   if version < Runtime.SCHEMA_VERSION then
-    -- v1 has no migrated payload yet; writing the schema marker still makes
-    -- future migrations explicit instead of inferring from missing fields.
     save:set("schema_version", Runtime.SCHEMA_VERSION)
   end
   self:resetRuntime()
@@ -38,8 +36,9 @@ function Runtime:resetRuntime()
   self.selectedSpecies = nil
   self.pendingExpMultiplier = nil
   self.pendingNaturalEncounter = false
-  self.allowFieldEffectReplacement = false
+  self.pendingExpirationNotice = nil
   self.lastPlayerPosition = nil
+  self.debugReturn = nil
   self.debugRolls = 0
   self.debugSuccesses = 0
 end

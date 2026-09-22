@@ -33,7 +33,7 @@ Items.EFFECT_KIND = {
 }
 
 Items.all = {
-  { key="shiny_finder", itemId="DS_SHINY_FINDER", name="SHINY FINDER", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
+  { key="shiny_finder", itemId="DS_SHINY_FINDER", name="SHINY FINDER", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT", effect="DS_SHINY_FINDER_EFFECT" },
   { key="rare_lure", itemId="DS_RARE_LURE", name="RARE LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="mystery_lure", itemId="DS_MYSTERY_LURE", name="MYSTERY LURE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
   { key="species_whistle", itemId="DS_SPECIES_WHISTLE", name="PKMN WHISTLE", ownership="CONSUMABLE", family="OAK_PALLET", effectKind="FIELD_EFFECT" },
