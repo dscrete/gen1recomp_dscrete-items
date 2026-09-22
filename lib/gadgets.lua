@@ -1,5 +1,5 @@
 -- Player-facing permanent gadget menu. The Start menu row appears once at
--- least one DScrete permanent/reusable gadget has been unlocked.
+-- least one implemented DScrete permanent/reusable gadget has been unlocked.
 
 local Gadgets = {}
 
@@ -8,7 +8,7 @@ function Gadgets.install(mod, Items, runtime, handlers)
 
   local function unlockedItems()
     local out = {}
-    for _, item in ipairs(Items.permanent()) do
+    for _, item in ipairs(Items.permanent(true)) do
       if runtime:isUnlocked(item.key) then out[#out + 1] = item end
     end
     return out
@@ -38,8 +38,6 @@ function Gadgets.install(mod, Items, runtime, handlers)
     game.stack:push(menu)
   end
 
-  -- v0.2.5 already exposes ui.start_menu.items specifically so mods can add
-  -- rows without patching engine UI code.
   mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
     local out = next(game, items)
     if type(out) ~= "table" then out = items end
