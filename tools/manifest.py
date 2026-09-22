@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small standalone sanity check for fields verified in Gen1Recomp v0.2.74.
+"""Small standalone sanity check for fields verified in Gen1Recomp v0.2.5.
 
 The authoritative validator remains Gen1Recomp's Manifest.validate/modkit; this
 exists only so the standalone repository catches an obviously incomplete package.
@@ -17,7 +17,7 @@ EXPECTED = {
     "entry": "main.lua",
     "profile": "content",
     "games": ["gen1"],
-    "game_version": ">=0.2.74 <0.3.0",
+    "game_version": ">=0.2.5 <0.3.0",
 }
 REQUIRED_TYPES = {
     "id": str,
