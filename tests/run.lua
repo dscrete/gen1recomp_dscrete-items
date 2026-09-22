@@ -30,6 +30,7 @@ dofile("tests/shiny_finder_test.lua")
 dofile("tests/encounter_weights_test.lua")
 dofile("tests/silph_tracker_test.lua")
 dofile("tests/mystery_whistle_test.lua")
+dofile("tests/resonator_safari_test.lua")
 
 io.write(("%d passed, %d failed\n"):format(passed, failed))
 if failed > 0 then os.exit(1) end
