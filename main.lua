@@ -15,19 +15,19 @@ local function longSteps(default)
 end
 
 return function(mod)
-  local mysterySteps=longSteps("250"); mysterySteps.key="mystery_lure_steps"; mysterySteps.label="MYSTERY STEPS"
+  local mysterySteps=longSteps("250"); mysterySteps.key="mystery_lure_steps"; mysterySteps.label="MYSTERY LURE STEPS"
   mod.options:define({
-    { key="prism_scent_chance", label="PRISM ODDS", type="choice", default="100", choices={{"1 / 1","1"},{"1 / 10","10"},{"1 / 100","100"},{"1 / 1000","1000"}} },
-    { key="prism_scent_steps", label="PRISM STEPS", type="choice", default="250", choices={{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"},{"2500","2500"}} },
-    { key="elusive_scent_strength", label="ELUSIVE POWER", type="choice", default="mild", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
-    { key="elusive_scent_steps", label="ELUSIVE STEPS", type="choice", default="250", choices={{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"},{"2500","2500"}} },
-    { key="mystery_lure_share", label="MYSTERY RATE", type="choice", default="low", choices={{"LOW - 5%","low"},{"MED - 10%","medium"},{"HIGH - 20%","high"}} },
+    { key="prism_scent_chance", label="PRISM SCENT ODDS", type="choice", default="100", choices={{"1 / 1","1"},{"1 / 10","10"},{"1 / 100","100"},{"1 / 1000","1000"}} },
+    { key="prism_scent_steps", label="PRISM SCENT STEPS", type="choice", default="250", choices={{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"},{"2500","2500"}} },
+    { key="elusive_scent_strength", label="ELUSIVE SCENT POWER", type="choice", default="mild", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
+    { key="elusive_scent_steps", label="ELUSIVE SCENT STEPS", type="choice", default="250", choices={{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"},{"2500","2500"}} },
+    { key="mystery_lure_share", label="MYSTERY LURE RATE", type="choice", default="low", choices={{"LOW - 5%","low"},{"MED - 10%","medium"},{"HIGH - 20%","high"}} },
     mysterySteps,
-    { key="mystery_lure_seen_only", label="MYSTERY POOL", type="choice", default="seen", choices={{"SEEN ONLY","seen"},{"ALLOW UNSEEN","all"}} },
+    { key="mystery_lure_seen_only", label="MYSTERY LURE POOL", type="choice", default="seen", choices={{"SEEN ONLY","seen"},{"ALLOW UNSEEN","all"}} },
     { key="species_whistle_strength", label="WHISTLE POWER", type="choice", default="mild", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
     { key="species_whistle_steps", label="WHISTLE STEPS", type="choice", default="100", choices={{"25","25"},{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"}} },
-    { key="species_whistle_nonlocal", label="NONLOCAL TARGETS", type="choice", default="off", choices={{"OFF","off"},{"ON","on"}} },
-    { key="species_whistle_nonlocal_rate", label="NONLOCAL RATE", type="choice", default="0.5", choices={{"0.5%","0.5"},{"1%","1"},{"2%","2"}} },
+    { key="species_whistle_nonlocal", label="WHISTLE NONLOCAL", type="choice", default="off", choices={{"OFF","off"},{"ON","on"}} },
+    { key="species_whistle_nonlocal_rate", label="WHISTLE NONLOCAL RATE", type="choice", default="0.5", choices={{"0.5%","0.5"},{"1%","1"},{"2%","2"}} },
   })
 
   local Items=loadLocal(mod,"lib/items.lua")
