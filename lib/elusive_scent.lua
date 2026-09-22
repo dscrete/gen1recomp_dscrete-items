@@ -1,6 +1,7 @@
--- Elusive Scent: temporarily reweights the rarest species already present in
--- the current encounter table. It never adds species, changes encounter rate,
--- or changes levels.
+-- Elusive Scent: temporarily compresses the current encounter table's rarity
+-- curve. Common species remain the baseline while uncommon and rare species get
+-- progressively larger weight boosts before the table is normalized. It never
+-- adds species, changes encounter rate, or changes levels.
 
 local ElusiveScent = {}
 
@@ -10,6 +11,9 @@ ElusiveScent.STRENGTH_OPTION = "elusive_scent_strength"
 ElusiveScent.STEPS_OPTION = "elusive_scent_steps"
 ElusiveScent.DURATION_STEPS = 250
 
+-- These are upper compression strengths, not flat multipliers. The shared
+-- weighting curve keeps the commonest species at 1x and approaches these
+-- values as species become increasingly rare.
 local STRENGTHS = { mild = 2, strong = 4, extreme = 8 }
 local VALID_DURATIONS = { [50]=true, [100]=true, [250]=true, [500]=true, [1000]=true, [2500]=true }
 local WILDS_ID = "overworld_wild_spawns"
@@ -30,7 +34,7 @@ function ElusiveScent.install(mod, runtime, Weights)
   local function configuredDuration()
     return ElusiveScent.resolveDuration(mod.options:get(ElusiveScent.STEPS_OPTION))
   end
-  local function configuredFactor()
+  local function configuredStrength()
     return ElusiveScent.resolveStrength(mod.options:get(ElusiveScent.STRENGTH_OPTION))
   end
   local function eligibleTerrain(terrain)
@@ -83,7 +87,7 @@ function ElusiveScent.install(mod, runtime, Weights)
       local ok = runtime:activateFieldEffect(ElusiveScent.EFFECT_ID, duration, replace)
       if not ok then return "failed", { "The ELUSIVE SCENT\nfailed to spread." } end
       return "consumed", {
-        ("ELUSIVE SCENT drifts\nthrough the area!\fRare local POKéMON\nare easier to find.\fIt will last for\n%d steps."):format(duration),
+        ("ELUSIVE SCENT drifts\nthrough the area!\fUncommon and rare\nPOKéMON draw closer.\fIt will last for\n%d steps."):format(duration),
       }, { useJingle=true }
     end,
   })
@@ -96,7 +100,7 @@ function ElusiveScent.install(mod, runtime, Weights)
         or not (ctx and eligibleTerrain(ctx.terrain)) then
       return next(encDef, ctx)
     end
-    local boosted = Weights.boostEncounterDef(encDef, ctx.terrain, configuredFactor())
+    local boosted = Weights.boostEncounterDef(encDef, ctx.terrain, configuredStrength())
     return next(boosted, ctx)
   end)
 
@@ -116,7 +120,7 @@ function ElusiveScent.install(mod, runtime, Weights)
         local terrain = self.surfaceInfo and self.surfaceInfo.encounterKind or "grass"
         if terrain == "indoor" then terrain = "grass" end
         local encDef = mergedEncounterDef(mapId)
-        local boosted = encDef and Weights.boostEncounterDef(encDef, terrain, configuredFactor()) or nil
+        local boosted = encDef and Weights.boostEncounterDef(encDef, terrain, configuredStrength()) or nil
         local tableDef = boosted and Weights.terrainTable(boosted, terrain)
         local picked = tableDef and pickSlot(tableDef)
         if picked then
