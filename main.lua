@@ -17,6 +17,7 @@ end
 return function(mod)
   local mysterySteps=longSteps("250"); mysterySteps.key="mystery_lure_steps"; mysterySteps.label="MYSTERY LURE STEPS"
   local resonatorSteps=longSteps("250"); resonatorSteps.key="prototype_resonator_steps"; resonatorSteps.label="PROTO RESONATOR STEPS"
+  local glitchSteps=longSteps("250"); glitchSteps.key="glitch_detector_steps"; glitchSteps.label="GLITCH DET. STEPS"
   mod.options:define({
     { key="prism_scent_chance", label="PRISM SCENT ODDS", type="choice", default="100", choices={{"1 / 1","1"},{"1 / 10","10"},{"1 / 100","100"},{"1 / 1000","1000"}} },
     { key="prism_scent_steps", label="PRISM SCENT STEPS", type="choice", default="250", choices={{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"},{"2500","2500"}} },
@@ -34,6 +35,8 @@ return function(mod)
     { key="safari_kit_bait_power", label="SAFARI KIT BAIT POWER", type="choice", default="strong", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
     { key="safari_kit_pass_steps", label="SAFARI KIT PASS STEPS", type="choice", default="250", choices={{"100","100"},{"250","250"},{"500","500"}} },
     { key="safari_kit_pass_balls", label="SAFARI KIT PASS BALLS", type="choice", default="5", choices={{"3","3"},{"5","5"},{"10","10"}} },
+    { key="glitch_detector_rate", label="GLITCH DET. ANOMALY RATE", type="choice", default="strong", choices={{"MILD - 20%","mild"},{"STRONG - 40%","strong"},{"EXTREME - 60%","extreme"}} },
+    glitchSteps,
   })
 
   local Items=loadLocal(mod,"lib/items.lua")
@@ -46,19 +49,28 @@ return function(mod)
   local SpeciesWhistle=loadLocal(mod,"lib/species_whistle.lua")
   local PrototypeResonator=loadLocal(mod,"lib/prototype_resonator.lua")
   local SafariKit=loadLocal(mod,"lib/safari_kit.lua")
+  local OverworldFx=loadLocal(mod,"lib/overworld_fx.lua")
+  local GlitchDetector=loadLocal(mod,"lib/glitch_detector.lua")
+  local TreasureDetector=loadLocal(mod,"lib/treasure_detector.lua")
   local SilphTracker=loadLocal(mod,"lib/silph_tracker.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
   Items.registerBagItems(mod)
+  local fx=OverworldFx.install(mod)
   PrismScent.install(mod,runtime)
   ElusiveScent.install(mod,runtime,Weights)
   local mystery=MysteryLure.install(mod,runtime,Weights)
   local whistle=SpeciesWhistle.install(mod,runtime,Weights)
   local resonator=PrototypeResonator.install(mod,runtime,Weights)
   local safariKit=SafariKit.install(mod,runtime,Weights)
-  local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit)
-  local gadgets=Gadgets.install(mod,Items,runtime,{ silph_tracker=function(game) tracker.open(game) end })
+  local glitch=GlitchDetector.install(mod,runtime,fx)
+  local treasure=TreasureDetector.install(mod,runtime,fx)
+  local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit,glitch)
+  local gadgets=Gadgets.install(mod,Items,runtime,{
+    silph_tracker=function(game) tracker.open(game) end,
+    treasure_detector=function(game) treasure.open(game) end,
+  })
   Debug.install(mod,Items,runtime)
 
   mod.exports.version=mod.version
@@ -71,6 +83,8 @@ return function(mod)
   mod.exports.speciesWhistle=whistle
   mod.exports.prototypeResonator=resonator
   mod.exports.safariKit=safariKit
+  mod.exports.glitchDetector=glitch
+  mod.exports.treasureDetector=treasure
   mod.exports.silphTracker=tracker
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
