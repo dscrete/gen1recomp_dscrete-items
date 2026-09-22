@@ -42,6 +42,8 @@ code ownership; they do not decide how players obtain an item.
       **PROTO RESONATOR**, **SAFARI KIT**, and **GLITCH DET.** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
+- [x] Show Treasure Detector live band/distance, last trigger/sound result, and active
+      Glitch Detector tile count on **INSPECT** for live diagnostics.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -206,8 +208,10 @@ code ownership; they do not decide how players obtain an item.
   - [x] Render a faint always-present tell plus periodic wall-clock flicker inside a
         single 8x8 tile fragment, so anomaly visuals remain visible while standing still
         and never exceed one tile.
-  - [x] Keep rendering camera-relative to the saved world cell without mutating map
-        blocks, collision, warps, or save-map data.
+  - [x] Inject anomaly rendering into `drawWorld()` before `endWorldPass()` so saved
+        world-cell coordinates are transformed by the same zoom/camera pipeline as the
+        terrain instead of being drawn later on the UI canvas.
+  - [x] Avoid mutating map blocks, collision, warps, or save-map data.
   - [x] Only alter successful ordinary encounter rolls when the player is standing on
         one of the anomaly cells; ordinary cells keep their normal encounter behavior.
   - [x] Choose anomalies from all loaded Kanto Pokédex species 1-151 except Articuno,
@@ -219,11 +223,12 @@ code ownership; they do not decide how players obtain an item.
         anomaly species.
   - [x] Clear persisted anomaly-cell state on expiry/replacement/full DScrete reset.
   - [x] Add deterministic tests for presets, tile selection, state serialization,
-        Kanto/legendary filtering, camera transform, and anomaly-cell lookup.
+        Kanto/legendary filtering, camera transform, world-pass injection, and
+        anomaly-cell lookup.
   - [ ] Live-smoke anomaly placement on outdoor grass routes, caves, and water maps;
         verify visible cells correspond to useful encounter terrain rather than inert
         walkable path cells.
-  - [ ] Live-smoke the idle flicker at multiple zoom levels, map edges/camera boundaries,
+  - [ ] Re-test the idle flicker at multiple zoom levels, map edges/camera boundaries,
         and save/reboot; verify it stays on one world tile and does not interfere with
         battles, menus, transitions, or Wilds.
 
@@ -250,12 +255,16 @@ code ownership; they do not decide how players obtain an item.
         stronger band; moving within a band or farther away does not spam feedback.
   - [x] Use audio-only passive feedback after live testing showed screen-space text was
         too dependent on zoom/camera presentation.
+  - [x] Use the known Gen 1 **Tink** one-shot as the primary detector ping, with
+        **Press_AB** fallback, bounded 1/2/3-ping clusters, and rising pitch by band.
   - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
+  - [x] Expose the live band/distance and last attempted detector sound in developer
+        **INSPECT** so marker detection and audio failures can be separated in-game.
   - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
         the setting and full DScrete reset restores the default ON state.
-  - [x] Add deterministic nearest-hidden-item and distance-band tests.
-  - [ ] Live-smoke audio-only proximity feedback while walking, including fast-forward,
-        menus, battles, and multiple zoom levels.
+  - [x] Add deterministic nearest-hidden-item, distance-band, and bounded ping tests.
+  - [ ] Re-test audio-only proximity feedback from >10 cells through **DIRECTLY HERE**,
+        including fast-forward, menus, battles, and multiple zoom levels.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
