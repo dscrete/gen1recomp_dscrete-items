@@ -22,9 +22,10 @@ test("permanent gadgets do not occupy bag slots", function()
   end
 end)
 
-test("Shiny Finder is a consumable field effect", function()
-  local item = Items.byKey.shiny_finder
-  eq(item.itemId, "DS_SHINY_FINDER")
+test("Prism Scent is a consumable field effect", function()
+  local item = Items.byKey.prism_scent
+  eq(item.itemId, "DS_PRISM_SCENT")
+  eq(item.effect, "DS_PRISM_SCENT_EFFECT")
   eq(item.ownership, "CONSUMABLE")
   eq(item.effectKind, "FIELD_EFFECT")
 end)
