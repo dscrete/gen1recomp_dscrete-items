@@ -27,6 +27,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add deterministic test helpers and seeded probability simulations.
 - [x] Add shared encounter-weight helpers for rarity compression, targeted boosts,
       reserved encounter shares, signal bands, and later encounter modifiers.
+- [x] Make every player-facing mod-option label identify the item it belongs to, while
+      keeping stable option keys/values for saved-config compatibility.
 - [x] Require completed work and changed requirements to update this checklist via
       repository instructions in `AGENTS.md`.
 
@@ -129,8 +131,8 @@ code ownership; they do not decide how players obtain an item.
   - [x] If the target is native locally, boost it by configurable **MILD / STRONG /
         EXTREME** 2x / 4x / 8x weighting.
   - [x] By default, fail without consumption when the selected species is not local.
-  - [x] Add optional **NONLOCAL TARGETS** mode with separately labeled **NONLOCAL RATE**
-        choices of 0.5% / 1% / 2%.
+  - [x] Add optional **WHISTLE NONLOCAL** mode with separately labeled **WHISTLE
+        NONLOCAL RATE** choices of 0.5% / 1% / 2%.
   - [x] Use shorter duration presets: 25 / 50 / 100 / 250 / 500 / 1000 steps.
   - [x] Remain mutually exclusive with the other field effects.
   - [x] Apply to normal encounters and fishing and reflect the effective chance in
