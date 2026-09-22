@@ -17,6 +17,7 @@ The minimum-version verifier targets tag `v0.2.5`. The ordered backlog lives in
 - Standalone Lua/static tests, minimum-engine verifier, package target, and rolling
   `dev` prerelease ZIP.
 - Developer-only Pallet Town harness with GET ITEMS, WARP, INSPECT, and RESET.
+- Debug grants and gadget unlocks expose implemented content only.
 
 ### Prism Scent
 
@@ -34,29 +35,38 @@ The minimum-version verifier targets tag `v0.2.5`. The ordered backlog lives in
 
 - Replaces the earlier planned Rare Lure concept.
 - Consumable timed field effect, mutually exclusive with Prism Scent.
-- All species tied for the lowest **combined species weight** are boosted equally.
-- Duplicate slots are summed before rarity is determined.
-- MILD / STRONG / EXTREME options use 2x / 4x / 8x rare-species weighting.
+- Uses rarity compression rather than boosting only the single rarest tier.
+- The commonest combined species weight is the 1x baseline; uncommon species receive
+  a boost and progressively rarer species receive progressively larger boosts.
+- Duplicate slots are summed before the species-level multiplier is calculated, then
+  each species' multiplier is applied back to its original slots.
+- MILD / STRONG / EXTREME are compression strengths: very rare species approach
+  2x / 4x / 8x weighting while common species remain at baseline.
 - Uses the shared duration presets: 50 / 100 / 250 / 500 / 1000 / 2500 steps.
 - Changes species weighting only: encounter frequency, levels and species membership
-  remain unchanged.
+  remain unchanged. Final encounter probabilities are normalized back to the engine's
+  256-point table, so common final shares may fall as rarer species become easier to
+  find.
 - Applies to grass, cave/indoor, surf/water and Safari step encounters; fishing is
   intentionally unchanged.
 - Operates through the normal `encounter.roll` chain and merged encounter registry.
-- Optional Wilds of Kanto integration chooses visible-spawn species from the boosted
-  merged table when its public exports are available.
+- Optional Wilds of Kanto integration chooses visible-spawn species from the same
+  compressed merged table when its public exports are available.
 
 ### Silph Tracker and GADGETS
 
 - Silph Tracker is a permanent gadget with no bag item.
-- The Start menu receives a GADGETS row once at least one permanent/reusable DScrete
-  gadget is unlocked.
+- The Start menu receives a GADGETS row once at least one implemented permanent/
+  reusable DScrete gadget is unlocked.
+- Unimplemented catalogue gadgets remain hidden even if stale debug unlock flags exist.
 - Tracker scans the current map only and reports every local species using:
   NO SIGNAL / FAINT / WEAK / STRONG / VERY STRONG.
 - Unseen species display as UNKNOWN while retaining their signal band.
 - Tracker uses the public effective-encounter preview when available, otherwise the
-  merged encounter registry; active Elusive Scent weighting is reflected in either
-  path.
+  merged encounter registry; active Elusive Scent rarity compression is reflected in
+  either path.
+- Player-facing results use a persistent scrollable ListMenu with one species per row,
+  avoiding text auto-scroll/fast-forward readability problems.
 - Current development acquisition remains debug-only via UNLOCK GADGETS.
 
 ## Shared encounter-weight contract
@@ -69,11 +79,14 @@ For a Gen-1 encounter table:
 
 1. Convert cumulative slot buckets into per-slot weights.
 2. Sum duplicate slots by species.
-3. Determine rarity from combined nonzero species weight.
-4. Apply modifiers to species weights while preserving slot species and levels.
-5. Rebuild normalized cumulative buckets with the final threshold fixed at 256.
+3. Determine each species' rarity relative to the commonest combined weight.
+4. Apply the selected rarity-compression curve to species weights.
+5. Reapply each species multiplier to its original slots, preserving species/levels.
+6. Rebuild normalized cumulative buckets with the final threshold fixed at 256.
 
-The module also owns coarse Tracker signal-band thresholds.
+The Elusive curve is monotonic: the commonest species receives multiplier 1; rarer
+species never receive a smaller raw multiplier than more-common species. The module
+also owns coarse Tracker signal-band thresholds.
 
 ## Compatibility contract
 
@@ -132,16 +145,17 @@ preserving the area's species identity.
 
 ## Test strategy
 
-Standalone deterministic tests cover metadata, runtime persistence/migration, field
-replacement and expiration, Prism Scent shiny rules, Elusive Scent rarity/ties,
-weighting invariants, and signal bands. GitHub Actions runs them on every push/PR.
+Standalone deterministic tests cover metadata, implemented-only debug/gadget filters,
+runtime persistence/migration, field replacement and expiration, Prism Scent shiny
+rules, Elusive Scent rarity compression, weighting invariants, Pikachu-like uncommon
+share regression, and signal bands. GitHub Actions runs them on every push/PR.
 
 Still required before treating these features as fully engine-validated:
 
 - `modkit.py validate` and in-game smoke at the minimum supported engine;
 - Elusive Scent grass/cave/surf/Safari behavior in play;
 - optional Wilds visible-spawn behavior with Elusive Scent;
-- GADGETS Start-menu navigation and Silph Tracker readout in play;
+- GADGETS Start-menu navigation and Silph Tracker list readout in play;
 - Prism/Elusive replacement and expiration text in mixed-use sessions.
 
 ## Definition of done for each item
