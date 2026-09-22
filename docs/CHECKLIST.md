@@ -36,10 +36,10 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add **GET ITEMS**, **WARP**, **INSPECT**, and **RESET** flows.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
-- [x] Add direct **PRISM SCENT** and **ELUSIVE SCENT** grants.
+- [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, and
+      **PKMN WHISTLE** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
-      inspection/reset helpers to implemented content only. Mystery Lure and Species
-      Whistle join **ALL IMPLEMENTED** once their effects are registered.
+      inspection/reset helpers to implemented content only.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -120,24 +120,26 @@ code ownership; they do not decide how players obtain an item.
         refusal, unseen-pool option, and Wilds.
 
 - [x] **Species Whistle** — call one remembered Pokédex-seen non-legendary species.
-  - [x] Add a **WHISTLE TARGET** Start-menu selector while a Whistle is in the bag,
-        because item-effect callbacks are synchronous and cannot safely host the
-        asynchronous species picker themselves.
-  - [x] Restrict target selection to Pokédex-seen non-legendary species and remember
-        the last selection persistently.
+  - [x] Open the species selector directly when **PKMN WHISTLE** is used from the bag,
+        using the public `item.use` hook to defer normal item dispatch until selection.
+  - [x] Do not add a permanent Start-menu target entry.
+  - [x] Restrict target selection to Pokédex-seen non-legendary species, remember the
+        last selection persistently, and start the selector on that remembered row.
+  - [x] Cancel selection without consuming the Whistle.
   - [x] If the target is native locally, boost it by configurable **MILD / STRONG /
         EXTREME** 2x / 4x / 8x weighting.
   - [x] By default, fail without consumption when the selected species is not local.
-  - [x] Add optional **WHISTLE RARE** non-local mode with separately configurable
-        0.5% / 1% / 2% insertion rates.
+  - [x] Add optional **NONLOCAL TARGETS** mode with separately labeled **NONLOCAL RATE**
+        choices of 0.5% / 1% / 2%.
   - [x] Use shorter duration presets: 25 / 50 / 100 / 250 / 500 / 1000 steps.
   - [x] Remain mutually exclusive with the other field effects.
   - [x] Apply to normal encounters and fishing and reflect the effective chance in
         Silph Tracker.
   - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
   - [x] Add deterministic target-boost, non-local-share, preset, and legendary tests.
-  - [ ] Complete minimum-engine/in-game smoke testing of target selection, local and
-        non-local modes, fishing, persistence, Tracker reflection, and Wilds.
+  - [ ] Complete minimum-engine/in-game smoke testing of in-bag target selection,
+        remembered cursor position, local/non-local modes, cancellation, fishing,
+        persistence, Tracker reflection, and Wilds.
 
 - [ ] **Prototype Repel** — attract encounters at or above the lead Pokemon's level.
 - [ ] **Safari Bait / Pass** — alter one curated encounter set or stated Safari rule.
