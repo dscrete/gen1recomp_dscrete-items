@@ -26,8 +26,8 @@ return function(mod)
     { key="mystery_lure_seen_only", label="MYSTERY POOL", type="choice", default="seen", choices={{"SEEN ONLY","seen"},{"ALLOW UNSEEN","all"}} },
     { key="species_whistle_strength", label="WHISTLE POWER", type="choice", default="mild", choices={{"MILD","mild"},{"STRONG","strong"},{"EXTREME","extreme"}} },
     { key="species_whistle_steps", label="WHISTLE STEPS", type="choice", default="100", choices={{"25","25"},{"50","50"},{"100","100"},{"250","250"},{"500","500"},{"1000","1000"}} },
-    { key="species_whistle_nonlocal", label="WHISTLE RARE", type="choice", default="off", choices={{"OFF","off"},{"ON","on"}} },
-    { key="species_whistle_nonlocal_rate", label="WHISTLE RARE %", type="choice", default="0.5", choices={{"0.5%","0.5"},{"1%","1"},{"2%","2"}} },
+    { key="species_whistle_nonlocal", label="NONLOCAL TARGETS", type="choice", default="off", choices={{"OFF","off"},{"ON","on"}} },
+    { key="species_whistle_nonlocal_rate", label="NONLOCAL RATE", type="choice", default="0.5", choices={{"0.5%","0.5"},{"1%","1"},{"2%","2"}} },
   })
 
   local Items=loadLocal(mod,"lib/items.lua")
