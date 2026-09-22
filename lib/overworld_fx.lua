@@ -1,16 +1,19 @@
 -- Lightweight overworld-only visual effects for DScrete gadgets/items.
--- Uses the public screen.render_visible hook to decorate the live overworld's
--- draw pass without pushing a blocking UI state.
+-- The anomaly overlay is inserted into the overworld's WORLD pass, before
+-- Renderer:endWorldPass().  That matters: drawing after screen.draw() lands on
+-- the UI canvas, which makes an ostensibly world-anchored mark slide at any
+-- survey zoom other than the one accidental scale where both canvases agree.
 
 local OverworldFx = {}
 
 local function now()
-  return (love and love.timer and love.timer.getTime and love.timer.getTime()) or 0
+  if love and love.timer and love.timer.getTime then return love.timer.getTime() end
+  return os.clock()
 end
 
--- Gen 1 world cells are 16x16 pixels. The overworld camera stores its top-left
--- in those same world-pixel coordinates, so overlays transform from saved world
--- cells through the live camera rather than following player movement.
+-- Gen 1 walk cells are 16x16 world pixels.  While drawWorld() is active the
+-- world canvas is also expressed in world pixels, with the live camera as its
+-- top-left, so this is the same transform the terrain renderer uses.
 local CELL_PX = 16
 
 function OverworldFx.worldCellToScreen(ow, cellX, cellY)
@@ -23,8 +26,8 @@ end
 function OverworldFx.install(mod)
   local state = { anomalyProvider = nil }
 
-  -- Kept as a no-op compatibility surface for older callers. Passive detector
-  -- feedback is audio-only now; overworld text was too zoom-dependent.
+  -- Retained as a compatibility no-op for older dev builds.  Treasure Detector
+  -- passive feedback is audio-only after live zoom testing.
   function OverworldFx.flashMessage(_text,_seconds) end
 
   function OverworldFx.setAnomalyProvider(fn)
@@ -32,30 +35,26 @@ function OverworldFx.install(mod)
   end
 
   local function drawAnomalyMark(sx,sy,phase)
-    -- Each anomaly occupies only the upper-left 8x8 tile inside its 16x16
-    -- encounter cell. A faint 2-pixel tell is always present, while the rest
-    -- pulses/flickers from wall-clock time, so standing still still reveals it.
-    local x,y=math.floor(sx),math.floor(sy)
-    love.graphics.setScissor(math.max(0,x),math.max(0,y),
-      math.max(0,math.min(8,160-math.max(0,x))),
-      math.max(0,math.min(8,144-math.max(0,y))))
+    -- Centre one 8x8 corruption fragment inside the 16x16 encounter cell.
+    -- The tiny tell is permanent and the larger pattern pulses from wall-clock
+    -- time, so a stationary player can still discover it.
+    local x,y=math.floor(sx+4),math.floor(sy+4)
 
-    love.graphics.setColor(1,1,1,0.45)
+    love.graphics.setColor(1,1,1,0.55)
     love.graphics.rectangle("fill",x+1,y+1,2,1)
     love.graphics.rectangle("fill",x+5,y+6,2,1)
 
-    -- About 0.35 s of stronger corruption every ~1.4 s, with per-tile phase.
-    if ((now()+phase) % 1.4) < 0.35 then
-      love.graphics.setColor(1,1,1,0.9)
-      love.graphics.rectangle("fill",x,y+2,7,1)
-      love.graphics.rectangle("fill",x+2,y+5,6,1)
+    -- Roughly 0.45 seconds of visible corruption every 1.35 seconds.  A phase
+    -- offset keeps the three cells from flashing in lockstep.
+    if ((now()+phase) % 1.35) < 0.45 then
+      love.graphics.setColor(1,1,1,0.95)
+      love.graphics.rectangle("fill",x,y+1,7,1)
+      love.graphics.rectangle("fill",x+2,y+4,6,1)
+      love.graphics.rectangle("fill",x+1,y+7,4,1)
       love.graphics.setColor(0,0,0,0.95)
-      love.graphics.rectangle("fill",x+1,y+3,5,1)
-      love.graphics.rectangle("fill",x+4,y+7,4,1)
+      love.graphics.rectangle("fill",x+1,y+2,5,1)
+      love.graphics.rectangle("fill",x+4,y+5,4,1)
     end
-
-    love.graphics.setScissor()
-    love.graphics.setColor(1,1,1,1)
   end
 
   local function drawAnomalies(ow)
@@ -63,25 +62,33 @@ function OverworldFx.install(mod)
     if not provider or not ow or not ow.camera then return end
     local tiles=provider()
     if type(tiles)~="table" or #tiles==0 then return end
+
+    -- Do not leak color/scissor/shader state into sprites or later world FX.
+    love.graphics.push("all")
     for i,tile in ipairs(tiles) do
       local sx,sy=OverworldFx.worldCellToScreen(ow,tile.x,tile.y)
-      if sx and sx>-8 and sx<160 and sy>-8 and sy<144 then
-        drawAnomalyMark(sx,sy,i*0.31)
-      end
+      -- No 160x144 bounds here: survey zoom deliberately makes the world
+      -- canvas larger than the classic UI canvas.  LOVE clips to the current
+      -- world canvas naturally.
+      if sx and sy then drawAnomalyMark(sx,sy,i*0.29) end
     end
+    love.graphics.pop()
   end
 
   mod.hooks:wrap("screen.render_visible",function(next,screen)
     local visible=next(screen)
-    if visible~=false and screen and screen.isOverworld and not screen._dscreteFxWrapped then
-      local original=screen.draw
-      if type(original)=="function" then
-        screen.draw=function(self,...)
-          local result=original(self,...)
+    if visible~=false and screen and screen.isOverworld and not screen._dscreteWorldFxWrapped then
+      -- OverworldState:draw() is:
+      --   beginWorldPass -> drawWorld -> endWorldPass -> drawUI
+      -- so wrapping drawWorld is the stable place for world-space decoration.
+      local originalWorld=screen.drawWorld
+      if type(originalWorld)=="function" then
+        screen.drawWorld=function(self,...)
+          local result=originalWorld(self,...)
           drawAnomalies(self)
           return result
         end
-        screen._dscreteFxWrapped=true
+        screen._dscreteWorldFxWrapped=true
       end
     end
     return visible
