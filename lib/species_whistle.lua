@@ -12,6 +12,7 @@ local STRENGTHS={ mild=2, strong=4, extreme=8 }
 local DURATIONS={ [25]=true,[50]=true,[100]=true,[250]=true,[500]=true,[1000]=true }
 local RATES={ ["0.5"]=0.005,["1"]=0.01,["2"]=0.02 }
 local LEGENDARY={ ARTICUNO=true,ZAPDOS=true,MOLTRES=true,MEWTWO=true,MEW=true }
+local WILDS_ID="overworld_wild_spawns"
 
 function SpeciesWhistle.resolveStrength(v) return STRENGTHS[tostring(v or "")] or 2 end
 function SpeciesWhistle.resolveDuration(v) local n=tonumber(v); if n and DURATIONS[n] then return n end; return 100 end
@@ -24,17 +25,35 @@ local function seen(save,species)
   return d and ((d.seen and d.seen[species]) or (d.owned and d.owned[species])) or false
 end
 
-local function localSpecies(mod, Weights, mapId, species)
+local function encounterDef(mod,mapId)
   local registry=mod.content and mod.content.encounters
-  if not (registry and type(registry.get)=="function") then return false end
-  local ok,def=pcall(registry.get,registry,mapId); if not ok or type(def)~="table" then return false end
+  if not (registry and type(registry.get)=="function") then return nil end
+  local ok,def=pcall(registry.get,registry,mapId)
+  return ok and type(def)=="table" and def or nil
+end
+
+local function localSpecies(mod, Weights, mapId, species)
+  local def=encounterDef(mod,mapId); if not def then return false end
   for _,terrain in ipairs({"grass","water"}) do
     if (Weights.distribution(def,terrain)[species] or 0)>0 then return true end
   end
   return false
 end
 
+local function pickSlot(Weights,tableDef)
+  local rows=Weights.slotWeights(tableDef); if #rows==0 then return nil end
+  local pick=love.math.random(0,255)
+  local cumulative=0
+  for _,row in ipairs(rows) do
+    cumulative=cumulative+row.weight
+    if pick<cumulative then return {species=row.species,level=row.level} end
+  end
+  local last=rows[#rows]
+  return last and {species=last.species,level=last.level} or nil
+end
+
 function SpeciesWhistle.install(mod,runtime,Weights)
+  local wildsWrapped=false
   local function target() return runtime:getReusableState(SpeciesWhistle.TARGET_KEY,nil) end
   local function validTarget(data,save,species)
     return type(species)=="string" and not LEGENDARY[species] and data and data.pokemon and data.pokemon[species] and seen(save,species)
@@ -43,9 +62,7 @@ function SpeciesWhistle.install(mod,runtime,Weights)
   local function openSelector(game)
     local rows={}
     for species,def in pairs(game.data.pokemon or {}) do
-      if validTarget(game.data,game.save,species) then
-        rows[#rows+1]={label=(def.name or species),value=species}
-      end
+      if validTarget(game.data,game.save,species) then rows[#rows+1]={label=(def.name or species),value=species} end
     end
     table.sort(rows,function(a,b) return a.label<b.label end)
     rows[#rows+1]={label="CANCEL",value="cancel"}
@@ -53,8 +70,7 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     menu=mod.ui.ListMenu.new(game,"WHISTLE TARGET",rows,{
       pageJump=true,
       onChoose=function(row)
-        if not row then return end
-        if row.value~="cancel" then runtime:setReusableState(SpeciesWhistle.TARGET_KEY,row.value) end
+        if row and row.value~="cancel" then runtime:setReusableState(SpeciesWhistle.TARGET_KEY,row.value) end
         if menu then menu:close() end
       end,
       onCancel=function() if menu then menu:close() end end,
@@ -67,11 +83,8 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     local out=next(game,items); if type(out)~="table" then out=items end
     local inv=game.save and game.save.inventory or {}
     if (tonumber(inv.DS_SPECIES_WHISTLE) or 0)<=0 then return out end
-    local selected=target(); local label=selected and "WHISTLE TARGET*" or "WHISTLE TARGET"
-    local row={label=label,onSelect=function() openSelector(game) end}
-    for i,item in ipairs(out) do
-      if item.label=="OPTION" then table.insert(out,i,row); return out end
-    end
+    local row={label=target() and "WHISTLE TARGET*" or "WHISTLE TARGET",onSelect=function() openSelector(game) end}
+    for i,item in ipairs(out) do if item.label=="OPTION" then table.insert(out,i,row); return out end end
     out[#out+1]=row; return out
   end)
 
@@ -119,6 +132,39 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     return enc
   end)
 
+  local function installWildsCompatibility()
+    if wildsWrapped or type(mod.find)~="function" then return wildsWrapped end
+    local found=mod.find(WILDS_ID)
+    local logic=found and found.exports and found.exports.logic
+    if not (logic and type(logic.trySpawn)=="function") then return false end
+    if logic._dscreteSpeciesWhistleWrapped then wildsWrapped=true return true end
+    local original=logic.trySpawn
+    logic.trySpawn=function(self,game,opts)
+      opts=opts or {}
+      if runtime:isActive(SpeciesWhistle.EFFECT_ID) and not opts.species and not opts.testSpawn and not opts.readinessProbe then
+        local species=target()
+        local current=mod.world:current(); local mapId=(current and current.mapId) or self.activeMapId
+        local terrain=self.surfaceInfo and self.surfaceInfo.encounterKind or "grass"
+        if terrain=="indoor" then terrain="grass" end
+        local def=encounterDef(mod,mapId)
+        local native=def and species and (Weights.distribution(def,terrain)[species] or 0)>0
+        if species and native then
+          local boosted=Weights.boostSpeciesEncounterDef(def,terrain,species,SpeciesWhistle.resolveStrength(mod.options:get(SpeciesWhistle.STRENGTH_OPTION)))
+          local picked=pickSlot(Weights,Weights.terrainTable(boosted,terrain))
+          if picked then local f={}; for k,v in pairs(opts) do f[k]=v end; f.species,f.level=picked.species,picked.level; opts=f end
+        elseif species and SpeciesWhistle.nonlocalEnabled(mod)
+            and love.math.random()<=SpeciesWhistle.resolveNonlocalRate(mod.options:get(SpeciesWhistle.NONLOCAL_RATE_OPTION)) then
+          local base=def and pickSlot(Weights,Weights.terrainTable(def,terrain))
+          local f={}; for k,v in pairs(opts) do f[k]=v end; f.species=species; if base then f.level=base.level end; opts=f
+        end
+      end
+      return original(self,game,opts)
+    end
+    logic._dscreteSpeciesWhistleWrapped=true
+    wildsWrapped=true
+    return true
+  end
+
   mod.hooks:wrap("input.step",function(next,game,dt)
     local r=next(game,dt)
     if runtime.pendingExpirationNotice==SpeciesWhistle.EFFECT_ID then
@@ -128,6 +174,8 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     return r
   end)
 
+  mod.events:on("mods.loaded",installWildsCompatibility)
+  mod.events:on("game.ready",installWildsCompatibility)
   SpeciesWhistle.target=target
   SpeciesWhistle.localSpecies=function(mapId,species) return localSpecies(mod,Weights,mapId,species) end
   return SpeciesWhistle
