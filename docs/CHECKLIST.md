@@ -201,36 +201,36 @@ code ownership; they do not decide how players obtain an item.
 - [x] **Glitch Detector** — create visible, safe encounter anomalies on specific tiles.
   - [x] Implement as a consumable timed field effect mutually exclusive with the other
         normal field effects.
-  - [x] Seed three nearby passable/water anomaly cells per active map and persist the
-        active map plus tile coordinates through save/load under the item reusable key.
-  - [x] Keep seeded anomaly cells within Manhattan distance 2-6 of activation when
-        possible so the player can actually spot and investigate them.
-  - [x] Render a faint always-present tell plus periodic wall-clock flicker inside a
-        single 8x8 tile fragment, so anomaly visuals remain visible while standing still
-        and never exceed one tile.
+  - [x] Keep exactly one nearby passable/water anomaly cell active at a time and persist
+        the active map plus tile coordinate through save/load under the item reusable key.
+  - [x] Keep the anomaly within Manhattan distance 2-6 of the current position when
+        possible so the player can plausibly notice and investigate it.
+  - [x] When the player reaches the anomaly cell, suppress that cell's ordinary random
+        roll and start one guaranteed wild battle through `mod.world:startWildBattle()`;
+        consume the visible anomaly immediately and seed a new one afterward.
+  - [x] Preserve the map's native encounter-level distribution while replacing only the
+        species with a random nonlegendary Kanto Pokédex species.
+  - [x] Render only an intermittent 8x8 corruption fragment; no permanent marker remains
+        now that finding the spot guarantees an encounter.
+  - [x] Add configurable **SUBTLE (~4s) / NORMAL (~2s) / FREQUENT (~1s)** flash cadence,
+        defaulting to SUBTLE while retaining FREQUENT for live debugging.
   - [x] Inject anomaly rendering into `drawWorld()` before `endWorldPass()` so saved
         world-cell coordinates are transformed by the same zoom/camera pipeline as the
         terrain instead of being drawn later on the UI canvas.
   - [x] Avoid mutating map blocks, collision, warps, or save-map data.
-  - [x] Only alter successful ordinary encounter rolls when the player is standing on
-        one of the anomaly cells; ordinary cells keep their normal encounter behavior.
   - [x] Choose anomalies from all loaded Kanto Pokédex species 1-151 except Articuno,
         Zapdos, Moltres, Mewtwo, and Mew; do not use MissingNo or invalid species IDs.
-  - [x] Preserve the rolled native encounter level and ordinary catch/battle behavior.
-  - [x] Expose **MILD 20% / STRONG 40% / EXTREME 60%** anomaly replacement chances,
-        with STRONG default, plus standard 50 / 100 / 250 / 500 / 1000 / 2500 steps.
   - [x] Show only **INTERFERENCE DETECTED** in Silph Tracker rather than revealing the
         anomaly species.
   - [x] Clear persisted anomaly-cell state on expiry/replacement/full DScrete reset.
-  - [x] Add deterministic tests for presets, tile selection, state serialization,
-        Kanto/legendary filtering, camera transform, world-pass injection, and
-        anomaly-cell lookup.
-  - [ ] Live-smoke anomaly placement on outdoor grass routes, caves, and water maps;
-        verify visible cells correspond to useful encounter terrain rather than inert
-        walkable path cells.
-  - [ ] Re-test the idle flicker at multiple zoom levels, map edges/camera boundaries,
-        and save/reboot; verify it stays on one world tile and does not interfere with
-        battles, menus, transitions, or Wilds.
+  - [x] Add deterministic tests for flash presets, single-tile selection, consumed-tile
+        exclusion, native-level selection, state serialization, Kanto/legendary filtering,
+        camera transform, and world-pass injection.
+  - [ ] Live-smoke guaranteed anomaly battles on outdoor routes, caves, water maps, and
+        passable non-encounter terrain; verify one battle fires and the mark relocates.
+  - [ ] Re-test SUBTLE/NORMAL/FREQUENT idle flicker at multiple zoom levels, map edges/
+        camera boundaries, and save/reboot; verify it stays on one world tile and does
+        not interfere with battles, menus, transitions, or Wilds.
 
 - [ ] For each future encounter item, prefer public hook chaining/merged encounter
       views so other encounter, overworld-spawn, and presentation mods remain optional
@@ -251,20 +251,23 @@ code ownership; they do not decide how players obtain an item.
         do not reveal the item name or a direction arrow.
   - [x] Use Manhattan distance bands: **FAINT** within 10, **SIGNAL** within 6,
         **STRONG** within 3, **VERY STRONG** at 1, and **DIRECTLY HERE** at 0.
-  - [x] While passive mode is enabled, emit a beep only when movement crosses into a
+  - [x] While passive mode is enabled, emit feedback only when movement crosses into a
         stronger band; moving within a band or farther away does not spam feedback.
   - [x] Use audio-only passive feedback after live testing showed screen-space text was
         too dependent on zoom/camera presentation.
-  - [x] Use the known Gen 1 **Tink** one-shot as the primary detector ping, with
-        **Press_AB** fallback, bounded 1/2/3-ping clusters, and rising pitch by band.
+  - [x] Replace the ordinary `Tink` SFX with generated short electronic detector tones;
+        use clearly different pitch/rhythm signatures for all five proximity bands and
+        reserve an alternating four-tone high pattern for **DIRECTLY HERE**.
+  - [x] Respect the player's SFX-volume setting for generated tones and fall back to the
+        Gen 1 **Switch** sound if runtime tone synthesis is unavailable.
   - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
   - [x] Expose the live band/distance and last attempted detector sound in developer
         **INSPECT** so marker detection and audio failures can be separated in-game.
   - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
         the setting and full DScrete reset restores the default ON state.
-  - [x] Add deterministic nearest-hidden-item, distance-band, and bounded ping tests.
+  - [x] Add deterministic nearest-hidden-item, distance-band, and tone-pattern tests.
   - [ ] Re-test audio-only proximity feedback from >10 cells through **DIRECTLY HERE**,
-        including fast-forward, menus, battles, and multiple zoom levels.
+        confirming every band is audibly distinguishable at normal music volume.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
