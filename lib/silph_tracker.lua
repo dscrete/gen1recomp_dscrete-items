@@ -20,16 +20,15 @@ local function displayName(game, species)
 end
 
 function SilphTracker.install(mod, runtime, Weights, ElusiveScent)
-  local function scentFactor()
+  local function scentStrength()
     if not runtime:isActive(ElusiveScent.EFFECT_ID) then return nil end
     return ElusiveScent.resolveStrength(mod.options:get(ElusiveScent.STRENGTH_OPTION))
   end
 
   local function applyScent(dist)
-    local factor = scentFactor()
-    if not factor then return dist end
-    local rare = Weights.rarestSpecies(dist)
-    return Weights.boostDistribution(dist, rare, factor)
+    local strength = scentStrength()
+    if not strength then return dist end
+    return Weights.compressDistribution(dist, strength)
   end
 
   local function preview(mapId, terrain)
