@@ -65,6 +65,7 @@ function Debug.install(mod, Items, runtime)
       { label="PKMN WHISTLE", value="whistle" },
       { label="PROTO RESONATOR", value="resonator" },
       { label="SAFARI KIT", value="safari" },
+      { label="GLITCH DET.", value="glitch" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -82,6 +83,8 @@ function Debug.install(mod, Items, runtime)
       giveItem(ctx, Items.byKey.prototype_resonator.itemId, 1)
     elseif action == "safari" then
       giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
+    elseif action == "glitch" then
+      giveItem(ctx, Items.byKey.glitch_detector.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
