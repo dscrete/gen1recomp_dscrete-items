@@ -16,13 +16,13 @@ function GlitchDetector.resolveDuration(v)
   local n=tonumber(v); return (n and DURATIONS[n]) and n or 250
 end
 
-local function encodeTiles(tiles)
+function GlitchDetector.encodeTiles(tiles)
   local out={}
   for _,t in ipairs(tiles or {}) do out[#out+1]=("%d,%d"):format(t.x,t.y) end
   return table.concat(out,";")
 end
 
-local function decodeTiles(s)
+function GlitchDetector.decodeTiles(s)
   local out={}
   for pair in tostring(s or ""):gmatch("[^;]+") do
     local x,y=pair:match("^(-?%d+),(-?%d+)$")
@@ -67,16 +67,12 @@ function GlitchDetector.pickTiles(candidates,count,rng)
   return out
 end
 
-local function kantoPool(game)
+function GlitchDetector.kantoPool(pokemon)
   local out={}
-  for id,def in pairs((game and game.data and game.data.pokemon) or {}) do
-    local dex=tonumber(def and (def.dexNo or def.dex or def.pokedex or def.number))
+  for id,def in pairs(pokemon or {}) do
+    local dex=tonumber(def and (def.dex or def.dexNo or def.pokedex or def.number))
     local name=tostring(id)
-    if (not dex or dex<=151) and not LEGENDARIES[name] then
-      -- Gen1Recomp's base table is Kanto; unknown mod-added species without a dex
-      -- number are conservatively excluded by requiring one of the normal species fields.
-      if dex or (def and def.name and def.moves) then out[#out+1]=id end
-    end
+    if dex and dex>=1 and dex<=151 and not LEGENDARIES[name] then out[#out+1]=id end
   end
   table.sort(out,function(a,b) return tostring(a)<tostring(b) end)
   return out
@@ -89,12 +85,12 @@ function GlitchDetector.install(mod,runtime,fx)
   local function persist(mapId,tiles)
     currentMap=mapId; currentTiles=tiles or {}
     runtime:setReusableState(GlitchDetector.MAP_KEY,mapId)
-    runtime:setReusableState(GlitchDetector.TILES_KEY,encodeTiles(currentTiles))
+    runtime:setReusableState(GlitchDetector.TILES_KEY,GlitchDetector.encodeTiles(currentTiles))
   end
 
   local function restore()
     currentMap=runtime:getReusableState(GlitchDetector.MAP_KEY,nil)
-    currentTiles=decodeTiles(runtime:getReusableState(GlitchDetector.TILES_KEY,""))
+    currentTiles=GlitchDetector.decodeTiles(runtime:getReusableState(GlitchDetector.TILES_KEY,""))
   end
   restore()
 
@@ -121,8 +117,11 @@ function GlitchDetector.install(mod,runtime,fx)
     use=function()
       local pos=mod.world:current()
       if not pos or not pos.mapId then return "failed",{"No stable field\nsignal here."} end
+      if runtime.activeFieldEffect==GlitchDetector.EFFECT_ID then
+        return "failed",{"The detector is already\nreading anomalies."}
+      end
       local replace=false
-      if runtime.activeFieldEffect and runtime.activeFieldEffect~=GlitchDetector.EFFECT_ID then
+      if runtime.activeFieldEffect then
         replace=runtime:requestFieldReplacement(GlitchDetector.EFFECT_ID)
         if not replace then return "failed",{"Another field effect\nis already active.\fUse GLITCH DET. again\nto replace it."} end
       end
@@ -141,15 +140,27 @@ function GlitchDetector.install(mod,runtime,fx)
     local pos=mod.world:current()
     if not pos or pos.mapId~=currentMap or not GlitchDetector.isAnomalyTile(ensureTiles(),pos.x,pos.y) then return enc end
     if love.math.random()>=GlitchDetector.resolveRate(mod.options:get(GlitchDetector.RATE_OPTION)) then return enc end
-    local pool=kantoPool(ctx and ctx.game or (mod.world and mod.world.game))
+    local game=(ctx and ctx.game) or (mod.world and mod.world.game)
+    local pool=GlitchDetector.kantoPool(game and game.data and game.data.pokemon)
     if #pool>0 then enc.species=pool[love.math.random(1,#pool)] end
     return enc
   end)
 
   mod.hooks:wrap("input.step",function(next,game,dt)
     local r=next(game,dt)
-    if runtime:isActive(GlitchDetector.EFFECT_ID) then ensureTiles()
-    elseif currentMap or #currentTiles>0 then persist(nil,{}) end
+    if runtime:isActive(GlitchDetector.EFFECT_ID) then
+      ensureTiles()
+    elseif currentMap or #currentTiles>0 then
+      persist(nil,{})
+    end
+    if runtime.pendingExpirationNotice==GlitchDetector.EFFECT_ID then
+      local _,busy=mod.world:availableFieldActions()
+      if busy==nil then
+        runtime.pendingExpirationNotice=nil
+        persist(nil,{})
+        game.stack:push(mod.ui.TextBox.new(game,"The interference\nfaded away."))
+      end
+    end
     return r
   end)
 
