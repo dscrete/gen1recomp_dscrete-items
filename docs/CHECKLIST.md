@@ -186,6 +186,9 @@ code ownership; they do not decide how players obtain an item.
         at Safari entry.
   - [x] Add deterministic tests for Safari classification, presets, rarity compression,
         and persisted session-lock state/reset behavior.
+  - [ ] Rename the Safari Kit's **BAIT** choice to a distinct term such as **LURE** so
+        it cannot be confused with vanilla Safari battle BAIT; update UI, options,
+        Tracker wording, tests, and docs together.
   - [ ] Complete minimum-engine/in-game smoke testing of entry timing, low-cost Yellow
         Safari admission, BAIT/Tracker/Wilds behavior, PASS counters, SAVE KIT/cancel,
         no-kit lock, acquiring extra Kits mid-session, leaving/re-entering, and save/
@@ -243,6 +246,9 @@ code ownership; they do not decide how players obtain an item.
 - [ ] Keep player-facing balance values configurable through mod options/data where
       appropriate instead of baking them into behavior code.
 - [ ] Decide player-facing sources and progression only after item behavior is stable.
+- [ ] After all catalogue items are implemented, review every item key, bag item ID,
+      effect ID, reusable-state key, and player-facing name together for consistency,
+      collisions, stale prototype names, and migration needs before numbered releases.
 
 ## Build delivery
 
