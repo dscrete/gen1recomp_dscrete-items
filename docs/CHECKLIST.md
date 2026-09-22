@@ -38,8 +38,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add **GET ITEMS**, **WARP**, **INSPECT**, and **RESET** flows.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
-- [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, and
-      **PKMN WHISTLE** grants.
+- [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
+      **PROTO RESONATOR**, and **SAFARI KIT** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
@@ -96,7 +96,8 @@ code ownership; they do not decide how players obtain an item.
   - [x] Use **NO SIGNAL / FAINT / WEAK / STRONG / VERY STRONG** bands.
   - [x] Replace unseen species names with **UNKNOWN** while preserving their signal
         strength.
-  - [x] Reflect active Elusive Scent, Mystery Lure, and Species Whistle weighting.
+  - [x] Reflect active Elusive Scent, Mystery Lure, Species Whistle, and Safari Kit
+        BAIT weighting.
   - [x] Keep scope to the current map only.
   - [x] Present scan results as a persistent manual list so fast-forward cannot skip
         earlier readings.
@@ -143,8 +144,51 @@ code ownership; they do not decide how players obtain an item.
         remembered cursor position, local/non-local modes, cancellation, fishing,
         persistence, Tracker reflection, and Wilds.
 
-- [ ] **Prototype Repel** — attract encounters at or above the lead Pokemon's level.
-- [ ] **Safari Bait / Pass** — alter one curated encounter set or stated Safari rule.
+- [x] **Prototype Resonator** — attract unusually strong specimens of local species.
+  - [x] Replace the old Prototype Repel concept/name with **Prototype Resonator**.
+  - [x] Preserve the area's native species probabilities and native relative level
+        spread rather than filtering species or flattening all slots to one level.
+  - [x] Recalculate against the first non-fainted party Pokemon's current level for
+        every encounter.
+  - [x] Shift local encounter levels upward toward that lead level, never downward.
+  - [x] Cap the shifted area's maximum at native maximum +10 / +20 / +35 for
+        **MILD / STRONG / EXTREME**, with STRONG as default, and clamp to level 100.
+  - [x] Use 50 / 100 / 250 / 500 / 1000 / 2500 steps and the shared mutually-exclusive
+        timed field-effect lifecycle.
+  - [x] Apply to land/water encounters and fishing; refuse activation in Safari maps.
+  - [x] Add optional Wilds of Kanto visible-spawn integration without a dependency.
+  - [x] Persist the active effect and exact remaining steps through runtime recreation.
+  - [x] Add deterministic tests for caps, level shifting, live first-conscious lead,
+        Safari exclusion, native maximums, and persistence.
+  - [ ] Complete minimum-engine/in-game smoke testing of grass/cave/surf/fishing,
+        fainted-lead fallback, party reordering while active, save/reboot, level-100
+        clamp, replacement flow, Safari refusal, and Wilds.
+
+- [x] **Safari Kit** — one Safari-session enhancement chosen on entry.
+  - [x] Implement it as a consumable bag item, but do not require manual bag use.
+  - [x] When a Safari session reaches an interior Safari map and the player entered
+        with a Kit, prompt once with **BAIT / PASS / SAVE KIT**.
+  - [x] Consume one Kit only after BAIT or PASS is chosen; SAVE KIT/cancel consumes
+        nothing but locks out Kit use for that Safari session.
+  - [x] Enforce one entry decision per Safari session even if additional Kits are
+        obtained during the run; entering without a Kit also locks that session.
+  - [x] Persist BAIT / PASS / skipped / no-kit session state through save/load, and
+        clear it only after the underlying `save.safari` session ends.
+  - [x] **BAIT** compresses Safari rarity for the whole session without adding species
+        or changing catch/flee rules; expose MILD / STRONG / EXTREME with STRONG default.
+  - [x] Reflect BAIT-modified encounter signals in Silph Tracker.
+  - [x] Add optional Wilds of Kanto visible-spawn integration for BAIT.
+  - [x] **PASS** immediately adds configurable 100 / 250 / 500 steps and 3 / 5 / 10
+        Safari Balls, defaulting to +250 steps / +5 balls, without resetting position.
+  - [x] Manual bag use fails without consumption and explains that the choice happens
+        at Safari entry.
+  - [x] Add deterministic tests for Safari classification, presets, rarity compression,
+        and persisted session-lock state/reset behavior.
+  - [ ] Complete minimum-engine/in-game smoke testing of entry timing, low-cost Yellow
+        Safari admission, BAIT/Tracker/Wilds behavior, PASS counters, SAVE KIT/cancel,
+        no-kit lock, acquiring extra Kits mid-session, leaving/re-entering, and save/
+        reboot from each session mode.
+
 - [ ] **Glitch Detector** — enable curated temporary encounter anomalies without corrupting game state.
 - [ ] For each future encounter item, prefer public hook chaining/merged encounter
       views so other encounter, overworld-spawn, and presentation mods remain optional
