@@ -29,3 +29,18 @@ test("Prism Scent is a consumable field effect", function()
   eq(item.ownership, "CONSUMABLE")
   eq(item.effectKind, "FIELD_EFFECT")
 end)
+
+test("Elusive Scent is a consumable field effect", function()
+  local item = Items.byKey.elusive_scent
+  eq(item.itemId, "DS_ELUSIVE_SCENT")
+  eq(item.effect, "DS_ELUSIVE_SCENT_EFFECT")
+  eq(item.ownership, "CONSUMABLE")
+  eq(item.effectKind, "FIELD_EFFECT")
+end)
+
+test("Silph Tracker is a permanent gadget", function()
+  local item = Items.byKey.silph_tracker
+  eq(item.itemId, nil)
+  eq(item.ownership, "PERMANENT")
+  eq(item.effectKind, "TOOL")
+end)
