@@ -66,7 +66,17 @@ return function(mod)
   local safariKit=SafariKit.install(mod,runtime,Weights)
   local glitch=GlitchDetector.install(mod,runtime,fx)
   local treasure=TreasureDetector.install(mod,runtime,fx)
-  local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit,glitch)
+  local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit)
+  local trackerScan=tracker.scan
+  tracker.scan=function(game)
+    local rows,empty=trackerScan(game)
+    local pos=mod.world:current()
+    if pos and glitch.hasAnomalies and glitch.hasAnomalies(pos.mapId) then
+      table.insert(rows,1,{ species="__DS_INTERFERENCE", name="INTERFERENCE", band="DETECTED", share=math.huge })
+      empty=nil
+    end
+    return rows,empty
+  end
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
