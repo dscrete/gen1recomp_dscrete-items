@@ -63,6 +63,8 @@ function Debug.install(mod, Items, runtime)
       { label="ELUSIVE SCENT", value="elusive" },
       { label="MYSTERY LURE", value="mystery" },
       { label="PKMN WHISTLE", value="whistle" },
+      { label="PROTO RESONATOR", value="resonator" },
+      { label="SAFARI KIT", value="safari" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -76,6 +78,10 @@ function Debug.install(mod, Items, runtime)
       giveItem(ctx, Items.byKey.mystery_lure.itemId, 1)
     elseif action == "whistle" then
       giveItem(ctx, Items.byKey.species_whistle.itemId, 1)
+    elseif action == "resonator" then
+      giveItem(ctx, Items.byKey.prototype_resonator.itemId, 1)
+    elseif action == "safari" then
+      giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -120,10 +126,11 @@ function Debug.install(mod, Items, runtime)
     local unlocked = #state.unlocked > 0 and table.concat(state.unlocked, ", ") or "none"
     local effect = state.activeFieldEffect or "none"
     local selected = runtime:getReusableState("species_whistle_target", nil) or state.selectedSpecies or "none"
+    local safari = runtime:getReusableState("safari_kit_session", nil) or "none"
     local exp = state.pendingExpMultiplier or "none"
-    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fEXP MOD %s\nPRISM %d/%d\fUNLOCKED:\n%s")
+    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fSAFARI %s\nEXP MOD %s\fPRISM %d/%d\fUNLOCKED:\n%s")
       :format(tostring(mod.version), tostring(state.schemaVersion), tostring(effect),
-        tonumber(state.remainingSteps) or 0, tostring(selected), tostring(exp),
+        tonumber(state.remainingSteps) or 0, tostring(selected), tostring(safari), tostring(exp),
         tonumber(state.debugSuccesses) or 0, tonumber(state.debugRolls) or 0, unlocked)
     showText(ctx, text)
   end
