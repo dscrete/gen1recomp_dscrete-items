@@ -60,25 +60,28 @@ function Debug.install(mod, Items, runtime)
   local function grantMenu(ctx)
     local action = choose(ctx, "GET ITEMS", {
       { label="PRISM SCENT", value="prism" },
-      { label="ALL TEST ITEMS", value="all" },
+      { label="ELUSIVE SCENT", value="elusive" },
+      { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
       { label="BACK", value="back" },
     })
     if action == "prism" then
       giveItem(ctx, Items.byKey.prism_scent.itemId, 1)
+    elseif action == "elusive" then
+      giveItem(ctx, Items.byKey.elusive_scent.itemId, 1)
     elseif action == "all" then
-      for _, item in ipairs(Items.consumables()) do
+      for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
         if stop == math.huge then break end
       end
-      showText(ctx, "Test items added.\nBag limits are obeyed.")
+      showText(ctx, "Implemented test items\nwere added.")
     elseif action == "unlock" then
-      for _, item in ipairs(Items.permanent()) do runtime:unlock(item.key) end
-      showText(ctx, "All DScrete gadgets\nwere unlocked.")
+      for _, item in ipairs(Items.permanent(true)) do runtime:unlock(item.key) end
+      showText(ctx, "Implemented gadgets\nwere unlocked.")
     elseif action == "remove" then
-      for _, item in ipairs(Items.consumables()) do takeItem(ctx, item.itemId, 99) end
-      showText(ctx, "DScrete test items\nwere removed.")
+      for _, item in ipairs(Items.consumables(true)) do takeItem(ctx, item.itemId, 99) end
+      showText(ctx, "Implemented test items\nwere removed.")
     end
   end
 
@@ -106,7 +109,7 @@ function Debug.install(mod, Items, runtime)
 
   local function inspect(ctx)
     local permanent = {}
-    for _, item in ipairs(Items.permanent()) do permanent[#permanent + 1] = item.key end
+    for _, item in ipairs(Items.permanent(true)) do permanent[#permanent + 1] = item.key end
     local state = runtime:snapshot(permanent)
     local unlocked = #state.unlocked > 0 and table.concat(state.unlocked, ", ") or "none"
     local effect = state.activeFieldEffect or "none"
@@ -132,8 +135,8 @@ function Debug.install(mod, Items, runtime)
     if action == "effect" then runtime:clearFieldEffect()
     elseif action == "runtime" then runtime:resetRuntime()
     elseif action == "save" then runtime:resetPersistent(itemKeys(Items))
-    elseif action == "inventory" then for _, item in ipairs(Items.consumables()) do takeItem(ctx, item.itemId, 99) end
-    elseif action == "unlocks" then for _, item in ipairs(Items.permanent()) do runtime:lock(item.key) end
+    elseif action == "inventory" then for _, item in ipairs(Items.consumables(true)) do takeItem(ctx, item.itemId, 99) end
+    elseif action == "unlocks" then for _, item in ipairs(Items.permanent(true)) do runtime:lock(item.key) end
     elseif action == "telemetry" then runtime.debugRolls, runtime.debugSuccesses = 0, 0
     else return end
     showText(ctx, "DScrete state reset.")
