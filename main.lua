@@ -11,9 +11,11 @@ end
 return function(mod)
   local Items = loadLocal(mod, "lib/items.lua")
   local Runtime = loadLocal(mod, "lib/runtime.lua")
+  local Debug = loadLocal(mod, "lib/debug.lua")
   local runtime = Runtime.new(mod.save)
 
   Items.registerBagItems(mod)
+  Debug.install(mod, Items, runtime)
 
   -- Stable public surface for later DScrete systems (Oak Research, Safari
   -- ecology, etc.) without requiring them to reach into this mod's files.
