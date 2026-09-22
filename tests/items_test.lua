@@ -9,52 +9,37 @@ test("catalogue has unique valid metadata", function()
     check(Items.OWNERSHIP[item.ownership], "bad ownership " .. item.key)
     check(Items.FAMILY[item.family], "bad family " .. item.key)
     check(Items.EFFECT_KIND[item.effectKind], "bad effect kind " .. item.key)
-    if item.itemId then
-      check(not ids[item.itemId], "duplicate item id " .. item.itemId)
-      ids[item.itemId] = true
-    end
+    if item.itemId then check(not ids[item.itemId], "duplicate item id " .. item.itemId); ids[item.itemId] = true end
   end
 end)
 
 test("permanent gadgets do not occupy bag slots", function()
-  for _, item in ipairs(Items.permanent()) do
-    eq(item.itemId, nil, item.key .. " should not be a bag item")
+  for _, item in ipairs(Items.permanent()) do eq(item.itemId, nil, item.key .. " should not be a bag item") end
+end)
+
+test("implemented encounter consumables have effects", function()
+  local expected={ prism_scent="DS_PRISM_SCENT_EFFECT", elusive_scent="DS_ELUSIVE_SCENT_EFFECT",
+    mystery_lure="DS_MYSTERY_LURE_EFFECT", species_whistle="DS_SPECIES_WHISTLE_EFFECT" }
+  for key,effect in pairs(expected) do
+    local item=Items.byKey[key]
+    eq(item.effect,effect,key)
+    eq(item.ownership,"CONSUMABLE",key)
+    eq(item.effectKind,"FIELD_EFFECT",key)
+    check(item.implemented,key)
   end
 end)
 
-test("Prism Scent is a consumable field effect", function()
-  local item = Items.byKey.prism_scent
-  eq(item.itemId, "DS_PRISM_SCENT")
-  eq(item.effect, "DS_PRISM_SCENT_EFFECT")
-  eq(item.ownership, "CONSUMABLE")
-  eq(item.effectKind, "FIELD_EFFECT")
-  check(item.implemented)
+test("Silph Tracker is the only implemented permanent gadget", function()
+  local gadgets=Items.permanent(true)
+  eq(#gadgets,1)
+  eq(gadgets[1].key,"silph_tracker")
 end)
 
-test("Elusive Scent is a consumable field effect", function()
-  local item = Items.byKey.elusive_scent
-  eq(item.itemId, "DS_ELUSIVE_SCENT")
-  eq(item.effect, "DS_ELUSIVE_SCENT_EFFECT")
-  eq(item.ownership, "CONSUMABLE")
-  eq(item.effectKind, "FIELD_EFFECT")
-  check(item.implemented)
-end)
-
-test("Silph Tracker is a permanent gadget", function()
-  local item = Items.byKey.silph_tracker
-  eq(item.itemId, nil)
-  eq(item.ownership, "PERMANENT")
-  eq(item.effectKind, "TOOL")
-  check(item.implemented)
-end)
-
-test("implemented filters exclude catalogue-only future items", function()
-  local consumables = Items.consumables(true)
-  eq(#consumables, 2)
-  eq(consumables[1].key, "prism_scent")
-  eq(consumables[2].key, "elusive_scent")
-
-  local gadgets = Items.permanent(true)
-  eq(#gadgets, 1)
-  eq(gadgets[1].key, "silph_tracker")
+test("implemented filters expose only built content", function()
+  local consumables=Items.consumables(true)
+  eq(#consumables,4)
+  eq(consumables[1].key,"prism_scent")
+  eq(consumables[2].key,"elusive_scent")
+  eq(consumables[3].key,"mystery_lure")
+  eq(consumables[4].key,"species_whistle")
 end)
