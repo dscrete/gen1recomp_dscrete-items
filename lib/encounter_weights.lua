@@ -61,28 +61,62 @@ function EncounterWeights.rarestSpecies(dist)
   return rare, minimum
 end
 
-function EncounterWeights.boostDistribution(dist, rare, factor)
-  factor = tonumber(factor) or 1
-  local out = {}
-  for species, weight in pairs(dist or {}) do
-    out[species] = (tonumber(weight) or 0) * (rare and rare[species] and factor or 1)
-  end
-  return out
-end
-
 function EncounterWeights.total(dist)
   local n = 0
   for _, weight in pairs(dist or {}) do n = n + (tonumber(weight) or 0) end
   return n
 end
 
-function EncounterWeights.boostEncounterDef(encDef, terrain, factor)
+-- Elusive Scent is a rarity-compression effect, not a "boost only the rarest"
+-- effect. The commonest species is the baseline (1x). Every species below that
+-- weight receives a progressively larger multiplier, with lower weights gaining
+-- more. The strength value is the upper multiplier approached by extremely rare
+-- species: mild=2, strong=4, extreme=8.
+--
+-- The square makes the curve gentle around common/uncommon species and stronger
+-- near the rare end. This preserves the area's ordering while narrowing the gap.
+function EncounterWeights.rarityMultiplier(weight, maximum, strength)
+  weight, maximum, strength = tonumber(weight) or 0, tonumber(maximum) or 0,
+    tonumber(strength) or 1
+  if weight <= 0 or maximum <= 0 or strength <= 1 then return 1 end
+  local ratio = math.max(0, math.min(1, weight / maximum))
+  local rarity = 1 - ratio
+  return 1 + (strength - 1) * rarity * rarity
+end
+
+function EncounterWeights.compressDistribution(dist, strength)
+  local maximum = 0
+  for _, weight in pairs(dist or {}) do
+    weight = tonumber(weight) or 0
+    if weight > maximum then maximum = weight end
+  end
+  local out = {}
+  for species, weight in pairs(dist or {}) do
+    weight = tonumber(weight) or 0
+    out[species] = weight * EncounterWeights.rarityMultiplier(weight, maximum, strength)
+  end
+  return out
+end
+
+-- Retained as a small generic helper for later targeted modifiers.
+function EncounterWeights.boostDistribution(dist, selected, factor)
+  factor = tonumber(factor) or 1
+  local out = {}
+  for species, weight in pairs(dist or {}) do
+    out[species] = (tonumber(weight) or 0) * (selected and selected[species] and factor or 1)
+  end
+  return out
+end
+
+function EncounterWeights.boostEncounterDef(encDef, terrain, strength)
   if type(encDef) ~= "table" then return encDef, {} end
   local source = EncounterWeights.terrainTable(encDef, terrain)
   if not source then return encDef, {} end
   local dist = EncounterWeights.distributionFromTable(source)
-  local rare = EncounterWeights.rarestSpecies(dist)
-  if not next(rare) or (tonumber(factor) or 1) <= 1 then return encDef, rare end
+  local compressed = EncounterWeights.compressDistribution(dist, strength)
+  if EncounterWeights.total(compressed) <= 0 or (tonumber(strength) or 1) <= 1 then
+    return encDef, compressed
+  end
 
   local copy = {}
   for k, v in pairs(encDef) do copy[k] = v end
@@ -94,11 +128,14 @@ function EncounterWeights.boostEncounterDef(encDef, terrain, factor)
   local rows = EncounterWeights.slotWeights(source)
   local scaled, total = {}, 0
   for i, row in ipairs(rows) do
-    local weight = row.weight * (rare[row.species] and factor or 1)
+    local baseSpeciesWeight = dist[row.species] or 0
+    local wantedSpeciesWeight = compressed[row.species] or baseSpeciesWeight
+    local multiplier = baseSpeciesWeight > 0 and (wantedSpeciesWeight / baseSpeciesWeight) or 1
+    local weight = row.weight * multiplier
     scaled[i] = weight
     total = total + weight
   end
-  if total <= 0 then return encDef, rare end
+  if total <= 0 then return encDef, compressed end
 
   target.buckets = {}
   local cumulative = 0
@@ -114,7 +151,7 @@ function EncounterWeights.boostEncounterDef(encDef, terrain, factor)
   end
 
   if terrain == "water" then copy.water = target else copy.grass = target end
-  return copy, rare
+  return copy, compressed
 end
 
 function EncounterWeights.signalBand(weight, total)
