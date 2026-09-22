@@ -11,6 +11,14 @@ ShinyFinder.ITEM_EFFECT_ID = "DS_SHINY_FINDER_EFFECT"
 ShinyFinder.DURATION_STEPS = 250
 ShinyFinder.CHANCE_NUMERATOR = 1
 ShinyFinder.CHANCE_DENOMINATOR = 100
+ShinyFinder.CHANCE_OPTION = "shiny_finder_chance"
+ShinyFinder.STEPS_OPTION = "shiny_finder_steps"
+
+local VALID_CHANCES = { [1] = true, [10] = true, [100] = true, [1000] = true }
+local VALID_DURATIONS = {
+  [50] = true, [100] = true, [250] = true,
+  [500] = true, [1000] = true, [2500] = true,
+}
 
 local SHINY_ATTACK = { 2, 3, 6, 7, 10, 11, 14, 15 }
 local SHINY_ATTACK_SET = {}
@@ -19,6 +27,18 @@ for _, value in ipairs(SHINY_ATTACK) do SHINY_ATTACK_SET[value] = true end
 local function hpDV(dvs)
   return (dvs.attack % 2) * 8 + (dvs.defense % 2) * 4
     + (dvs.speed % 2) * 2 + (dvs.special % 2)
+end
+
+function ShinyFinder.resolveChanceDenominator(value)
+  local parsed = tonumber(value)
+  if parsed and VALID_CHANCES[parsed] then return parsed end
+  return ShinyFinder.CHANCE_DENOMINATOR
+end
+
+function ShinyFinder.resolveDuration(value)
+  local parsed = tonumber(value)
+  if parsed and VALID_DURATIONS[parsed] then return parsed end
+  return ShinyFinder.DURATION_STEPS
 end
 
 function ShinyFinder.makeShinyDVs(rng)
@@ -61,6 +81,15 @@ function ShinyFinder.install(mod, runtime)
   local rng = function(lo, hi) return love.math.random(lo, hi) end
   local liveGame, logicTick, lastCountedTick = nil, 0, -1
 
+  local function configuredDuration()
+    return ShinyFinder.resolveDuration(mod.options:get(ShinyFinder.STEPS_OPTION))
+  end
+
+  local function configuredChanceDenominator()
+    return ShinyFinder.resolveChanceDenominator(
+      mod.options:get(ShinyFinder.CHANCE_OPTION))
+  end
+
   mod.content.item_effects:register(ShinyFinder.ITEM_EFFECT_ID, {
     needsTarget = false,
     field = true,
@@ -78,14 +107,15 @@ function ShinyFinder.install(mod, runtime)
           }
         end
       end
+      local duration = configuredDuration()
       local ok = runtime:activateFieldEffect(
-        ShinyFinder.EFFECT_ID, ShinyFinder.DURATION_STEPS, replace)
+        ShinyFinder.EFFECT_ID, duration, replace)
       if not ok then
         return "failed", { "The SHINY FINDER\nfailed to start." }
       end
       return "consumed", {
         ("SHINY FINDER is\nsearching!\fIt will run for\n%d steps.")
-          :format(ShinyFinder.DURATION_STEPS),
+          :format(duration),
       }, { useJingle = true }
     end,
   })
@@ -124,7 +154,10 @@ function ShinyFinder.install(mod, runtime)
     if not (mon and mon.species and mon.level) then return end
 
     runtime.debugRolls = runtime.debugRolls + 1
-    if not ShinyFinder.rollSucceeds(rng) then return end
+    local denominator = configuredChanceDenominator()
+    if not ShinyFinder.rollSucceeds(rng, ShinyFinder.CHANCE_NUMERATOR, denominator) then
+      return
+    end
 
     local dvs = ShinyFinder.makeShinyDVs(rng)
     -- Fail closed if the pinned engine ever changes its shiny predicate.
