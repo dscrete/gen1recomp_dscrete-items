@@ -20,7 +20,7 @@ range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag
 Full in-game smoke testing at the compatibility floor remains tracked separately from
 standalone implementation status.
 
-Current numbered release: **v0.2.2**.
+Current numbered release: **v0.3.0**.
 
 ## Versioning and updates
 
@@ -176,6 +176,25 @@ a Rocket success after a direct loss, or expiry if the player never resolves the
 event. Those outcomes persist separately so later dialogue can remember what actually
 happened.
 
+## Battle tools
+
+### Prototype Ball
+
+A consumable experimental Poké Ball with the same baseline factors, throw animation,
+and ordinary Gen-1 capture flow as a standard Poké Ball. If the wild target already
+has a major status condition, the Ball doubles that target's effective species catch
+rate before the normal HP/status calculation, capped at the Gen-1 byte maximum of 255.
+Without status, it is deliberately just a Poké Ball.
+
+### EXP Battery
+
+A field-use consumable that arms a persistent **2× battle EXP** charge. The charge
+survives save/load and applies to every normal EXP share produced by the next defeated
+Pokémon, including multiple participating recipients, then disarms when that payout
+turn finishes. Turns with no positive EXP do not waste it, and non-battle growth such
+as Rare Candy does not consume or receive the bonus. A second Battery cannot be used
+while one is already armed.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -191,8 +210,8 @@ happened.
 | Treasure Detector | Permanent | Detection | Gives stronger audio feedback near hidden items. |
 | Pokedex Chip | Permanent | Detection | Adds live encounter statistics to seen Pokédex entries. |
 | Rocket Decoder | Permanent | Detection | Enables and decodes authored temporary Rocket incidents. |
-| Prototype Ball | Consumable | Battle | Applies a documented modifier to normal capture calculation. |
-| EXP Battery | Consumable | Battle | Arms a bonus for a future eligible EXP award. |
+| Prototype Ball | Consumable | Battle | Poké Ball baseline; doubles effective catch rate against statused wild targets. |
+| EXP Battery | Consumable | Battle | Doubles the full next defeated-Pokémon battle EXP payout. |
 | Trainer Beacon | Consumable | Battle | Allows an eligible defeated trainer to be challenged again. |
 | Link Cable | Consumable | Pokémon | Evolves the four Gen-1 trade-evolution species. |
 | Move Recorder | Consumable | Pokémon | Offers an eligible missed level-up move. |
@@ -210,7 +229,8 @@ Current acquisition remains deliberately development-oriented while behavior is 
 stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
-tools.
+tools. Prototype Ball and EXP Battery also have direct GET ITEMS entries, and INSPECT
+shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
 scenario can be tested deterministically rather than waiting for the normal scheduler.
@@ -232,5 +252,5 @@ The ordered source of truth is [docs/CHECKLIST.md](docs/CHECKLIST.md). Detailed
 behavioral contracts and integration notes live in
 [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-With the current detection tools implemented, the next ordered items are
-**Prototype Ball**, **EXP Battery**, and **Trainer Beacon**.
+With Prototype Ball and EXP Battery implemented, the next ordered battle item is
+**Trainer Beacon**.
