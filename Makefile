@@ -3,6 +3,8 @@
 PYTHON ?= python3
 LUA ?= luajit
 ZIP ?= zip
+VERSION = $(shell $(PYTHON) -c 'import json; print(json.load(open("manifest.json"))["version"])')
+PACKAGE = dist/gen1recomp_dscrete_items-$(VERSION).zip
 
 # Standalone: no Gen1Recomp checkout required.
 test: test-lua test-static
@@ -21,15 +23,15 @@ verify-upstream:
 test-integration: verify-upstream
 	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base imported
 
-# Build a minimal, directly installable Gen1Recomp mod archive. The archive
-# contains the mod at its root (manifest.json beside main.lua), not the repo's
-# development/test files.
+# Build the exact ZIP shape preferred by Gen1Recomp's GitHub mod updater:
+# <manifest id>-<manifest version>.zip, with manifest.json beside main.lua at
+# archive root and no repository development/test files.
 package: clean-package
 	mkdir -p dist/package
 	cp manifest.json main.lua dist/package/
 	cp -R lib dist/package/
-	cd dist/package && $(ZIP) -qr ../dscrete-items-dev.zip .
-	test -s dist/dscrete-items-dev.zip
+	cd dist/package && $(ZIP) -qr ../gen1recomp_dscrete_items-$(VERSION).zip .
+	test -s $(PACKAGE)
 
 clean-package:
-	rm -rf dist/package dist/dscrete-items-dev.zip
+	rm -rf dist/package dist/gen1recomp_dscrete_items-*.zip
