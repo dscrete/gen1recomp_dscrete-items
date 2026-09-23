@@ -377,20 +377,18 @@ code ownership; they do not decide how players obtain an item.
 
 ## 4. Battle tools — Battle
 
-- [x] **Prototype Ball** — reward status setup while preserving normal capture math.
+- [x] **Prototype Ball** — trade terrible high-HP performance for exceptional low-HP capture power.
   - [x] Register a real consumable bag item and custom `content.balls` definition.
-  - [x] Match ordinary Poké Ball baseline factors and throw animation.
-  - [x] If the wild target has any major status condition, double the effective species
-        catch-rate input and clamp it to 255; give no extra species-rate boost otherwise.
-  - [x] Treat an existing catch-rate override as the baseline before applying the 2×.
-  - [x] Delegate back to `ctx.vanillaAttempt()` so HP/status bonuses, wobble logic,
-        capture storage, Pokédex updates, and normal battle effects remain engine-owned.
-  - [x] Let the normal bag/battle `ball` path own consumption, trainer refusal,
-        animation, and battle turn cost.
-  - [x] Add deterministic tests for status/no-status behavior, rate cap, override
-        composition, ball baseline values, and vanilla-attempt delegation.
-  - [ ] In-game smoke normal wild throws, every major status, trainer refusal, bag
-        consumption, throw/wobble animation, party/PC storage, and Pokédex updates.
+  - [x] Keep ordinary Poké Ball roll/HP/wobble factors and throw animation so the custom behavior is isolated to the effective catch-rate input.
+  - [x] Above 50% HP, halve the target's effective species catch-rate input, making the Ball deliberately worse than a normal Poké Ball.
+  - [x] At 26–50% HP, use the normal Poké Ball catch-rate input unchanged.
+  - [x] At 11–25% HP, double the effective catch-rate input.
+  - [x] At 10% HP or less, triple the effective catch-rate input, capped at 255, for a substantial advantage over an Ultra Ball on badly weakened targets.
+  - [x] Treat an existing catch-rate override as the baseline before applying the health-band multiplier.
+  - [x] Delegate back to `ctx.vanillaAttempt()` so ordinary Gen-1 HP math and status catch bonuses still stack after the Prototype Ball's health-based adjustment.
+  - [x] Let the normal bag/battle `ball` path own consumption, trainer refusal, animation, and battle turn cost.
+  - [x] Add deterministic tests for all four HP boundaries, high-HP penalty, low-HP cap, override composition, ball baseline values, and vanilla-attempt delegation.
+  - [ ] In-game smoke throws above 50%, around 50%, at 25%, and at <=10% HP; verify status bonuses still stack, plus trainer refusal, bag consumption, throw/wobble animation, party/PC storage, and Pokédex updates.
 
 - [x] **EXP Battery** — arm a persistent 2× bonus for the next defeated Pokémon payout.
   - [x] Implement as a field-use consumable; refuse another Battery while already armed
