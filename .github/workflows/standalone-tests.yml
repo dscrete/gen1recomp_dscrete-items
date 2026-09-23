@@ -1,4 +1,4 @@
-name: Standalone tests and package
+name: Standalone tests and versioned release
 
 on:
   push:
@@ -21,25 +21,35 @@ jobs:
       - name: Run standalone tests
         run: make test
 
-      - name: Build testable mod ZIP
+      - name: Build installable mod ZIP
         run: make package
 
-      - name: Publish rolling dev prerelease
+      - name: Verify versioned package
+        run: |
+          VERSION="$(python3 -c 'import json; print(json.load(open("manifest.json"))["version"])')"
+          test -s "dist/gen1recomp_dscrete_items-${VERSION}.zip"
+
+      - name: Publish new manifest version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git tag -f dev "${GITHUB_SHA}"
-          git push origin refs/tags/dev --force
-          if gh release view dev >/dev/null 2>&1; then
-            gh release edit dev \
-              --title "Development Build" \
-              --notes "Latest automatic build from main. This is a prerelease for testing and may be unstable." \
-              --prerelease
-          else
-            gh release create dev \
-              --title "Development Build" \
-              --notes "Latest automatic build from main. This is a prerelease for testing and may be unstable." \
-              --prerelease
+          VERSION="$(python3 -c 'import json; print(json.load(open("manifest.json"))["version"])')"
+          TAG="v${VERSION}"
+          ASSET="dist/gen1recomp_dscrete_items-${VERSION}.zip"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "${TAG} is already released; ordinary commits do not create another release."
+            exit 0
           fi
-          gh release upload dev dist/dscrete-items-dev.zip --clobber
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            gh release create "${TAG}" "${ASSET}" \
+              --title "DScrete Items ${TAG}" \
+              --generate-notes
+          else
+            gh release create "${TAG}" "${ASSET}" \
+              --target "${GITHUB_SHA}" \
+              --title "DScrete Items ${TAG}" \
+              --generate-notes
+          fi
