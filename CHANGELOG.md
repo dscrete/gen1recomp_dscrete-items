@@ -4,6 +4,20 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.4.0 — 2026-09-23
+
+### Added
+
+- Trainer Beacon, a consumable rematch tool for defeated ordinary trainers. Use it while facing an eligible trainer to rebuild their current merged original party with a badge-tier +5 / +10 / +15 / +20 level boost, automatically applying ordinary level evolutions that the boosted levels have reached.
+- Trainer Beacon rematches keep normal EXP, reduce prize money to roughly half, and use a configurable per-trainer step cooldown with 500 steps as the default.
+- Trainer Beacon dialogue includes 10 first-rematch and 10 later-rematch variants for every supported ordinary Gen-1 trainer class, plus generic modded-class fallbacks and generated-party references such as the rematch team's strongest Pokémon.
+- Link Cable, a consumable party tool that asks merged evolution methods whether a Pokémon responds to a semantic trade trigger instead of hard-coding the four vanilla trade-evolution species. Compatible modded/Fakemon trade evolutions therefore work automatically.
+- Direct developer-harness grants for Trainer Beacon and Link Cable.
+
+### Changed
+
+- Link Cable confirmation now commits to genuine trade semantics: the item is not consumed while selecting/canceling, but after confirmation it uses the native trade-evolution presentation and cannot be B-cancelled during the evolution.
+
 ## 0.3.1 — 2026-09-23
 
 ### Changed

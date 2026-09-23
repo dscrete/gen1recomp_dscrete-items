@@ -67,8 +67,10 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="PROTO RESONATOR", value="resonator" },
       { label="SAFARI KIT", value="safari" },
       { label="GLITCH DET.", value="glitch" },
+      { label="TRAINER BEACON", value="trainer_beacon" },
       { label="PROTO BALL", value="proto_ball" },
       { label="EXP BATTERY", value="exp_battery" },
+      { label="LINK CABLE", value="link_cable" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -88,10 +90,14 @@ function Debug.install(mod, Items, runtime, diagnostics)
       giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
     elseif action == "glitch" then
       giveItem(ctx, Items.byKey.glitch_detector.itemId, 1)
+    elseif action == "trainer_beacon" then
+      giveItem(ctx, Items.byKey.trainer_beacon.itemId, 1)
     elseif action == "proto_ball" then
       giveItem(ctx, Items.byKey.prototype_ball.itemId, 1)
     elseif action == "exp_battery" then
       giveItem(ctx, Items.byKey.exp_battery.itemId, 1)
+    elseif action == "link_cable" then
+      giveItem(ctx, Items.byKey.link_cable.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)

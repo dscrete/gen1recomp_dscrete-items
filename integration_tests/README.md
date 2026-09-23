@@ -119,5 +119,52 @@ not pretend to validate engine hooks.
   receives nor consumes the Battery bonus;
 - verify full DScrete persistent-state reset clears an armed Battery.
 
+## Trainer Beacon smoke matrix
+
+- defeat ordinary trainers from several classes, face each trainer afterward, use a
+  Trainer Beacon, and confirm one copy is consumed only after a valid signal is accepted;
+- use the Beacon on an undefeated trainer, while not facing a trainer, and on excluded
+  story classes such as a Gym Leader; each must fail without consuming the item;
+- test 0-1 / 2-3 / 4-5 / 6+ badge states and verify the rematch party starts from that
+  trainer's current merged original party with +5 / +10 / +15 / +20 levels respectively;
+- choose trainers whose Pokémon cross one and multiple ordinary level-evolution
+  thresholds after the boost and verify those species evolve while stone/trade
+  evolutions do not occur merely because of level;
+- verify normal battle EXP is retained while prize money is approximately half the
+  equivalent rebuilt party's ordinary trainer payout;
+- confirm the first rematch draws only from that trainer class's first-rematch pool and
+  later fights draw only from its later-rematch pool;
+- sample Bug Catcher, Swimmer, Scientist, Channeler and at least three other classes to
+  verify class voice, humor/darker variants, text wrapping and generated
+  strongest-Pokémon references all render correctly;
+- verify an unknown/modded trainer class receives generic fallback dialogue rather than
+  an error, and a compatible trainer-party mod composes before the Beacon level boost;
+- after a rematch, confirm that trainer refuses another Beacon until the configured
+  step cooldown expires, that other defeated trainers remain independently available,
+  and that the countdown/rematch count survives save/reload;
+- exercise player win, loss and blackout paths and confirm no Beacon state leaks into
+  unrelated later trainer battles.
+
+## Link Cable smoke matrix
+
+- grant a Link Cable and verify its selector lists only party Pokémon whose current
+  merged evolution data accepts the standard trade trigger;
+- with Kadabra, Machoke, Graveler and Haunter in representative parties, confirm the
+  selector identifies each without any species-specific compatibility path;
+- cancel from the target list and from the USE CABLE confirmation and verify the item
+  remains in the bag and no evolution begins;
+- confirm USE CABLE consumes exactly one item, displays the short link connection text,
+  and opens the native evolution presentation;
+- press B during the committed evolution and verify it cannot be cancelled, matching a
+  genuine trade evolution;
+- verify the evolved species receives normal Pokédex seen/owned updates and any move it
+  should learn from the native evolution flow;
+- install a compatible modded/Fakemon species whose merged evolution method accepts
+  `{ kind = "trade" }`; confirm it appears automatically and evolves without a DScrete
+  species whitelist;
+- test a custom non-trade evolution method and verify it stays absent from the selector;
+- save/reload before use and after a completed evolution to verify no transient Link
+  Cable selection/pending state persists incorrectly.
+
 As more items land, engine-facing regression drivers should be added beside this
 matrix rather than duplicating Gen1Recomp internals in standalone Python models.

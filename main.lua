@@ -39,6 +39,7 @@ return function(mod)
     { key="glitch_detector_flash_rate", label="GLITCH DET. FLASH RATE", type="choice", default="subtle", choices={{"SUBTLE - ~4S","subtle"},{"NORMAL - ~2S","normal"},{"FREQUENT - ~1S","frequent"}} },
     glitchSteps,
     { key="treasure_detector_volume", label="TREASURE DET. VOLUME", type="choice", default="loud", choices={{"QUIET","quiet"},{"NORMAL","normal"},{"LOUD","loud"},{"MAX","max"}} },
+    { key="trainer_beacon_cooldown", label="TRAINER BEACON COOLDOWN", type="choice", default="500", choices={{"100 STEPS","100"},{"250 STEPS","250"},{"500 STEPS","500"},{"1000 STEPS","1000"},{"2500 STEPS","2500"}} },
   })
 
   local Items=loadLocal(mod,"lib/items.lua")
@@ -60,6 +61,9 @@ return function(mod)
   local RocketDecoder=loadLocal(mod,"lib/rocket_decoder.lua")
   local PrototypeBall=loadLocal(mod,"lib/prototype_ball.lua")
   local ExpBattery=loadLocal(mod,"lib/exp_battery.lua")
+  local TrainerBeaconDialogue=loadLocal(mod,"lib/trainer_beacon_dialogue.lua")
+  local TrainerBeacon=loadLocal(mod,"lib/trainer_beacon.lua")
+  local LinkCable=loadLocal(mod,"lib/link_cable.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -91,6 +95,8 @@ return function(mod)
   local rocketDecoder=RocketDecoder.install(mod,runtime,Items,RocketIncidents)
   local prototypeBall=PrototypeBall.install(mod)
   local expBattery=ExpBattery.install(mod,runtime)
+  local trainerBeacon=TrainerBeacon.install(mod,runtime,TrainerBeaconDialogue)
+  local linkCable=LinkCable.install(mod)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -99,6 +105,7 @@ return function(mod)
   })
   Debug.install(mod,Items,runtime,{
     treasure=treasure,glitch=glitch,rocket=rocketDecoder,expBattery=expBattery,
+    trainerBeacon=trainerBeacon,
   })
 
   mod.exports.version=mod.version
@@ -119,6 +126,9 @@ return function(mod)
   mod.exports.rocketIncidents=RocketIncidents
   mod.exports.prototypeBall=prototypeBall
   mod.exports.expBattery=expBattery
+  mod.exports.trainerBeacon=trainerBeacon
+  mod.exports.trainerBeaconDialogue=TrainerBeaconDialogue
+  mod.exports.linkCable=linkCable
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end

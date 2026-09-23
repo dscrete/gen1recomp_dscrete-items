@@ -41,8 +41,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
-      **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **PROTO BALL**, and
-      **EXP BATTERY** grants.
+      **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
+      **PROTO BALL**, **EXP BATTERY**, and **LINK CABLE** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -407,12 +407,63 @@ code ownership; they do not decide how players obtain an item.
   - [ ] In-game smoke wild/trainer payouts, multi-participant shares, EXP.ALL where
         available, level-up/move learning, save/reload, Rare Candy exclusion, and reset.
 
-- [ ] **Trainer Beacon** — rematch only trainers in an explicit eligibility table.
+- [x] **Trainer Beacon** — rematch a defeated ordinary trainer through a physical nearby signal.
+  - [x] Require the player to face the trainer NPC and require that NPC's extracted
+        trainer-defeat event flag to already be set; never use the Beacon for a first battle.
+  - [x] Exclude Gym Leaders, Elite Four, rivals, Giovanni, Professor Oak, and broad
+        scripted Rocket-class battles by default while exposing explicit per-target
+        eligibility overrides for later authored exceptions.
+  - [x] Preserve the trainer's current merged original party composition, then add
+        **+5 / +10 / +15 / +20** levels by badge tier instead of scaling to the player's
+        exact party level.
+  - [x] Recursively apply only ordinary **LEVEL** evolutions reached by those boosted
+        levels; do not infer stone, trade, or other special evolutions from level alone.
+  - [x] Compose through the public `trainer.party` hook so other trainer-party mods can
+        contribute their party before the Beacon applies its rematch boost.
+  - [x] Give normal battle EXP while reducing rematch prize money to roughly 50% by
+        using a battle-local copy of the trainer reward multiplier.
+  - [x] Consume one Beacon only after a valid defeated target and cooldown are accepted;
+        invalid, undefeated, excluded, unavailable, or cooling-down targets consume nothing.
+  - [x] Persist per-trainer rematch count and a step-based cooldown; expose
+        **100 / 250 / 500 / 1000 / 2500** step presets with **500** as default.
+  - [x] Author exactly **10 first-rematch + 10 later-rematch** dialogue variants for
+        every supported ordinary Gen-1 trainer class, with a 10+10 generic fallback for
+        unknown/modded classes.
+  - [x] Mix neutral, competitive, humorous, and occasional dark/spooky class-specific
+        writing and support generated-party placeholders such as `{STRONGEST}`.
+  - [x] Wrap generated dialogue to Gen-1 text width and derive trainer personality from
+        the actual trainer class rather than guessing from overworld sprite art.
+  - [x] Add direct developer grant plus deterministic tests for tiers, evolution rules,
+        class exclusions/overrides, cooldowns, strongest-Pokémon substitution, dialogue
+        counts/width, and implemented-catalogue exposure.
+  - [ ] In-game smoke ordinary trainers from several classes across all four badge tiers,
+        first/later dialogue variation, strongest-Pokémon substitutions, recursive level
+        evolution, 50% reward behavior, cooldown persistence, save/reload, invalid/story
+        targets, loss/blackout handling, and interaction with another trainer-party mod.
 
 ## 5. Pokemon tools — Pokemon
 
-- [ ] **Link Cable** — evolve the four trade-evolution species with the trade
-      presentation and a safe return to item flow.
+- [x] **Link Cable** — perform the same semantic evolution trigger as a completed trade.
+  - [x] Implement as a consumable party tool with no level requirement of its own.
+  - [x] Build the selector from only party Pokémon whose merged evolution method accepts
+        `{ kind = "trade" }`; do not hard-code Kadabra/Machoke/Graveler/Haunter.
+  - [x] Allow modded/Fakemon trade evolutions automatically when their merged evolution
+        method responds to the standard trade trigger and the target species exists.
+  - [x] Permit cancel from the target selector and confirmation without consuming the item.
+  - [x] After **USE CABLE** confirmation, consume one Cable and show a short link-connection
+        message before opening the native evolution presentation.
+  - [x] Pass `via="TRADE"` to the native evolution screen so a confirmed Cable evolution
+        keeps real trade semantics: native animation/apply/move-learning and no B-cancel
+        once the connection has committed.
+  - [x] Fail cleanly without consumption when the party has no eligible trade evolution.
+  - [x] Add deterministic tests for standard TRADE, custom semantic trade methods,
+        non-trade exclusion, eligible-only party filtering, and a regression guard
+        against reintroducing a hard-coded vanilla species list.
+  - [ ] In-game smoke Kadabra/Machoke/Graveler/Haunter plus at least one compatible
+        modded trade evolution, selector/confirmation cancellation, item consumption,
+        native animation, evolved-species move learning, Pokédex flags, save state, and
+        inability to B-cancel after confirmation.
+
 - [ ] **Move Recorder** — offer an eligible missed level-up move.
 - [ ] **Fossil Catalyst** — apply a disclosed modifier during fossil revival.
 - [ ] **DNA Stabilizer** — improve DVs within bounded shiny-safe rules.

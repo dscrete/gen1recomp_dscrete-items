@@ -11,14 +11,15 @@ The current feature set is built primarily on public Mod API surfaces:
 - `content.items` and `content.item_effects` for real bag items and transactional use;
 - `content.balls` plus the stock custom-ball `attempt`/`vanillaAttempt` contract for
   Prototype Ball capture behavior;
-- `mod.save` for persistent ownership, reusable gadget state, timed effects, and the
-  EXP Battery's armed charge;
+- `mod.save` for persistent ownership, reusable gadget state, timed effects, the EXP
+  Battery's armed charge, and Trainer Beacon rematch/cooldown state;
 - `content.maps`, `content.map_scripts`, `content.commands`, `mod.ui` and
   `mod.developer` for authored/debug interactions;
-- `mod.world:current()`, `mapOverview()`, `spawnNpc()`, `removeNpc()`, `warpTo()` and
-  `startWildBattle()` for field tools and Rocket incidents;
+- `mod.world:current()`, `mapOverview()`, `spawnNpc()`, `removeNpc()`, `warpTo()`,
+  `queueScript()` and `startWildBattle()` for field tools, rematches, and Rocket incidents;
 - `movement.collision`, `world.stepped`, `map.entered`, `encounter.roll`,
-  `encounter.fishing`, `exp.gain`, and battle lifecycle events for runtime behavior; and
+  `encounter.fishing`, `exp.gain`, `trainer.party`, and battle lifecycle events for
+  runtime behavior; and
 - `mod.world:effectiveEncounters()` when available for merged encounter-table previews.
 
 Rocket Decoder's temporary actors use runtime NPCs only. Incidents do not permanently
@@ -37,6 +38,34 @@ was added after the supported 0.2.5 floor. The Battery instead uses the floor-co
 to keep one transient payout window open through all normal EXP shares produced by the
 next defeated Pokémon. This retains the existing engine compatibility claim without
 copying or patching `BattleState:awardExp()`.
+
+Trainer Beacon composes through `trainer.party`: the downstream/current merged party
+is resolved first, then the Beacon copies that party, applies its badge-tier level
+increase, and follows only ordinary LEVEL evolution rows reached by those new levels.
+The public field API does not expose a list of nearby trainer NPCs, so target discovery
+uses the item-effect context's documented live `overworld` reference to inspect the
+trainer NPC occupying the player's facing cell. The trainer header's existing defeat
+event remains the authority for whether the trainer is rematchable.
+
+## Link Cable evolution seam
+
+Gen1Recomp's merged `evolution_methods` registry has exposed the standard TRADE method
+since the supported 0.2.5 floor. Link Cable therefore determines eligibility by asking
+each current evolution row's merged method whether it accepts `{ kind = "trade" }`.
+This avoids a Kadabra/Machoke/Graveler/Haunter whitelist and automatically includes
+compatible modded/Fakemon evolution methods that use the same semantic trigger.
+
+After confirmation, Link Cable opens the public native `EvolutionState` with
+`via="TRADE"`, preserving the normal evolution animation, apply/Pokédex behavior,
+post-evolution move learning, and genuine non-cancelable trade presentation.
+
+One public-API limitation remains: the mod-facing hook facade exposes `wrap`, but no
+public `call`/`requestEvolution` operation with which another mod can explicitly invoke
+Gen1Recomp's global `evolution.check` wrapper chain for a synthetic trigger. Link Cable
+therefore honors the **merged evolution method's own check function**, but a third-party
+mod that blocks evolution *only* by wrapping `evolution.check` will not see the Link
+Cable's preflight eligibility check. If Gen1Recomp publishes a public evolution-request
+entry point, Link Cable should migrate to it and remove this limitation.
 
 ## Pokédex navigation seam
 
