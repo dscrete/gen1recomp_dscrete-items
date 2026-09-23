@@ -4,6 +4,14 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.3.1 — 2026-09-23
+
+### Changed
+
+- Prototype Ball is now health-driven rather than status-driven. Above 50% HP it is deliberately poor at half a Poké Ball's effective catch-rate input; at 26–50% HP it matches a Poké Ball; at 11–25% HP it doubles the catch-rate input; and at 10% HP or less it triples it, giving a substantial payoff over Ultra Ball performance on badly weakened targets.
+- Prototype Ball still delegates to Gen1Recomp's normal Gen-1 capture flow after rewriting the catch-rate input, so ordinary HP math and status catch bonuses continue to stack normally.
+- EXP Battery behavior is unchanged from 0.3.0.
+
 ## 0.3.0 — 2026-09-23
 
 ### Added
