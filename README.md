@@ -20,7 +20,7 @@ range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag
 Full in-game smoke testing at the compatibility floor remains tracked separately from
 standalone implementation status.
 
-Current numbered release: **v0.2.0**.
+Current numbered release: **v0.2.2**.
 
 ## Versioning and updates
 
@@ -134,11 +134,12 @@ shows the current signal and toggles passive mode.
 
 ### Pokedex Chip
 
-Adds live encounter research to **seen** Pokémon. Open a normal Pokédex entry and press
-**SELECT** to open a dedicated AREA DATA screen showing every currently represented
-encounter location, encounter method, effective species percentage and effective level
-range. The readout reflects DScrete's active encounter weighting and Prototype
-Resonator level shifts.
+Adds live encounter research to **seen** Pokémon. Highlight a seen Pokémon directly in
+the normal Pokédex list and press **SELECT** to open a dedicated AREA DATA screen.
+SELECT also works from that Pokémon's normal DATA entry page. The screen shows every
+currently represented encounter location, encounter method, effective species
+percentage and effective level range. The readout reflects DScrete's active encounter
+weighting and Prototype Resonator level shifts.
 
 Fishing percentages are the species share conditional on a successful catch selection;
 they do not include the separate chance that a rod produces no bite.

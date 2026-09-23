@@ -1,6 +1,7 @@
 -- Pokedex Chip: encounter-area statistics layered onto seen Pokedex entries.
--- The primary entry point is SELECT from the normal DexEntryMenu; the GADGETS
--- row exists only as a discoverability/help surface.
+-- The primary entry point is SELECT on a highlighted seen row in the native
+-- Pokedex list; SELECT from the normal DexEntryMenu remains a secondary path.
+-- The GADGETS row exists only as a discoverability/help surface.
 
 local PokedexChip = {}
 
@@ -120,6 +121,15 @@ local function total(dist)
   return value
 end
 
+-- Native PokedexMenu rows intentionally expose `value` only for known rows.
+-- Keep this tiny helper pure so SELECT routing can be regression-tested without
+-- reproducing the engine's list implementation in the standalone harness.
+function PokedexChip.selectedListSpecies(menu)
+  local index=menu and tonumber(menu.index)
+  local row=index and menu.items and menu.items[index]
+  return row and row.value or nil
+end
+
 function PokedexChip.install(mod,runtime,Weights,deps)
   deps=deps or {}
   local ElusiveScent=deps.elusive
@@ -127,7 +137,6 @@ function PokedexChip.install(mod,runtime,Weights,deps)
   local SpeciesWhistle=deps.whistle
   local PrototypeResonator=deps.resonator
   local SafariKit=deps.safari
-  local inputLatch=false
 
   local function activeDistribution(mapId,terrain)
     local dist
@@ -353,24 +362,34 @@ function PokedexChip.install(mod,runtime,Weights,deps)
 
   function PokedexChip.help(game)
     game.stack:push(mod.ui.TextBox.new(game,
-      "POKEDEX CHIP ONLINE.\fOpen a seen POKEDEX\nentry and press SELECT\nto view AREA DATA."))
+      "POKEDEX CHIP ONLINE.\fHighlight a seen PKMN\nin the POKEDEX and\npress SELECT.\fSELECT also works on\nits DATA page."))
   end
 
-  -- The compatibility floor has no dex-entry decoration hook. SELECT is unused
-  -- by the native entry page, so layer the encounter page from input.step while
-  -- leaving the original Pokedex implementation intact.
+  -- The compatibility floor has no dex-entry/list action hook. input.step runs
+  -- before new input edges are promoted, so `wasPressed` here intentionally sees
+  -- the previous fixed step's SELECT edge. Native Pokedex screens do not consume
+  -- SELECT, making this one-tick-later observation stable across keyboard, pad,
+  -- raw joystick and touch mappings without swallowing/rebinding physical input.
   mod.hooks:wrap("input.step",function(next,game,dt)
     local result=next(game,dt)
     local pressed=game and game.input and game.input:wasPressed("select")
-    if pressed and not inputLatch and runtime:isUnlocked(PokedexChip.KEY) then
+    if pressed and runtime:isUnlocked(PokedexChip.KEY) then
       local stack=game.stack
       local top=stack and stack.top and stack:top()
-      local ok,DexEntryMenu=pcall(require,"src.ui.DexEntryMenu")
-      if ok and top and getmetatable(top)==DexEntryMenu and top.def and top.def.id then
-        PokedexChip.open(game,top.def.id)
+      local species
+
+      local okList,PokedexMenu=pcall(require,"src.ui.PokedexMenu")
+      if okList and top and getmetatable(top)==PokedexMenu then
+        species=PokedexChip.selectedListSpecies(top)
+      else
+        local okEntry,DexEntryMenu=pcall(require,"src.ui.DexEntryMenu")
+        if okEntry and top and getmetatable(top)==DexEntryMenu and top.def then
+          species=top.def.id
+        end
       end
+
+      if species then PokedexChip.open(game,species) end
     end
-    inputLatch=pressed and true or false
     return result
   end)
 

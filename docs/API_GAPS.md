@@ -21,15 +21,24 @@ The current feature set is built primarily on public Mod API surfaces:
 Rocket Decoder's temporary actors use runtime NPCs only. Incidents do not permanently
 rewrite map blocks, collision, warps or save-map data.
 
-## Pokédex entry seam
+## Pokédex navigation seam
 
 The compatibility floor does not expose a public hook for decorating or extending the
-native Gen-1 Pokédex entry page. Pokedex Chip therefore uses a deliberately narrow
-compatibility seam: it observes `input.step`, identifies the exact
-`src.ui.DexEntryMenu` state, and opens a separate AREA DATA screen when SELECT is
-pressed. It does **not** monkey-patch, replace, or rebuild the native Pokédex screen.
+native Gen-1 Pokédex list or entry page. Pokedex Chip therefore uses a deliberately
+narrow compatibility seam: it observes `input.step`, identifies either the exact
+`src.ui.PokedexMenu` list or `src.ui.DexEntryMenu` state, and opens a separate AREA
+DATA screen when the previous fixed step contained SELECT. On the list it reads only
+the highlighted row's existing `value`, which Gen1Recomp exposes only for known
+Pokémon; unseen dashed rows therefore remain inert.
 
-If Gen1Recomp later publishes a dex-entry action/decorator hook, migrate to that public
+`input.step` runs before fresh button edges are promoted, so the Chip intentionally
+observes the prior fixed step's SELECT edge rather than trying to read a new edge too
+early. The native Pokédex list and entry page do not consume SELECT, so the state is
+still present when that edge is observed one tick later. This keeps keyboard, gamepad,
+raw joystick and touch mappings on the engine's normal input path. The Chip does
+**not** monkey-patch, replace, or rebuild either native Pokédex screen.
+
+If Gen1Recomp later publishes a Pokédex action/decorator hook, migrate to that public
 surface. Until then, minimum/latest-engine smoke testing of SELECT navigation remains
 required.
 

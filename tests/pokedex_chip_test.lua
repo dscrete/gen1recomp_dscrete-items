@@ -32,13 +32,30 @@ test("Pokedex Chip replacement preview matches post-selection fishing modifiers"
   check(math.abs(nonlocal.PIKACHU/nonlocalTotal-0.02)<0.00001,"nonlocal replacement share should be exact")
 end)
 
-test("Pokedex Chip is wired to the native dex entry instead of only GADGETS",function()
+test("Pokedex Chip resolves only known highlighted native Pokedex rows",function()
+  local menu={index=2,items={
+    {value="BULBASAUR"},
+    {value="PIKACHU"},
+    {value=nil},
+  }}
+  eq(PokedexChip.selectedListSpecies(menu),"PIKACHU")
+  menu.index=3
+  eq(PokedexChip.selectedListSpecies(menu),nil)
+  menu.index=99
+  eq(PokedexChip.selectedListSpecies(menu),nil)
+end)
+
+test("Pokedex Chip is wired to the native dex list and entry page",function()
   local f=assert(io.open("lib/pokedex_chip.lua","r"))
   local src=f:read("*a"); f:close()
+  check(src:find('require,"src.ui.PokedexMenu"',1,true)~=nil,
+    "chip should identify the native PokedexMenu list")
   check(src:find('require,"src.ui.DexEntryMenu"',1,true)~=nil,
-    "chip should identify the native DexEntryMenu")
+    "chip should retain the native DexEntryMenu shortcut")
   check(src:find('wasPressed("select")',1,true)~=nil,
-    "SELECT should open encounter data from a dex entry")
+    "SELECT should open encounter data from native dex screens")
+  check(src:find("selectedListSpecies",1,true)~=nil,
+    "highlighted seen rows should route directly to AREA DATA")
   check(src:find("NO CURRENT HABITAT",1,true)~=nil,
     "seen species with no current encounter source needs a clear empty state")
   check(src:find("PrototypeResonator.raiseLevel",1,true)~=nil,
