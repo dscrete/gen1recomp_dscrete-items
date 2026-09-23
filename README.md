@@ -20,7 +20,7 @@ range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag
 Full in-game smoke testing at the compatibility floor remains tracked separately from
 standalone implementation status.
 
-Current numbered release: **v0.3.1**.
+Current numbered release: **v0.4.0**.
 
 ## Versioning and updates
 
@@ -202,6 +202,35 @@ turn finishes. Turns with no positive EXP do not waste it, and non-battle growth
 as Rare Candy does not consume or receive the bonus. A second Battery cannot be used
 while one is already armed.
 
+### Trainer Beacon
+
+A consumable rematch signal used while facing an already-defeated ordinary trainer.
+Gym Leaders, Elite Four, rivals and other story-critical classes are excluded by
+default. One successful use rebuilds the trainer's current merged original party with
+a badge-tier **+5 / +10 / +15 / +20** level boost. Pokémon that have reached ordinary
+level-evolution thresholds evolve naturally; stone, trade and other special evolutions
+are not inferred from level alone.
+
+Rematches award normal EXP and roughly half normal prize money. Each trainer has a
+configurable step cooldown, defaulting to **500 steps**. Dialogue is keyed to the
+actual trainer class: every supported ordinary Gen-1 class has 10 first-rematch and 10
+later-rematch variants, while unknown/modded classes receive a generic fallback.
+Generated lines can reference the rebuilt team, including its strongest Pokémon.
+
+## Pokémon tools
+
+### Link Cable
+
+A consumable that simulates the evolution trigger of a completed trade without
+hard-coding a species list. The selector only displays party Pokémon whose merged
+evolution method accepts the standard trade trigger, so compatible Fakemon/modded
+trade evolutions work automatically.
+
+Target selection and the final **USE CABLE** confirmation can be cancelled without
+consuming anything. After confirmation the Cable is consumed, a short link connection
+message is shown, and Gen1Recomp's native evolution presentation runs with genuine
+trade semantics. That means the committed evolution cannot be cancelled with B.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -219,8 +248,8 @@ while one is already armed.
 | Rocket Decoder | Permanent | Detection | Enables and decodes authored temporary Rocket incidents. |
 | Prototype Ball | Consumable | Battle | Half-strength above 50% HP, scaling to 3× catch-rate input at <=10% HP. |
 | EXP Battery | Consumable | Battle | Doubles the full next defeated-Pokémon battle EXP payout. |
-| Trainer Beacon | Consumable | Battle | Allows an eligible defeated trainer to be challenged again. |
-| Link Cable | Consumable | Pokémon | Evolves the four Gen-1 trade-evolution species. |
+| Trainer Beacon | Consumable | Battle | Rematches a faced defeated ordinary trainer with a progression-boosted evolved team. |
+| Link Cable | Consumable | Pokémon | Triggers any compatible semantic trade evolution in the party. |
 | Move Recorder | Consumable | Pokémon | Offers an eligible missed level-up move. |
 | Fossil Catalyst | Consumable | Pokémon | Applies a disclosed modifier during fossil revival. |
 | DNA Stabilizer | Consumable | Pokémon | Improves DVs within bounded shiny-safe rules. |
@@ -236,8 +265,8 @@ Current acquisition remains deliberately development-oriented while behavior is 
 stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
-tools. Prototype Ball and EXP Battery also have direct GET ITEMS entries, and INSPECT
-shows whether an EXP Battery charge is currently armed.
+tools. Prototype Ball, EXP Battery, Trainer Beacon and Link Cable also have direct
+GET ITEMS entries, and INSPECT shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
 scenario can be tested deterministically rather than waiting for the normal scheduler.
@@ -258,6 +287,3 @@ has not already been released; later commits at the same version do not publish 
 The ordered source of truth is [docs/CHECKLIST.md](docs/CHECKLIST.md). Detailed
 behavioral contracts and integration notes live in
 [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
-
-With Prototype Ball and EXP Battery implemented, the next ordered battle item is
-**Trainer Beacon**.
