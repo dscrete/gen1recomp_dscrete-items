@@ -14,8 +14,10 @@ currently pins v0.2.74. The ordered delivery backlog lives in
 - Encounter-modifying timed effects share one active slot, replacement confirmation,
   eligible-step countdown and exact save/load persistence.
 - The developer-only Pallet Town harness supplies GET ITEMS, WARP, INSPECT and RESET.
-- Standalone Lua/static tests and package creation run on every push/PR; successful
-  `main` builds update the rolling `dev` prerelease ZIP.
+- `manifest.json` is the player-facing semantic-version and GitHub-update source of
+  truth. Standalone tests and updater-compatible packaging run on every push/PR; a new
+  manifest version on `main` publishes one matching stable `vX.Y.Z` release with
+  `gen1recomp_dscrete_items-X.Y.Z.zip` attached.
 
 ## Encounter foundation
 
