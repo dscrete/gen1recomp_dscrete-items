@@ -67,7 +67,6 @@ test("Glitch Detector forced encounter keeps a native grass level slot", functio
   local second=GlitchDetector.nativeEncounter(def,function() return 200 end)
   eq(first.level,4)
   eq(second.level,6)
-  -- Encounter frequency is deliberately irrelevant to forced anomaly battles.
   eq(first.species,"PIDGEY")
   eq(GlitchDetector.nativeEncounter({water=def.grass},function() return 0 end),nil)
 end)
@@ -159,7 +158,7 @@ test("Treasure Detector distance bands get stronger nearby without text payloads
   eq(TreasureDetector.bandForDistance(3).text,nil)
 end)
 
-test("Treasure Detector proximity bands have distinct electronic signatures", function()
+test("Treasure Detector proximity bands have persistent increasingly urgent cadence", function()
   eq(TreasureDetector.SOUND_FALLBACK,"Switch")
   local faint=TreasureDetector.patternForRank(1)
   local signal=TreasureDetector.patternForRank(2)
@@ -167,14 +166,28 @@ test("Treasure Detector proximity bands have distinct electronic signatures", fu
   local very=TreasureDetector.patternForRank(4)
   local here=TreasureDetector.patternForRank(5)
   eq(#faint.tones,1)
-  eq(#signal.tones,2)
+  eq(#signal.tones,1)
   eq(#strong.tones,2)
-  eq(#very.tones,3)
-  eq(#here.tones,4)
+  eq(#very.tones,2)
+  eq(#here.tones,2)
   check(here.tones[1]>very.tones[1] and very.tones[1]>faint.tones[1],
     "closer bands should move to clearly higher tones")
   check(here.tones[1]~=here.tones[2],
     "directly-here pattern should alternate pitches")
-  check(here.spacing<signal.spacing,
-    "nearer patterns should sound denser")
+  check(faint.repeatDelay>signal.repeatDelay and signal.repeatDelay>strong.repeatDelay
+      and strong.repeatDelay>very.repeatDelay and very.repeatDelay>here.repeatDelay,
+    "repeat cadence must get progressively more urgent")
+  check(faint.repeatDelay>=3 and here.repeatDelay<=0.25,
+    "far signal should pause for seconds while directly-here is rapid")
+end)
+
+test("Treasure Detector runtime rechecks every frame for persistent pulse and collection stop", function()
+  local f=assert(io.open("lib/treasure_detector.lua","r"))
+  local src=f:read("*a"); f:close()
+  check(src:find("Re%-read every frame")~=nil,
+    "detector must re-read hidden item state even while stationary")
+  check(src:find("nextPatternAt",1,true)~=nil,
+    "persistent detector needs a repeating pattern timer")
+  check(src:find("availableFieldActions",1,true)~=nil,
+    "persistent detector should suppress audio when field actions are busy")
 end)
