@@ -9,17 +9,34 @@ harness is currently pinned to **v0.2.74** / commit
 The current feature set is built primarily on public Mod API surfaces:
 
 - `content.items` and `content.item_effects` for real bag items and transactional use;
-- `mod.save` for persistent ownership, reusable gadget state and timed effects;
+- `content.balls` plus the stock custom-ball `attempt`/`vanillaAttempt` contract for
+  Prototype Ball capture behavior;
+- `mod.save` for persistent ownership, reusable gadget state, timed effects, and the
+  EXP Battery's armed charge;
 - `content.maps`, `content.map_scripts`, `content.commands`, `mod.ui` and
   `mod.developer` for authored/debug interactions;
 - `mod.world:current()`, `mapOverview()`, `spawnNpc()`, `removeNpc()`, `warpTo()` and
   `startWildBattle()` for field tools and Rocket incidents;
 - `movement.collision`, `world.stepped`, `map.entered`, `encounter.roll`,
-  `encounter.fishing` and `battle.started` for runtime behavior; and
+  `encounter.fishing`, `exp.gain`, and battle lifecycle events for runtime behavior; and
 - `mod.world:effectiveEncounters()` when available for merged encounter-table previews.
 
 Rocket Decoder's temporary actors use runtime NPCs only. Incidents do not permanently
 rewrite map blocks, collision, warps or save-map data.
+
+## Battle-tool compatibility
+
+Prototype Ball needs no private capture seam. `content.balls` already exists at the
+Gen1Recomp 0.2.5 floor and custom ball attempts receive `ctx.vanillaAttempt()`, so the
+mod can change only the effective species catch-rate input and then return to the
+ordinary Gen-1 catch implementation.
+
+EXP Battery deliberately does **not** depend on `battle.exp_award`. That grouping hook
+was added after the supported 0.2.5 floor. The Battery instead uses the floor-compatible
+`exp.gain` hook, with `battle.started`, `battle.turn_ended`, and `battle.ended` events
+to keep one transient payout window open through all normal EXP shares produced by the
+next defeated Pokémon. This retains the existing engine compatibility claim without
+copying or patching `BattleState:awardExp()`.
 
 ## Pokédex navigation seam
 

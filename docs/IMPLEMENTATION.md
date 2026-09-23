@@ -216,6 +216,45 @@ expired does not falsely become a remembered battle victory.
 The three templates deliberately exercise different framework capabilities so later
 incidents can expand content without first expanding the core engine.
 
+## Battle tools
+
+### Prototype Ball
+
+Prototype Ball is a real consumable bag item registered as both an item effect and a
+`content.balls` record. Its ball definition intentionally copies the ordinary Poké
+Ball factors (`randMax=255`, `hpFactor=12`, `wobbleFactor=255`) and the normal toss
+animation. The custom attempt callback changes only one input: if the target already
+has any major status condition, its effective species catch rate is doubled and
+clamped to 255. The callback then calls `ctx.vanillaAttempt()` so Gen1Recomp still owns
+HP scaling, status bonuses, wobble calculation, capture storage and all normal battle
+side effects. Existing catch-rate overrides remain the baseline before the 2× modifier.
+
+The item effect is battle-only and returns the engine's ordinary `ball` result, leaving
+bag consumption, trainer-ball refusal, throw animation and turn cost to the stock bag
+and battle flow. With no target status the Ball is deliberately equivalent to a Poké
+Ball rather than a universally stronger capture item.
+
+### EXP Battery
+
+EXP Battery is a field-use consumable with a persistent one-shot armed state under the
+standard reusable-state namespace. Arming stores a 2× multiplier through save/load;
+using another Battery while one is already armed fails before consumption.
+
+The actual EXP change is made only through the public `exp.gain` hook. Battle lifecycle
+events (`battle.started`, `battle.turn_ended`, and `battle.ended`) provide a transient
+battle window: every positive `exp.gain` call produced while the next defeated Pokémon's
+payout is distributed receives the same 2× multiplier, so participant splits and
+EXP.ALL-style additional shares remain one logical charge. The charge is cleared only
+after that payout turn has produced positive EXP; ordinary turns do not waste it.
+Non-battle growth paths such as Rare Candy never enter this battle window.
+
+This deliberately avoids depending on the newer `battle.exp_award` hook, which was not
+present at the advertised Gen1Recomp 0.2.5 floor. The Battery therefore keeps the
+existing compatibility range rather than silently raising the minimum engine version.
+`runtime.pendingExpMultiplier` is transient diagnostic state only; the persistent armed
+flag is the reusable `exp_battery` value and is cleared by the normal full DScrete
+persistent reset.
+
 ## Shared encounter-weight contract
 
 `lib/encounter_weights.lua` remains the single source of truth for Gen-1 slot weights,
@@ -239,6 +278,9 @@ Compatibility is optional and composable rather than dependency-based.
 - Wilds of Kanto is discovered only through its public exports and remains optional.
 - Rocket incidents use public runtime-NPC/map-script/world surfaces and never require a
   companion mod.
+- Prototype Ball composes through `content.balls` and the engine's stock catch attempt.
+- EXP Battery composes through `exp.gain` plus public battle lifecycle events available
+  at the minimum supported engine version.
 - Pokedex Chip's native-list/entry identification is the one documented narrow
   internal UI seam required by the compatibility floor.
 
@@ -246,17 +288,17 @@ Compatibility is optional and composable rather than dependency-based.
 
 Standalone deterministic tests cover catalogue metadata, persistence/migrations,
 field-effect transactions, encounter weighting, all current encounter tools, detector
-logic, Pokedex Chip level/fishing calculations and native-list/entry wiring, plus
-Rocket Decoder serialization, progression gates, placement, conditioned dialogue,
-compact conversation UI, authored party tiers, reward pools and memory paths.
+logic, Pokedex Chip level/fishing calculations and native-list/entry wiring, Rocket
+Decoder serialization/progression/dialogue/rewards, Prototype Ball catch-rate and
+registration behavior, and EXP Battery persistence/distribution grouping.
 
 Those tests are not a substitute for engine execution. The unchecked matrix in
 `integration_tests/README.md` still covers controller navigation, rendering, native
-Pokédex behavior, runtime actor placement, dialogue/battle flows, save/reload and
-cleanup.
+Pokédex behavior, runtime actor placement, dialogue/battle flows, real capture storage,
+EXP presentation/level-up behavior, save/reload and cleanup.
 
 ## Next implementation order
 
-With the current detection items implemented, the ordered backlog moves to the battle
-tools: **Prototype Ball -> EXP Battery -> Trainer Beacon**. The checklist remains the
-source of truth when later dependencies require reordering.
+With Prototype Ball and EXP Battery implemented, the next ordered battle item is
+**Trainer Beacon**. The checklist remains the source of truth when later dependencies
+require reordering.

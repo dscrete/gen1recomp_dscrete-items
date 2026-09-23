@@ -58,6 +58,8 @@ return function(mod)
   local PokedexChip=loadLocal(mod,"lib/pokedex_chip.lua")
   local RocketIncidents=loadLocal(mod,"lib/rocket_incidents.lua")
   local RocketDecoder=loadLocal(mod,"lib/rocket_decoder.lua")
+  local PrototypeBall=loadLocal(mod,"lib/prototype_ball.lua")
+  local ExpBattery=loadLocal(mod,"lib/exp_battery.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -87,13 +89,17 @@ return function(mod)
     resonator=resonator,safari=safariKit,
   })
   local rocketDecoder=RocketDecoder.install(mod,runtime,Items,RocketIncidents)
+  local prototypeBall=PrototypeBall.install(mod)
+  local expBattery=ExpBattery.install(mod,runtime)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
     pokedex_chip=function(game) pokedexChip.help(game) end,
     rocket_decoder=function(game) rocketDecoder.open(game) end,
   })
-  Debug.install(mod,Items,runtime,{treasure=treasure,glitch=glitch,rocket=rocketDecoder})
+  Debug.install(mod,Items,runtime,{
+    treasure=treasure,glitch=glitch,rocket=rocketDecoder,expBattery=expBattery,
+  })
 
   mod.exports.version=mod.version
   mod.exports.items=Items
@@ -111,6 +117,8 @@ return function(mod)
   mod.exports.pokedexChip=pokedexChip
   mod.exports.rocketDecoder=rocketDecoder
   mod.exports.rocketIncidents=RocketIncidents
+  mod.exports.prototypeBall=prototypeBall
+  mod.exports.expBattery=expBattery
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end

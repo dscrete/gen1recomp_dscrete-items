@@ -67,6 +67,8 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="PROTO RESONATOR", value="resonator" },
       { label="SAFARI KIT", value="safari" },
       { label="GLITCH DET.", value="glitch" },
+      { label="PROTO BALL", value="proto_ball" },
+      { label="EXP BATTERY", value="exp_battery" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -86,6 +88,10 @@ function Debug.install(mod, Items, runtime, diagnostics)
       giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
     elseif action == "glitch" then
       giveItem(ctx, Items.byKey.glitch_detector.itemId, 1)
+    elseif action == "proto_ball" then
+      giveItem(ctx, Items.byKey.prototype_ball.itemId, 1)
+    elseif action == "exp_battery" then
+      giveItem(ctx, Items.byKey.exp_battery.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -132,7 +138,10 @@ function Debug.install(mod, Items, runtime, diagnostics)
     local selected = runtime:getReusableState("species_whistle_target", nil) or state.selectedSpecies or "none"
     -- Safari Kit session state is persisted under the catalogue key itself.
     local safari = runtime:getReusableState("safari_kit", nil) or "none"
-    local exp = state.pendingExpMultiplier or "none"
+    local expWindow = state.pendingExpMultiplier or "none"
+    local expBattery = diagnostics.expBattery
+    local expArmed = expBattery and type(expBattery.isArmed)=="function"
+      and (expBattery.isArmed() and "ARMED" or "idle") or "n/a"
 
     local treasureBand,treasureDistance,treasureSound,treasureLast="n/a","n/a","n/a","n/a"
     local treasure=diagnostics.treasure
@@ -159,10 +168,11 @@ function Debug.install(mod, Items, runtime, diagnostics)
       if ok and type(tiles)=="table" then glitchTiles=#tiles end
     end
 
-    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fSAFARI %s\nEXP MOD %s\fTREASURE %s\nDIST %s\nLAST %s\nSOUND %s\fGLITCH TILES %d\nPRISM %d/%d\fUNLOCKED:\n%s")
+    local text = ("DScrete v%s\nSAVE SCHEMA %s\fEFFECT %s\nSTEPS %d\nSPECIES %s\fSAFARI %s\nEXP BAT %s\nEXP MOD %s\fTREASURE %s\nDIST %s\nLAST %s\nSOUND %s\fGLITCH TILES %d\nPRISM %d/%d\fUNLOCKED:\n%s")
       :format(tostring(mod.version), tostring(state.schemaVersion), tostring(effect),
-        tonumber(state.remainingSteps) or 0, tostring(selected), tostring(safari), tostring(exp),
-        treasureBand,treasureDistance,treasureLast,treasureSound,glitchTiles,
+        tonumber(state.remainingSteps) or 0, tostring(selected), tostring(safari),
+        tostring(expArmed), tostring(expWindow), treasureBand,treasureDistance,
+        treasureLast,treasureSound,glitchTiles,
         tonumber(state.debugSuccesses) or 0, tonumber(state.debugRolls) or 0, unlocked)
     showText(ctx, text)
   end
