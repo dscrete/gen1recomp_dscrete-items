@@ -4,6 +4,13 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.4.1 — 2026-09-23
+
+### Fixed
+
+- Expanded the supported Gen1Recomp engine range from `>=0.2.5 <0.3.0` to `>=0.2.5 <1.0.0`, so the mod can load on Gen1Recomp 0.3.3 and later compatible 0.x Mod API 2 releases instead of being blocked by an arbitrary minor-version ceiling.
+- Kept `v0.2.5` as the compatibility floor while reserving `1.0.0` as the next explicit engine-compatibility review boundary.
+
 ## 0.4.0 — 2026-09-23
 
 ### Added

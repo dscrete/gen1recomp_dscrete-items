@@ -13,11 +13,12 @@ class ManifestTests(unittest.TestCase):
         validate_compatibility(document)
         self.assertTrue((ROOT / document["entry"]).is_file())
         self.assertEqual(document["github"], "dscrete/gen1recomp_dscrete-items")
+        self.assertEqual(document["game_version"], ">=0.2.5 <1.0.0")
 
     def test_missing_entry_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "manifest.json"
-            path.write_text('{"id":"gen1recomp_dscrete_items","name":"DScrete Items","version":"0.1.0","api":2,"profile":"content","games":["gen1"],"game_version":">=0.2.5 <0.3.0","github":"dscrete/gen1recomp_dscrete-items"}', encoding="utf-8")
+            path.write_text('{"id":"gen1recomp_dscrete_items","name":"DScrete Items","version":"0.1.0","api":2,"profile":"content","games":["gen1"],"game_version":">=0.2.5 <1.0.0","github":"dscrete/gen1recomp_dscrete-items"}', encoding="utf-8")
             with self.assertRaises(ManifestError):
                 validate_compatibility(load_manifest(path))
 

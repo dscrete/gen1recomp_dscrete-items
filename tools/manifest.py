@@ -18,7 +18,7 @@ EXPECTED = {
     "entry": "main.lua",
     "profile": "content",
     "games": ["gen1"],
-    "game_version": ">=0.2.5 <0.3.0",
+    "game_version": ">=0.2.5 <1.0.0",
     "github": "dscrete/gen1recomp_dscrete-items",
 }
 REQUIRED_TYPES = {

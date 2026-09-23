@@ -6,11 +6,15 @@ code ownership; they do not decide how players obtain an item.
 
 ## 0. Groundwork
 
-- [x] Pin and document the supported Gen1Recomp compatibility floor (`>=0.2.5 <0.3.0`).
+- [x] Pin and document supported Gen1Recomp compatibility as `>=0.2.5 <1.0.0`;
+      keep `v0.2.5` as the minimum verification floor and treat `1.0.0` as the next
+      explicit compatibility-review boundary.
 - [x] Add a reproducible standalone build/package target.
 - [x] Make `manifest.json` the semantic-version/update-source authority and package
       releases in Gen1Recomp's preferred `<mod-id>-<version>.zip` form.
 - [ ] Complete the minimum-supported-engine in-game smoke matrix.
+- [ ] Complete a current-release in-game smoke pass on Gen1Recomp `v0.3.3` after the
+      compatibility-range expansion.
 - [ ] Finish the full audit of item-use, wild-table, capture, EXP, evolution,
       trainer-defeat, hidden-item, PC, map-transition, and menu hooks as later
       catalogue items reach those systems.
