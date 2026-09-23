@@ -31,11 +31,13 @@ test("implemented encounter consumables have effects", function()
   end
 end)
 
-test("implemented permanent gadgets are tracker and treasure detector", function()
+test("implemented permanent gadgets include all four detection tools", function()
   local gadgets=Items.permanent(true)
-  eq(#gadgets,2)
+  eq(#gadgets,4)
   eq(gadgets[1].key,"silph_tracker")
   eq(gadgets[2].key,"treasure_detector")
+  eq(gadgets[3].key,"rocket_decoder")
+  eq(gadgets[4].key,"pokedex_chip")
 end)
 
 test("implemented filters expose only built content", function()

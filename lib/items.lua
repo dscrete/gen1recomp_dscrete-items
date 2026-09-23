@@ -32,8 +32,8 @@ Items.all = {
   { key="dna_stabilizer", itemId="DS_DNA_STABILIZER", name="DNA STABILIZER", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON" },
   { key="mutation_capsule", itemId="DS_MUTATION_CAPSULE", name="MUTATE CAP.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON" },
   { key="glitch_detector", itemId="DS_GLITCH_DETECTOR", name="GLITCH DET.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="FIELD_EFFECT", effect="DS_GLITCH_DETECTOR_EFFECT", implemented=true },
-  { key="rocket_decoder", name="ROCKET DECODER", ownership="PERMANENT", family="ROCKET", effectKind="TOOL" },
-  { key="pokedex_chip", name="POKEDEX CHIP", ownership="PERMANENT", family="OAK_PALLET", effectKind="TOOL" },
+  { key="rocket_decoder", name="ROCKET DECODER", ownership="PERMANENT", family="ROCKET", effectKind="TOOL", implemented=true },
+  { key="pokedex_chip", name="POKEDEX CHIP", ownership="PERMANENT", family="OAK_PALLET", effectKind="TOOL", implemented=true },
 }
 
 Items.byKey, Items.byItemId = {}, {}

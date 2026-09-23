@@ -55,6 +55,9 @@ return function(mod)
   local GlitchDetector=loadLocal(mod,"lib/glitch_detector.lua")
   local TreasureDetector=loadLocal(mod,"lib/treasure_detector.lua")
   local SilphTracker=loadLocal(mod,"lib/silph_tracker.lua")
+  local PokedexChip=loadLocal(mod,"lib/pokedex_chip.lua")
+  local RocketIncidents=loadLocal(mod,"lib/rocket_incidents.lua")
+  local RocketDecoder=loadLocal(mod,"lib/rocket_decoder.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -79,11 +82,18 @@ return function(mod)
     end
     return rows,empty
   end
+  local pokedexChip=PokedexChip.install(mod,runtime,Weights,{
+    elusive=ElusiveScent,mystery=MysteryLure,whistle=whistle,
+    resonator=resonator,safari=safariKit,
+  })
+  local rocketDecoder=RocketDecoder.install(mod,runtime,Items,RocketIncidents)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
+    pokedex_chip=function(game) pokedexChip.help(game) end,
+    rocket_decoder=function(game) rocketDecoder.open(game) end,
   })
-  Debug.install(mod,Items,runtime,{treasure=treasure,glitch=glitch})
+  Debug.install(mod,Items,runtime,{treasure=treasure,glitch=glitch,rocket=rocketDecoder})
 
   mod.exports.version=mod.version
   mod.exports.items=Items
@@ -98,6 +108,9 @@ return function(mod)
   mod.exports.glitchDetector=glitch
   mod.exports.treasureDetector=treasure
   mod.exports.silphTracker=tracker
+  mod.exports.pokedexChip=pokedexChip
+  mod.exports.rocketDecoder=rocketDecoder
+  mod.exports.rocketIncidents=RocketIncidents
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end
