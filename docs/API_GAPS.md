@@ -1,36 +1,59 @@
 # Public API status and remaining gaps
 
-DScrete Items targets Gen1Recomp **v0.2.74** at commit
-`9545ebbb839a8a7ea28472b626681154ab222623` and uses Mod API 2 public surfaces.
+DScrete Items supports Gen1Recomp **>=0.2.5 <0.3.0** with Mod API 2. The integration
+harness is currently pinned to **v0.2.74** / commit
+`9545ebbb839a8a7ea28472b626681154ab222623` for repeatable validation.
 
-## Resolved for the first playable slice
+## Public surfaces in use
 
-The v0.2.74 API already supplies the pieces needed for Phases 1-5:
+The current feature set is built primarily on public Mod API surfaces:
 
 - `content.items` and `content.item_effects` for real bag items and transactional use;
-- `mod.save` for persistent DScrete ownership/state;
+- `mod.save` for persistent ownership, reusable gadget state and timed effects;
 - `content.maps`, `content.map_scripts`, `content.commands`, `mod.ui` and
-  `mod.developer` for the developer-only Pallet Town harness;
-- `mod.world:current()` / `warpTo()` for debug navigation;
-- `movement.collision` for successful manual-step accounting;
-- `encounter.roll` and `encounter.fishing` to identify natural random encounters;
-- `battle.started` to receive the newly-created wild battle object; and
-- the sandbox-supported `src.pokemon.Stats` helper for `Stats.isShiny` and stat
-  recalculation.
+  `mod.developer` for authored/debug interactions;
+- `mod.world:current()`, `mapOverview()`, `spawnNpc()`, `removeNpc()`, `warpTo()` and
+  `startWildBattle()` for field tools and Rocket incidents;
+- `movement.collision`, `world.stepped`, `map.entered`, `encounter.roll`,
+  `encounter.fishing` and `battle.started` for runtime behavior; and
+- `mod.world:effectiveEncounters()` when available for merged encounter-table previews.
 
-Gen 1 does **not** expose Gen 2's `shiny.roll` hook. The Shiny Finder therefore marks
-a candidate only when it comes from the natural encounter hooks, then changes that
-new battle Pokemon's DVs at `battle.started`. Static battles, gifts, trades and
-trainer parties never receive the natural-encounter marker. This is the narrowest
-public-API implementation available in v0.2.74 and avoids engine-internal requires.
+Rocket Decoder's temporary actors use runtime NPCs only. Incidents do not permanently
+rewrite map blocks, collision, warps or save-map data.
 
-## Still requiring engine-side execution
+## Pokédex entry seam
 
-This standalone repository cannot prove rendering, map placement or live save/bag
-behavior by itself. `make test-integration` deliberately requires an external
-checkout at the exact pinned commit and runs Gen1Recomp's own `modkit.py validate`.
-The smoke matrix in `integration_tests/README.md` must also be exercised in-game
-before a release build is tagged.
+The compatibility floor does not expose a public hook for decorating or extending the
+native Gen-1 Pokédex entry page. Pokedex Chip therefore uses a deliberately narrow
+compatibility seam: it observes `input.step`, identifies the exact
+`src.ui.DexEntryMenu` state, and opens a separate AREA DATA screen when SELECT is
+pressed. It does **not** monkey-patch, replace, or rebuild the native Pokédex screen.
 
-Future items may reveal new public API gaps. Record those here when discovered;
-do not replace a missing public seam with an undeclared engine-internal dependency.
+If Gen1Recomp later publishes a dex-entry action/decorator hook, migrate to that public
+surface. Until then, minimum/latest-engine smoke testing of SELECT navigation remains
+required.
+
+## Encounter-preview limits
+
+`effectiveEncounters()` can preview merged static tables and compatible
+`encounter.table` transformations. DScrete additionally mirrors its own active
+Elusive Scent, Mystery Lure, Species Whistle, Safari Kit and Prototype Resonator rules
+when building Pokedex Chip statistics.
+
+A read-side screen cannot perfectly predict arbitrary third-party stochastic logic
+that only runs at `encounter.roll`/`encounter.fishing` time. Fishing percentages shown
+by Pokedex Chip are therefore the species share **conditional on a successful catch
+selection**, not the chance that a rod produces a bite at all.
+
+For Old/Good Rod global pools, the Chip lists rows only on maps that expose a known
+fishable source through a water encounter table or Super Rod group. This avoids
+claiming that every encounter-registry map is fishable without a public inactive-map
+shore query.
+
+## Engine-side validation still required
+
+This standalone repository cannot prove rendering, map placement, controller input or
+live save/bag behavior by itself. `make test-integration` requires the pinned external
+Gen1Recomp checkout and runs Gen1Recomp's own `modkit.py validate`; the smoke matrix in
+`integration_tests/README.md` must still be exercised in-game before those validation
+items are checked off.
