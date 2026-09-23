@@ -20,6 +20,31 @@ range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag
 Full in-game smoke testing at the compatibility floor remains tracked separately from
 standalone implementation status.
 
+Current numbered release: **v0.2.0**.
+
+## Versioning and updates
+
+`manifest.json` is the source of truth for the mod version and GitHub update source.
+Versions use numeric semantic versioning (`X.Y.Z`). While DScrete Items remains pre-1.0,
+feature releases normally bump the minor version and focused fixes bump the patch
+version.
+
+Gen1Recomp's mod updater reads the manifest's
+`github: "dscrete/gen1recomp_dscrete-items"` field, checks that repository's GitHub
+releases, compares semantic versions, and downloads the release ZIP. Numbered releases
+therefore use:
+
+- tag: `vX.Y.Z`;
+- release: non-prerelease GitHub release for that tag; and
+- asset: `gen1recomp_dscrete_items-X.Y.Z.zip`.
+
+The asset name intentionally matches Gen1Recomp's preferred `<mod-id>-<version>.zip`
+pattern. Ordinary commits still run tests and build the package, but they do not create
+another release unless the manifest version has changed. This avoids treating every
+commit as an update while keeping completed versions directly updatable from the repo.
+
+See [CHANGELOG.md](CHANGELOG.md) for player-facing release history.
+
 ## Design principles
 
 1. **Gen 1 first.** Reuse the existing bag, text boxes, palettes, sounds and map
@@ -189,15 +214,16 @@ tools.
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
 scenario can be tested deterministically rather than waiting for the normal scheduler.
 
-## Testing and downloadable build
+## Testing and release build
 
 `make test` runs the standalone Lua/static suite. `make test-integration` validates
 against the pinned Gen1Recomp integration checkout when its imported Gen-1 cache is
 available.
 
-Every push and pull request runs tests and builds a minimal
-`dist/dscrete-items-dev.zip`. Successful pushes to `main` update the rolling
-**Development Build** (`dev`) prerelease and replace its attached ZIP.
+`make package` builds the updater-compatible ZIP for the version currently declared in
+`manifest.json`. Every push and pull request runs the tests and builds that ZIP. A
+push to `main` publishes a new numbered GitHub release only when the manifest version
+has not already been released; later commits at the same version do not publish again.
 
 ## Delivery
 
