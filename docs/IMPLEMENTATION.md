@@ -90,10 +90,12 @@ direction arrow; its passive toggle persists in reusable gadget state.
 ### Pokedex Chip
 
 Pokedex Chip is a permanent gadget that extends the *experience* of a normal seen
-Pokédex entry without replacing the native screen.
+Pokédex row/entry without replacing either native screen.
 
 - Only Pokédex-seen species expose AREA DATA.
-- Pressing SELECT on the native `DexEntryMenu` opens a dedicated scrolling screen.
+- Pressing SELECT on a highlighted known row in the native `PokedexMenu` opens the
+  dedicated scrolling screen directly.
+- SELECT also works from that species' native `DexEntryMenu` DATA page.
 - The screen aggregates all locations present in the merged encounter/fishing data and
   shows map, method, effective species share and effective level range.
 - Land and surf rows use the effective encounter-table preview when available, then
@@ -105,10 +107,13 @@ Pokédex entry without replacing the native screen.
 - Rod percentages describe species share conditional on a successful catch selection;
   they do not include the rod's separate no-bite probability.
 
-The compatibility floor has no public dex-entry decoration/action hook. The Chip uses
-a narrow `input.step` seam to identify the exact native `src.ui.DexEntryMenu` state
-and open a separate screen on SELECT. This is documented in `API_GAPS.md` and should
-move to a public dex hook if one becomes available.
+The compatibility floor has no public Pokédex list/entry decoration or action hook.
+The Chip uses a narrow `input.step` seam to identify the exact native
+`src.ui.PokedexMenu` or `src.ui.DexEntryMenu` state and open a separate screen on
+SELECT. Because `input.step` fires before fresh button edges are promoted, this seam
+intentionally observes the previous fixed step's SELECT edge; neither native Pokédex
+screen consumes SELECT, so the relevant state remains stable. This is documented in
+`API_GAPS.md` and should move to a public dex hook if one becomes available.
 
 ### Rocket Decoder
 
@@ -234,16 +239,16 @@ Compatibility is optional and composable rather than dependency-based.
 - Wilds of Kanto is discovered only through its public exports and remains optional.
 - Rocket incidents use public runtime-NPC/map-script/world surfaces and never require a
   companion mod.
-- Pokedex Chip's native-entry identification is the one documented narrow internal UI
-  seam required by the compatibility floor.
+- Pokedex Chip's native-list/entry identification is the one documented narrow
+  internal UI seam required by the compatibility floor.
 
 ## Test strategy
 
 Standalone deterministic tests cover catalogue metadata, persistence/migrations,
 field-effect transactions, encounter weighting, all current encounter tools, detector
-logic, Pokedex Chip level/fishing calculations and native-entry wiring, plus Rocket
-Decoder serialization, progression gates, placement, conditioned dialogue, compact
-conversation UI, authored party tiers, reward pools and memory paths.
+logic, Pokedex Chip level/fishing calculations and native-list/entry wiring, plus
+Rocket Decoder serialization, progression gates, placement, conditioned dialogue,
+compact conversation UI, authored party tiers, reward pools and memory paths.
 
 Those tests are not a substitute for engine execution. The unchecked matrix in
 `integration_tests/README.md` still covers controller navigation, rendering, native
