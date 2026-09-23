@@ -277,18 +277,20 @@ code ownership; they do not decide how players obtain an item.
         too dependent on zoom/camera presentation.
   - [x] Replace the ordinary `Tink` SFX with generated short electronic detector tones;
         keep clearly different pitch/rhythm signatures across the five proximity bands.
-  - [x] Respect the player's SFX-volume setting for generated tones and fall back to the
-        Gen 1 **Switch** sound if runtime tone synthesis is unavailable.
+  - [x] Respect the player's master SFX-volume setting while exposing a detector-specific
+        **QUIET / NORMAL / LOUD / MAX** volume option, defaulting to **LOUD** so the
+        navigation cue can cut through normal game music.
+  - [x] Fall back to the Gen 1 **Switch** sound if runtime tone synthesis is unavailable.
   - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
   - [x] Expose the live band/distance and last attempted detector sound in developer
         **INSPECT** so marker detection and audio failures can be separated in-game.
   - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
         the setting and full DScrete reset restores the default ON state.
-  - [x] Add deterministic nearest-hidden-item, distance-band, persistent-cadence, and
-        tone-pattern tests.
-  - [ ] Re-test persistent audio from >10 cells through **DIRECTLY HERE**, confirming
-        every band is audibly distinguishable at normal music volume and pauses become
-        noticeably shorter as distance closes.
+  - [x] Add deterministic nearest-hidden-item, distance-band, persistent-cadence,
+        volume-preset, and tone-pattern tests.
+  - [ ] Re-test persistent audio from >10 cells through **DIRECTLY HERE** at all four
+        detector volume presets, confirming every band remains distinguishable over
+        normal music and pauses become noticeably shorter as distance closes.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
