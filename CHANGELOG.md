@@ -4,6 +4,18 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.3.0 — 2026-09-23
+
+### Added
+
+- Prototype Ball, a consumable experimental Poké Ball that uses ordinary Poké Ball math and doubles the target's effective species catch rate when the target already has a major status condition, capped at 255.
+- EXP Battery, a field-use consumable that persists an armed 2× battle-EXP charge through save/load and applies it to every normal EXP share from the next defeated Pokémon before disarming.
+- Direct developer-harness grants and EXP Battery armed-state diagnostics for both new battle tools.
+
+### Changed
+
+- EXP Battery deliberately uses the long-standing `exp.gain` hook plus battle lifecycle events instead of the newer `battle.exp_award` hook, preserving the advertised Gen1Recomp 0.2.5 compatibility floor.
+
 ## 0.2.2 — 2026-09-23
 
 ### Fixed
