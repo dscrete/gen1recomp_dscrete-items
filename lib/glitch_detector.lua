@@ -157,16 +157,15 @@ function GlitchDetector.install(mod,runtime,fx)
     end
   end
 
-  local function seedTiles(spotCount)
+  local function findTiles(spotCount)
     local pos=mod.world:current()
-    if not pos or not pos.mapId then return false,"no overworld" end
+    if not pos or not pos.mapId then return nil,"no overworld" end
     local eligible=liveGrassPredicate(pos.mapId)
-    if not eligible then return false,"grass unavailable" end
+    if not eligible then return nil,"grass unavailable" end
     local overview=mod.world:mapOverview()
     local candidates=GlitchDetector.candidates(overview,pos.x,pos.y,eligible)
-    if #candidates==0 then return false,"no nearby grass" end
-    persist(pos.mapId,GlitchDetector.pickTiles(candidates,spotCount))
-    return #currentTiles>0
+    if #candidates==0 then return nil,"no nearby grass" end
+    return GlitchDetector.pickTiles(candidates,spotCount),nil,pos.mapId
   end
 
   local function beginEffect(opts)
@@ -178,15 +177,16 @@ function GlitchDetector.install(mod,runtime,fx)
     end
     local duration=GlitchDetector.resolveDuration(opts.duration or mod.options:get(GlitchDetector.STEPS_OPTION))
     local spots=GlitchDetector.resolveSpotCount(opts.spots or mod.options:get(GlitchDetector.SPOTS_OPTION))
+
+    -- Validate placement before touching the shared field-effect slot. A failed
+    -- grass search must not erase some other active scent/resonator during the
+    -- second-use replacement flow.
+    local selected,seedWhy,mapId=findTiles(spots)
+    if not selected or #selected==0 then return false,seedWhy end
+
     local ok,why=runtime:activateFieldEffect(GlitchDetector.EFFECT_ID,duration,opts.replace==true)
     if not ok then return false,why end
-    persist(nil,{})
-    local seeded,seedWhy=seedTiles(spots)
-    if not seeded then
-      runtime:clearFieldEffect()
-      persist(nil,{})
-      return false,seedWhy
-    end
+    persist(mapId,selected)
     return true,nil,duration,#currentTiles
   end
 
