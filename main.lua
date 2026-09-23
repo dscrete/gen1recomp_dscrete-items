@@ -38,6 +38,7 @@ return function(mod)
     { key="glitch_detector_spots", label="GLITCH DET. SPOTS", type="choice", default="1", choices={{"1","1"},{"2","2"},{"3","3"},{"5","5"}} },
     { key="glitch_detector_flash_rate", label="GLITCH DET. FLASH RATE", type="choice", default="subtle", choices={{"SUBTLE - ~4S","subtle"},{"NORMAL - ~2S","normal"},{"FREQUENT - ~1S","frequent"}} },
     glitchSteps,
+    { key="treasure_detector_volume", label="TREASURE DET. VOLUME", type="choice", default="loud", choices={{"QUIET","quiet"},{"NORMAL","normal"},{"LOUD","loud"},{"MAX","max"}} },
   })
 
   local Items=loadLocal(mod,"lib/items.lua")
