@@ -3,10 +3,12 @@ local GlitchDetector = {}
 GlitchDetector.EFFECT_ID = "glitch_detector"
 GlitchDetector.ITEM_EFFECT_ID = "DS_GLITCH_DETECTOR_EFFECT"
 GlitchDetector.FLASH_OPTION = "glitch_detector_flash_rate"
+GlitchDetector.SPOTS_OPTION = "glitch_detector_spots"
 GlitchDetector.STEPS_OPTION = "glitch_detector_steps"
 GlitchDetector.STATE_KEY = "glitch_detector"
 
 local DURATIONS = { [50]=true,[100]=true,[250]=true,[500]=true,[1000]=true,[2500]=true }
+local SPOT_COUNTS = { [1]=true,[2]=true,[3]=true,[5]=true }
 local FLASH = {
   subtle={ period=4.0, window=0.22 },
   normal={ period=2.4, window=0.30 },
@@ -18,6 +20,11 @@ local DEFAULT_BUCKETS = { 51,102,127,153,178,204,229,242,253,256 }
 function GlitchDetector.resolveFlash(v)
   local row=FLASH[tostring(v or "")] or FLASH.subtle
   return { period=row.period, window=row.window }
+end
+
+function GlitchDetector.resolveSpotCount(v)
+  local n=tonumber(v)
+  return (n and SPOT_COUNTS[n]) and n or 1
 end
 
 function GlitchDetector.resolveDuration(v)
@@ -58,18 +65,20 @@ function GlitchDetector.isAnomalyTile(tiles,x,y)
   return false
 end
 
-function GlitchDetector.candidates(overview,originX,originY,avoid)
+-- Candidate cells are deliberately restricted by an engine-backed eligibility
+-- predicate. For Gen 1 this is map:isGrassCell(), so a visible anomaly can no
+-- longer land on an ordinary path simply because that path is walkable.
+function GlitchDetector.candidates(overview,originX,originY,eligible)
   local out={}
   if type(overview)~="table" or type(overview.rows)~="table" then return out end
   local blocked={}
   for _,m in ipairs(overview.markers or {}) do blocked[key(m.x,m.y)]=true end
-  if avoid then blocked[tostring(avoid)]=true end
   for y,row in ipairs(overview.rows) do
     for x=1,#row do
-      local c=row:sub(x,x)
       local cx,cy=x-1,y-1
       local d=math.abs(cx-(originX or 0))+math.abs(cy-(originY or 0))
-      if (c=="." or c=="~") and d>=2 and d<=6 and not blocked[key(cx,cy)] then
+      if d>=2 and d<=8 and not blocked[key(cx,cy)]
+          and (not eligible or eligible(cx,cy)) then
         out[#out+1]={x=cx,y=cy}
       end
     end
@@ -100,15 +109,11 @@ function GlitchDetector.kantoPool(pokemon)
 end
 
 -- Pick one native slot while deliberately ignoring only the map's encounter
--- frequency. This lets an anomaly force a battle but retain an ordinary local
--- level distribution. Species is replaced afterward by the anomaly pool.
-function GlitchDetector.nativeEncounter(encDef,terrain,rng)
+-- frequency. The anomaly forces the battle but retains an ordinary local level
+-- distribution. Species is replaced afterward by the anomaly pool.
+function GlitchDetector.nativeEncounter(encDef,rng)
   if type(encDef)~="table" then return nil end
-  local keyName=(terrain=="water") and "water" or "grass"
-  local slotDef=encDef[keyName]
-  if not (slotDef and type(slotDef.slots)=="table" and #slotDef.slots>0) then
-    slotDef=encDef[keyName=="water" and "grass" or "water"]
-  end
+  local slotDef=encDef.grass
   if not (slotDef and type(slotDef.slots)=="table" and #slotDef.slots>0) then return nil end
   rng=rng or function(a,b) return love.math.random(a,b) end
   local pick=rng(0,255)
@@ -124,16 +129,9 @@ function GlitchDetector.nativeEncounter(encDef,terrain,rng)
   return slot and { species=slot.species, level=slot.level } or nil
 end
 
-local function terrainAt(overview,x,y)
-  local row=overview and overview.rows and overview.rows[(tonumber(y) or -1)+1]
-  local c=row and row:sub((tonumber(x) or -1)+1,(tonumber(x) or -1)+1)
-  return c=="~" and "water" or "grass"
-end
-
 function GlitchDetector.install(mod,runtime,fx)
   local currentMap,currentTiles=GlitchDetector.decodeState(
     runtime:getReusableState(GlitchDetector.STATE_KEY,nil))
-  local avoidTile=nil
 
   local function persist(mapId,tiles)
     currentMap=mapId; currentTiles=tiles or {}
@@ -147,21 +145,53 @@ function GlitchDetector.install(mod,runtime,fx)
     return ok and def or nil
   end
 
-  local function hasNativeLevels(mapId)
-    local def=encounterDef(mapId)
-    return GlitchDetector.nativeEncounter(def,"grass",function() return 0 end)~=nil
-      or GlitchDetector.nativeEncounter(def,"water",function() return 0 end)~=nil
+  local function liveGrassPredicate(mapId)
+    local api=mod.world
+    if not (api and type(api.overworld)=="function") then return nil end
+    local ok,ow=pcall(api.overworld,api)
+    local map=ok and ow and ow.map
+    if not (map and map.id==mapId and type(map.isGrassCell)=="function") then return nil end
+    return function(x,y)
+      return map:isGrassCell(x,y)
+        and (type(map.isWalkableCell)~="function" or map:isWalkableCell(x,y))
+    end
   end
 
-  local function ensureTile()
-    if not runtime:isActive(GlitchDetector.EFFECT_ID) then return {} end
+  local function seedTiles(spotCount)
     local pos=mod.world:current()
-    if not pos or not pos.mapId then return {} end
-    if currentMap==pos.mapId and #currentTiles>0 then return currentTiles end
+    if not pos or not pos.mapId then return false,"no overworld" end
+    local eligible=liveGrassPredicate(pos.mapId)
+    if not eligible then return false,"grass unavailable" end
     local overview=mod.world:mapOverview()
-    local candidates=GlitchDetector.candidates(overview,pos.x,pos.y,avoidTile)
-    persist(pos.mapId,GlitchDetector.pickTiles(candidates,1))
-    avoidTile=nil
+    local candidates=GlitchDetector.candidates(overview,pos.x,pos.y,eligible)
+    if #candidates==0 then return false,"no nearby grass" end
+    persist(pos.mapId,GlitchDetector.pickTiles(candidates,spotCount))
+    return #currentTiles>0
+  end
+
+  local function beginEffect(opts)
+    opts=opts or {}
+    local pos=mod.world:current()
+    if not pos or not pos.mapId then return false,"no overworld" end
+    if not GlitchDetector.nativeEncounter(encounterDef(pos.mapId),function() return 0 end) then
+      return false,"no wild signal"
+    end
+    local duration=GlitchDetector.resolveDuration(opts.duration or mod.options:get(GlitchDetector.STEPS_OPTION))
+    local spots=GlitchDetector.resolveSpotCount(opts.spots or mod.options:get(GlitchDetector.SPOTS_OPTION))
+    local ok,why=runtime:activateFieldEffect(GlitchDetector.EFFECT_ID,duration,opts.replace==true)
+    if not ok then return false,why end
+    persist(nil,{})
+    local seeded,seedWhy=seedTiles(spots)
+    if not seeded then
+      runtime:clearFieldEffect()
+      persist(nil,{})
+      return false,seedWhy
+    end
+    return true,nil,duration,#currentTiles
+  end
+
+  local function ensureTiles()
+    if not runtime:isActive(GlitchDetector.EFFECT_ID) then return {} end
     return currentTiles
   end
 
@@ -171,8 +201,7 @@ function GlitchDetector.install(mod,runtime,fx)
     if not pos or pos.mapId~=currentMap
         or not GlitchDetector.isAnomalyTile(currentTiles,pos.x,pos.y) then return false end
 
-    local overview=mod.world:mapOverview()
-    local native=GlitchDetector.nativeEncounter(encounterDef(pos.mapId),terrainAt(overview,pos.x,pos.y))
+    local native=GlitchDetector.nativeEncounter(encounterDef(pos.mapId))
     if not native or not native.level then return false end
     local pool=GlitchDetector.kantoPool(game and game.data and game.data.pokemon)
     if #pool==0 then return false end
@@ -183,20 +212,25 @@ function GlitchDetector.install(mod,runtime,fx)
     local ok=starter(mod.world,species,native.level)
     if not ok then return false end
 
-    -- One visible anomaly means exactly one forced encounter. Remove the mark
-    -- as soon as the battle starts; a new cell is seeded after play resumes.
-    avoidTile=key(pos.x,pos.y)
-    persist(pos.mapId,{})
+    -- All visible spots represent alternate entrances to ONE anomaly event.
+    -- Triggering any one immediately ends the field effect and removes every
+    -- remaining mark; there is no automatic reseed after the battle.
+    runtime:clearFieldEffect()
+    persist(nil,{})
     return true
   end
 
-  GlitchDetector.tiles=function() return ensureTile() end
+  GlitchDetector.tiles=function() return ensureTiles() end
   GlitchDetector.hasAnomalies=function(mapId)
     return runtime:isActive(GlitchDetector.EFFECT_ID) and currentMap==mapId and #currentTiles>0
   end
+  -- Public/exported activation seam for future authored effects (a curse,
+  -- story script, NPC incident, etc.). It invokes the same save-safe anomaly
+  -- behavior without requiring the bag item itself.
+  GlitchDetector.activate=function(opts) return beginEffect(opts) end
 
   if fx then
-    fx.setAnomalyProvider(function() return ensureTile() end)
+    fx.setAnomalyProvider(function() return ensureTiles() end)
     if fx.setAnomalyFlashProvider then
       fx.setAnomalyFlashProvider(function()
         return GlitchDetector.resolveFlash(mod.options:get(GlitchDetector.FLASH_OPTION))
@@ -209,7 +243,6 @@ function GlitchDetector.install(mod,runtime,fx)
     use=function()
       local pos=mod.world:current()
       if not pos or not pos.mapId then return "failed",{"No stable field\nsignal here."} end
-      if not hasNativeLevels(pos.mapId) then return "failed",{"No wild signal can\nstabilize here."} end
       if runtime.activeFieldEffect==GlitchDetector.EFFECT_ID then
         return "failed",{"The detector is already\nreading anomalies."}
       end
@@ -218,19 +251,23 @@ function GlitchDetector.install(mod,runtime,fx)
         replace=runtime:requestFieldReplacement(GlitchDetector.EFFECT_ID)
         if not replace then return "failed",{"Another field effect\nis already active.\fUse GLITCH DET. again\nto replace it."} end
       end
-      local d=GlitchDetector.resolveDuration(mod.options:get(GlitchDetector.STEPS_OPTION))
-      local ok=runtime:activateFieldEffect(GlitchDetector.EFFECT_ID,d,replace)
-      if not ok then return "failed",{"The detector won't\nstabilize."} end
-      avoidTile=nil
-      persist(nil,{})
-      ensureTile()
-      return "consumed",{("Static crawls across\nthe detector.\fAnomalies active for\n%d steps."):format(d)},{useJingle=true}
+      local ok,why,d,spots=beginEffect({replace=replace})
+      if not ok then
+        if why=="no nearby grass" or why=="grass unavailable" then
+          return "failed",{"No nearby grass can\nhold the anomaly."}
+        elseif why=="no wild signal" then
+          return "failed",{"No wild signal can\nstabilize here."}
+        end
+        return "failed",{"The detector won't\nstabilize."}
+      end
+      return "consumed",{("Static crawls across\nthe detector.\f%d anomaly spot%s\nfor up to %d steps.")
+        :format(spots,spots==1 and "" or "s",d)},{useJingle=true}
     end,
   })
 
-  -- The anomaly tile owns the encounter. Suppress the ordinary random roll on
-  -- that exact cell; input.step below immediately starts one guaranteed wild
-  -- battle instead, even when the marked cell is otherwise inert terrain.
+  -- The anomaly spot owns the encounter. Suppress the ordinary random roll on
+  -- its exact grass cell; input.step below immediately starts the guaranteed
+  -- anomaly battle instead.
   mod.hooks:wrap("encounter.roll",function(next,encDef,ctx)
     if runtime:isActive(GlitchDetector.EFFECT_ID) then
       local pos=mod.world:current()
@@ -244,18 +281,15 @@ function GlitchDetector.install(mod,runtime,fx)
 
   mod.hooks:wrap("input.step",function(next,game,dt)
     local r=next(game,dt)
-    if runtime:isActive(GlitchDetector.EFFECT_ID) then
-      if #currentTiles>0 then triggerAnomaly(game) end
-      if #currentTiles==0 then ensureTile() end
-    elseif currentMap or #currentTiles>0 then
-      avoidTile=nil
+    if runtime:isActive(GlitchDetector.EFFECT_ID) and #currentTiles>0 then
+      triggerAnomaly(game)
+    elseif not runtime:isActive(GlitchDetector.EFFECT_ID) and (currentMap or #currentTiles>0) then
       persist(nil,{})
     end
     if runtime.pendingExpirationNotice==GlitchDetector.EFFECT_ID then
       local _,busy=mod.world:availableFieldActions()
       if busy==nil then
         runtime.pendingExpirationNotice=nil
-        avoidTile=nil
         persist(nil,{})
         game.stack:push(mod.ui.TextBox.new(game,"The interference\nfaded away."))
       end
