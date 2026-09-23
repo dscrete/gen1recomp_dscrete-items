@@ -41,11 +41,13 @@ code ownership; they do not decide how players obtain an item.
 - [x] Route test item grants through the engine's real inventory/script path.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
-      **PROTO RESONATOR**, **SAFARI KIT**, and **GLITCH DET.** grants.
+      **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **PROTO BALL**, and
+      **EXP BATTERY** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
-- [x] Show Treasure Detector live band/distance, last trigger/sound result, and active
-      Glitch Detector tile count on **INSPECT** for live diagnostics.
+- [x] Show Treasure Detector live band/distance, last trigger/sound result, active
+      Glitch Detector tile count, and EXP Battery armed state on **INSPECT** for live
+      diagnostics.
 - [ ] Visually smoke-test NPC placement and every curated warp landing coordinate.
 
 ## 1. First playable item
@@ -301,8 +303,9 @@ code ownership; they do not decide how players obtain an item.
   - [x] Implement as a permanent gadget with no bag slot.
   - [x] Keep encounter data locked until the species has been SEEN; ownership is not
         required.
-  - [x] Open a dedicated **AREA DATA** experience from the native Pokédex entry with
-        SELECT; keep the GADGETS row as help/discoverability rather than a second dex.
+  - [x] Open a dedicated **AREA DATA** experience with SELECT from a highlighted seen
+        species in the native Pokédex list or from its native DATA entry; keep the
+        GADGETS row as help/discoverability rather than a second dex.
   - [x] Show all locations represented by merged encounter/fishing data with encounter
         method, effective species share, and effective level range.
   - [x] Reflect merged/effective tables plus active Elusive Scent, Mystery Lure,
@@ -314,8 +317,8 @@ code ownership; they do not decide how players obtain an item.
   - [x] Use a dedicated scrolling Gen-1-style screen with the native menu cursor.
   - [x] Add deterministic level-range, fishing-distribution, replacement-share, and
         native-dex-entry navigation regression tests.
-  - [ ] Smoke-test SELECT entry navigation, seen/not-seen gating, long location names,
-        land/surf/rod rows, scrolling, and live field-effect changes in game.
+  - [ ] Smoke-test SELECT list/entry navigation, seen/not-seen gating, long location
+        names, land/surf/rod rows, scrolling, and live field-effect changes in game.
 
 - [x] **Rocket Decoder** — enable and decode authored temporary Rocket incidents.
   - [x] Spawn no incidents while the Decoder is locked; after unlock, maintain at most
@@ -374,8 +377,38 @@ code ownership; they do not decide how players obtain an item.
 
 ## 4. Battle tools — Battle
 
-- [ ] **Prototype Ball** — apply a documented condition to the normal capture math.
-- [ ] **EXP Battery** — arm and consume a bonus on the next eligible EXP award.
+- [x] **Prototype Ball** — reward status setup while preserving normal capture math.
+  - [x] Register a real consumable bag item and custom `content.balls` definition.
+  - [x] Match ordinary Poké Ball baseline factors and throw animation.
+  - [x] If the wild target has any major status condition, double the effective species
+        catch-rate input and clamp it to 255; give no extra species-rate boost otherwise.
+  - [x] Treat an existing catch-rate override as the baseline before applying the 2×.
+  - [x] Delegate back to `ctx.vanillaAttempt()` so HP/status bonuses, wobble logic,
+        capture storage, Pokédex updates, and normal battle effects remain engine-owned.
+  - [x] Let the normal bag/battle `ball` path own consumption, trainer refusal,
+        animation, and battle turn cost.
+  - [x] Add deterministic tests for status/no-status behavior, rate cap, override
+        composition, ball baseline values, and vanilla-attempt delegation.
+  - [ ] In-game smoke normal wild throws, every major status, trainer refusal, bag
+        consumption, throw/wobble animation, party/PC storage, and Pokédex updates.
+
+- [x] **EXP Battery** — arm a persistent 2× bonus for the next defeated Pokémon payout.
+  - [x] Implement as a field-use consumable; refuse another Battery while already armed
+        without consuming it.
+  - [x] Persist armed state through save/load under the standard reusable-state key.
+  - [x] Apply 2× to every positive normal battle EXP share from the next defeated
+        Pokémon, including multiple participant / EXP.ALL-style shares.
+  - [x] Keep the charge armed through ordinary turns with no positive EXP.
+  - [x] Clear the charge after the payout turn (or battle end) once it actually applied.
+  - [x] Keep Rare Candy and other non-battle growth outside the Battery bonus.
+  - [x] Use `exp.gain` plus battle lifecycle events available at the 0.2.5 floor; do not
+        require the newer `battle.exp_award` hook.
+  - [x] Expose direct developer grant and armed-state INSPECT diagnostics.
+  - [x] Add deterministic tests for persistent arming, duplicate-use refusal,
+        multi-share grouping, empty turns, battle-end cleanup, and hook-floor regression.
+  - [ ] In-game smoke wild/trainer payouts, multi-participant shares, EXP.ALL where
+        available, level-up/move learning, save/reload, Rare Candy exclusion, and reset.
+
 - [ ] **Trainer Beacon** — rematch only trainers in an explicit eligibility table.
 
 ## 5. Pokemon tools — Pokemon
