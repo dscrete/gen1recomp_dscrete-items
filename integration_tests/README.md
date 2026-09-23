@@ -32,8 +32,11 @@ not pretend to validate engine hooks.
 
 - unlock Pokedex Chip and confirm its GADGETS row explains native Pokédex access;
 - a species that is not SEEN cannot expose encounter data;
-- open a seen species' normal Pokédex entry and press SELECT; AREA DATA opens without
-  replacing the native entry page and B/SELECT returns correctly;
+- highlight a seen species directly in the normal Pokédex list and press SELECT;
+  AREA DATA opens without first entering the DATA side-menu option;
+- confirm SELECT also works from that species' normal DATA entry page and that
+  B/SELECT returns correctly from AREA DATA;
+- highlight an unseen dashed Pokédex row and confirm SELECT does nothing;
 - verify land, surf and Old/Good/Super Rod rows on representative maps, including
   long map names and scrolling beyond three rows;
 - verify displayed level ranges match native slots and update while Prototype
