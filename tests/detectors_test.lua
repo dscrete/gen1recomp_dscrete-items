@@ -82,6 +82,29 @@ test("Glitch Detector Kanto pool excludes legends and later dex numbers", functi
   eq(pool[2],"PIDGEY")
 end)
 
+test("Glitch Detector anomaly pool excludes native and Mystery Lure habitat species", function()
+  local pokemon={
+    PIDGEY={dex=16}, RATTATA={dex=19}, PIKACHU={dex=25},
+    RAPIDASH={dex=78}, SEEL={dex=86}, CHANSEY={dex=113},
+  }
+  local def={
+    grass={slots={{species="PIDGEY",level=4},{species="RATTATA",level=5}}},
+    water={slots={{species="SEEL",level=12}}},
+  }
+  local fakeMystery={
+    candidates=function(_,_,mapId,terrain,seenOnly)
+      eq(mapId,"VIRIDIAN_FOREST")
+      eq(terrain,"grass")
+      eq(seenOnly,false)
+      return {"PIDGEY","PIKACHU"}
+    end,
+  }
+  local pool=GlitchDetector.anomalyPool(pokemon,def,fakeMystery,"VIRIDIAN_FOREST")
+  eq(#pool,2)
+  eq(pool[1],"CHANSEY")
+  eq(pool[2],"RAPIDASH")
+end)
+
 test("detector overlays use live camera world coordinates", function()
   local ow={camera={x=32,y=48}}
   local x,y=OverworldFx.worldCellToScreen(ow,5,6)
