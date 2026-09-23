@@ -81,13 +81,17 @@ not pretend to validate engine hooks.
 ## Prototype Ball smoke matrix
 
 - grant a Prototype Ball through the developer NPC and confirm it occupies a normal bag
-  slot, can be tossed outside battle, and decrements exactly once when thrown;
-- against an unstatused wild Pokémon, compare behavior to a normal Poké Ball and confirm
-  the standard toss/wobble/caught flow is preserved;
-- inflict PAR, SLP, PSN, BRN, or FRZ, throw a Prototype Ball, and verify the statused
-  target receives the documented doubled effective species catch-rate input while the
-  engine's normal HP/status math still runs;
-- test a high-catch-rate species and confirm the doubled species rate caps at 255;
+  slot, cannot be tossed outside battle, and decrements exactly once when thrown;
+- throw against a target above 50% HP and verify the effective species catch-rate input
+  is halved before the stock Gen-1 HP/status calculation, making it deliberately worse
+  than a normal Poké Ball;
+- test the HP boundaries directly: 50% uses 1×, 25% uses 2×, and 10% or less uses 3×;
+- compare a badly weakened low-catch-rate target against Ultra Ball behavior and verify
+  the <=10% Prototype Ball band provides the intended substantial advantage;
+- apply a major status at low HP and confirm the engine's ordinary status catch bonus
+  still stacks after the Prototype Ball's HP-based rate adjustment;
+- test a high-catch-rate species at <=10% HP and confirm the adjusted species rate caps
+  at 255;
 - throw one at a trainer-owned Pokémon and confirm the normal trainer-ball refusal,
   animation, item consumption, and turn cost remain stock behavior;
 - capture with a full party and confirm normal party/PC storage, Pokédex registration,
