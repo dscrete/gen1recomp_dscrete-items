@@ -15,3 +15,10 @@ This repository is maintained through Codex Cloud.
 - Whenever requirements, naming, architecture, compatibility targets, or delivery plans change, revise the affected checklist text rather than leaving the old requirement in place.
 - Add newly discovered required work to the appropriate checklist section when it materially affects delivery or compatibility.
 - Do not mark engine/in-game validation complete unless it was actually exercised against the stated Gen1Recomp target.
+
+## Delivery verification
+
+- Prefer one completed `main` push for a user-requested change rather than publishing intermediate work when practical.
+- After the final `main` push, verify the **Standalone tests and package** workflow succeeds.
+- Treat the rolling `dev` tag/prerelease and its ZIP as the normal development completion build; verify `dev` points at the final commit and the release asset exists.
+- Do not create a separate release/tag for every intermediate commit. Use a distinct numbered tag only when a numbered public release is intentionally requested.
