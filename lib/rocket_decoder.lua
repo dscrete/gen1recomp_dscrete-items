@@ -58,6 +58,19 @@ local function contains(list,value)
   return false
 end
 
+function RocketDecoder.badgeTier(save,badges)
+  local inventory=save and save.inventory or {}
+  local count=0
+  for _,itemId in ipairs(badges or {}) do
+    local value=inventory[itemId]
+    if value~=nil and value~=false and value~=0 then count=count+1 end
+  end
+  if count<=1 then return 1 end
+  if count<=3 then return 2 end
+  if count<=5 then return 3 end
+  return 4
+end
+
 function RocketDecoder.findOpenCell(overview,x,y,occupied)
   if type(overview)~="table" or type(overview.rows)~="table" then return x,y end
   occupied=occupied or {}
@@ -124,6 +137,27 @@ function RocketDecoder.eligibleIncidents(Incidents,progress,state)
   return (#fresh>0) and fresh or repeatable
 end
 
+local function registerOperatives(mod,Incidents)
+  local base=mod.content.trainers:get("OPP_ROCKET") or {}
+  for _,op in pairs(Incidents.OPERATIVES or {}) do
+    if op.trainerId and op.parties and #op.parties>0 then
+      mod.content.trainers:register(op.trainerId,{
+        id=op.trainerId,
+        name=op.name,
+        basePic="OPP_ROCKET",
+        baseMoney=base.baseMoney,
+        battleTheme=base.battleTheme,
+        aiClass=base.aiClass,
+        aiMods=base.aiMods,
+        palette=base.palette,
+        paletteSource=base.paletteSource,
+        trueColor=base.trueColor,
+        parties=op.parties,
+      })
+    end
+  end
+end
+
 function RocketDecoder.install(mod,runtime,Items,Incidents)
   local showTextValue=mod.content.commands:get("show_text")
   local giveItemValue=mod.content.commands:get("give_item")
@@ -133,6 +167,8 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
   local startBattle=type(startBattleValue)=="table" and startBattleValue.fn or startBattleValue
   assert(type(showText)=="function" and type(giveItem)=="function" and type(startBattle)=="function",
     "Rocket Decoder requires public script commands")
+
+  registerOperatives(mod,Incidents)
 
   local state={}
   local UNREAD={}
@@ -237,6 +273,9 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
       player_wins=n(state[opKey(id,"player_wins")],0),
       rocket_wins=n(state[opKey(id,"rocket_wins")],0),
       alternate=n(state[opKey(id,"alternate")],0),
+      battle_wins=n(state[opKey(id,"battle_wins")],0),
+      battle_losses=n(state[opKey(id,"battle_losses")],0),
+      last_battle=state[opKey(id,"last_battle")],
       last_outcome=state[opKey(id,"last_outcome")],
       flags=flags,
     }
@@ -362,19 +401,40 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
     end
   end
 
-  local function choose(ctx,title,rows)
+  local function filteredRows(rows,env)
+    local out={}
+    for _,row in ipairs(rows or {}) do
+      local allowed=row.when
+      if type(allowed)=="function" then allowed=allowed(env) end
+      if allowed==nil or allowed==true then out[#out+1]=row end
+    end
+    return out
+  end
+
+  -- Conversation choices intentionally use the compact bordered Menu rather than
+  -- ListMenu: the latter is an opaque full-screen inventory/dex-style surface. This
+  -- keeps the NPC and map visible while the player chooses a reply.
+  local function choose(ctx,title,rows,env)
+    rows=filteredRows(rows,env)
+    if #rows==0 then return nil end
     local picked,done=nil,false
-    local menu
     local runner=ctx.runner
     local function finishChoice(value)
       if done then return end
-      done=true; picked=value
-      if menu then menu:close() end
+      done=true
+      picked=value
       runner:resume()
     end
-    menu=mod.ui.ListMenu.new(ctx.game,title,rows,{
-      pageJump=true,
-      onChoose=function(row) finishChoice(row and row.value) end,
+    local items={}
+    local function action(value)
+      return function() finishChoice(value) end
+    end
+    for _,row in ipairs(rows) do
+      items[#items+1]={label=row.label,onSelect=action(row.value)}
+    end
+    local menu=mod.ui.Menu.new(ctx.game,items,{
+      tx=10,ty=0,tw=10,maxVisible=5,noWrap=true,
+      title=title,anchor="topright",
       onCancel=function() finishChoice(nil) end,
     })
     ctx.game.stack:push(menu)
@@ -384,9 +444,15 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
 
   local function makeEnv(ctx,def,role)
     local env={}
+    local function effectiveTier()
+      local tier=RocketDecoder.badgeTier(ctx.save,Incidents.BADGES)
+      tier=math.max(tier,tonumber(def.minTrainerTier) or 1)
+      return math.max(1,math.min(4,tier))
+    end
     function env:say(text) return showText(ctx,text) end
-    function env:choose(title,rows) return choose(ctx,title,rows) end
+    function env:choose(title,rows) return choose(ctx,title,rows,self) end
     function env:memory(id) return memory(id) end
+    function env:tier() return effectiveTier() end
     function env:meet(id)
       if not truth(state.active_met) then
         state.active_met="1"
@@ -403,11 +469,31 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
       persist()
     end
     function env:incidentFlag(flag) return truth(state["incident_flag_"..flag]) end
-    function env:trainerBattle(party)
-      startBattle(ctx,"trainer","OPP_ROCKET",party or 5)
-      return ctx.lastBattleResult or (ctx.lastCheck and "win" or "loss")
+    function env:trainerBattle(operativeId)
+      operativeId=operativeId or def.operative
+      local op=Incidents.OPERATIVES and Incidents.OPERATIVES[operativeId]
+      local trainerId=op and op.trainerId or "OPP_ROCKET"
+      local party=effectiveTier()
+      if op and op.parties then party=math.min(party,#op.parties) end
+      startBattle(ctx,"trainer",trainerId,party)
+      local result=ctx.lastBattleResult or (ctx.lastCheck and "win" or "loss")
+      if operativeId then
+        if result=="win" then
+          state[opKey(operativeId,"battle_wins")]=tostring(n(state[opKey(operativeId,"battle_wins")],0)+1)
+          state[opKey(operativeId,"last_battle")]="win"
+        else
+          state[opKey(operativeId,"battle_losses")]=tostring(n(state[opKey(operativeId,"battle_losses")],0)+1)
+          state[opKey(operativeId,"last_battle")]="loss"
+        end
+        persist()
+      end
+      return result
     end
     function env:wildBattle(species,level)
+      if type(level)=="table" then
+        local tier=effectiveTier()
+        level=level[tier] or level[#level]
+      end
       startBattle(ctx,"wild",species,level)
       return ctx.lastBattleResult or (ctx.lastCheck and "win" or "loss")
     end
@@ -536,8 +622,9 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
         local def=Incidents.OPERATIVES[id]
         local mem=memory(id)
         game.stack:push(mod.ui.TextBox.new(game,
-          ("%s\fENCOUNTERS: %d\nPLAYER WINS: %d\nROCKET WINS: %d\fALT. RESOLUTIONS: %d\f%s")
-          :format(def.name,mem.met,mem.player_wins,mem.rocket_wins,mem.alternate,def.tagline)))
+          ("%s\fENCOUNTERS: %d\nBATTLES: %dW/%dL\fINCIDENT WINS: %d\nROCKET WINS: %d\fALT. RESOLUTIONS: %d\f%s")
+          :format(def.name,mem.met,mem.battle_wins,mem.battle_losses,
+            mem.player_wins,mem.rocket_wins,mem.alternate,def.tagline)))
       end,
       onCancel=function() if menu then menu:close() end end,
     })
