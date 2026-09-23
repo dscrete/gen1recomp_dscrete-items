@@ -2,7 +2,7 @@ local GlitchDetector=dofile("lib/glitch_detector.lua")
 local TreasureDetector=dofile("lib/treasure_detector.lua")
 local OverworldFx=dofile("lib/overworld_fx.lua")
 
-test("Glitch Detector flash and duration presets resolve safely", function()
+test("Glitch Detector flash, spot, and duration presets resolve safely", function()
   local subtle=GlitchDetector.resolveFlash("subtle")
   local normal=GlitchDetector.resolveFlash("normal")
   local frequent=GlitchDetector.resolveFlash("frequent")
@@ -12,52 +12,64 @@ test("Glitch Detector flash and duration presets resolve safely", function()
   check(subtle.period>normal.period and normal.period>frequent.period,
     "flash frequency should increase from subtle to frequent")
   eq(GlitchDetector.resolveFlash("bad").period,4.0)
+  eq(GlitchDetector.resolveSpotCount("1"),1)
+  eq(GlitchDetector.resolveSpotCount("2"),2)
+  eq(GlitchDetector.resolveSpotCount("3"),3)
+  eq(GlitchDetector.resolveSpotCount("5"),5)
+  eq(GlitchDetector.resolveSpotCount("bad"),1)
   eq(GlitchDetector.resolveDuration("50"),50)
   eq(GlitchDetector.resolveDuration("2500"),2500)
   eq(GlitchDetector.resolveDuration("bad"),250)
 end)
 
-test("Glitch Detector state roundtrips for save load", function()
-  local encoded=GlitchDetector.encodeState("VIRIDIAN_FOREST",{{x=4,y=5}})
+test("Glitch Detector state roundtrips multiple candidate spots", function()
+  local encoded=GlitchDetector.encodeState("VIRIDIAN_FOREST",{{x=4,y=5},{x=8,y=9},{x=12,y=3}})
   local map,tiles=GlitchDetector.decodeState(encoded)
   eq(map,"VIRIDIAN_FOREST")
-  eq(#tiles,1)
+  eq(#tiles,3)
   eq(tiles[1].x,4); eq(tiles[1].y,5)
+  eq(tiles[3].x,12); eq(tiles[3].y,3)
   local none,empty=GlitchDetector.decodeState(nil)
   eq(none,nil); eq(#empty,0)
 end)
 
-test("Glitch Detector chooses one close walkable tile and avoids markers", function()
+test("Glitch Detector candidates honor actual grass eligibility and markers", function()
   local overview={
     rows={".............",".............",".............",".............","............."},
     markers={{kind="warp",x=5,y=2},{kind="hidden",x=6,y=2}},
   }
-  local candidates=GlitchDetector.candidates(overview,4,2)
+  local grass={ ["2,2"]=true,["3,2"]=true,["4,0"]=true,["8,2"]=true,["9,2"]=true }
+  local candidates=GlitchDetector.candidates(overview,4,2,function(x,y)
+    return grass[tostring(x)..","..tostring(y)]==true
+  end)
   check(#candidates>0)
   for _,t in ipairs(candidates) do
     local d=math.abs(t.x-4)+math.abs(t.y-2)
-    check(d>=2 and d<=6,"candidate distance")
+    check(d>=2 and d<=8,"candidate distance")
+    check(grass[tostring(t.x)..","..tostring(t.y)]==true,"candidate must be grass")
     check(not (t.x==5 and t.y==2),"warp excluded")
     check(not (t.x==6 and t.y==2),"hidden marker excluded")
   end
-  local picked=GlitchDetector.pickTiles(candidates,1,function(_) return 1 end)
-  eq(#picked,1)
-  local avoided=GlitchDetector.candidates(overview,4,2,tostring(picked[1].x)..","..tostring(picked[1].y))
-  for _,t in ipairs(avoided) do
-    check(not (t.x==picked[1].x and t.y==picked[1].y),"consumed tile excluded from immediate reseed")
+  local picked=GlitchDetector.pickTiles(candidates,3,function(_) return 1 end)
+  eq(#picked,math.min(3,#candidates))
+  for i=1,#picked do
+    for j=i+1,#picked do
+      check(not (picked[i].x==picked[j].x and picked[i].y==picked[j].y),"spot picks stay unique")
+    end
   end
 end)
 
-test("Glitch Detector forced encounter keeps a native level slot", function()
+test("Glitch Detector forced encounter keeps a native grass level slot", function()
   local def={grass={rate=1,buckets={128,256},slots={
     {species="PIDGEY",level=4},{species="RATTATA",level=6},
   }}}
-  local first=GlitchDetector.nativeEncounter(def,"grass",function() return 0 end)
-  local second=GlitchDetector.nativeEncounter(def,"grass",function() return 200 end)
+  local first=GlitchDetector.nativeEncounter(def,function() return 0 end)
+  local second=GlitchDetector.nativeEncounter(def,function() return 200 end)
   eq(first.level,4)
   eq(second.level,6)
   -- Encounter frequency is deliberately irrelevant to forced anomaly battles.
   eq(first.species,"PIDGEY")
+  eq(GlitchDetector.nativeEncounter({water=def.grass},function() return 0 end),nil)
 end)
 
 test("Glitch Detector Kanto pool excludes legends and later dex numbers", function()
@@ -90,6 +102,17 @@ test("glitch overlay is injected before the world pass ends", function()
     "glitch flash cadence must be configurable")
   check(src:find("There is deliberately no permanent tell",1,true)~=nil,
     "guaranteed anomalies should only reveal themselves intermittently")
+end)
+
+test("Glitch Detector ends after the first triggered anomaly", function()
+  local f=assert(io.open("lib/glitch_detector.lua","r"))
+  local src=f:read("*a"); f:close()
+  check(src:find("runtime:clearFieldEffect()",1,true)~=nil,
+    "trigger must terminate the field effect")
+  check(src:find("there is no automatic reseed after the battle",1,true)~=nil,
+    "single encounter rule should remain explicit")
+  check(src:find("GlitchDetector.activate=function",1,true)~=nil,
+    "future scripted/curse activation seam")
 end)
 
 test("Treasure Detector finds nearest uncollected hidden marker", function()
