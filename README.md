@@ -20,7 +20,7 @@ range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag
 Full in-game smoke testing at the compatibility floor remains tracked separately from
 standalone implementation status.
 
-Current numbered release: **v0.3.0**.
+Current numbered release: **v0.3.1**.
 
 ## Versioning and updates
 
@@ -180,11 +180,18 @@ happened.
 
 ### Prototype Ball
 
-A consumable experimental Poké Ball with the same baseline factors, throw animation,
-and ordinary Gen-1 capture flow as a standard Poké Ball. If the wild target already
-has a major status condition, the Ball doubles that target's effective species catch
-rate before the normal HP/status calculation, capped at the Gen-1 byte maximum of 255.
-Without status, it is deliberately just a Poké Ball.
+A consumable experimental Poké Ball whose power depends on how badly the wild target
+has been weakened. It keeps ordinary Poké Ball throw/HP/wobble behavior, but changes
+the effective species catch-rate input before the normal Gen-1 calculation:
+
+- above 50% HP: **0.5×**;
+- 26–50% HP: **1×**;
+- 11–25% HP: **2×**;
+- 10% HP or less: **3×**, capped at 255.
+
+That makes careless throws deliberately worse than a normal Poké Ball, while a target
+pushed into critical HP gives the Prototype Ball a substantial advantage over an Ultra
+Ball. Normal status catch bonuses still stack afterward.
 
 ### EXP Battery
 
@@ -210,7 +217,7 @@ while one is already armed.
 | Treasure Detector | Permanent | Detection | Gives stronger audio feedback near hidden items. |
 | Pokedex Chip | Permanent | Detection | Adds live encounter statistics to seen Pokédex entries. |
 | Rocket Decoder | Permanent | Detection | Enables and decodes authored temporary Rocket incidents. |
-| Prototype Ball | Consumable | Battle | Poké Ball baseline; doubles effective catch rate against statused wild targets. |
+| Prototype Ball | Consumable | Battle | Half-strength above 50% HP, scaling to 3× catch-rate input at <=10% HP. |
 | EXP Battery | Consumable | Battle | Doubles the full next defeated-Pokémon battle EXP payout. |
 | Trainer Beacon | Consumable | Battle | Allows an eligible defeated trainer to be challenged again. |
 | Link Cable | Consumable | Pokémon | Evolves the four Gen-1 trade-evolution species. |
