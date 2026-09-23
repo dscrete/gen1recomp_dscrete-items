@@ -4,6 +4,14 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.2.2 — 2026-09-23
+
+### Fixed
+
+- Pokédex Chip AREA DATA now opens when SELECT is pressed directly on a highlighted seen Pokémon in the native Pokédex list.
+- The existing SELECT shortcut on the Pokémon's DATA entry remains available, while unseen dashed rows stay inert.
+- Pokédex Chip help and integration coverage now describe the actual list-first navigation path.
+
 ## 0.2.1 — 2026-09-23
 
 ### Changed
