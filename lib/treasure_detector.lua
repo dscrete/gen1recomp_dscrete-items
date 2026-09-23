@@ -2,6 +2,7 @@ local TreasureDetector = {}
 
 TreasureDetector.KEY = "treasure_detector"
 TreasureDetector.ENABLED_KEY = TreasureDetector.KEY
+TreasureDetector.VOLUME_OPTION = "treasure_detector_volume"
 TreasureDetector.SOUND_FALLBACK = "Switch"
 
 local BANDS = {
@@ -20,6 +21,16 @@ local PATTERNS = {
   [3]={ tones={620,760}, spacing=0.12, repeatDelay=1.05 },
   [4]={ tones={820,940}, spacing=0.09, repeatDelay=0.50 },
   [5]={ tones={1050,1320}, spacing=0.07, repeatDelay=0.22 },
+}
+
+-- Detector-specific gain sits on top of the game's SFX volume. QUIET is close
+-- to the old detector level; louder presets deliberately let this navigation
+-- cue cut through music while master SFX volume still scales it down to zero.
+local VOLUME_MULTIPLIERS = {
+  quiet=1.00,
+  normal=1.50,
+  loud=2.25,
+  max=3.25,
 }
 
 function TreasureDetector.bandForDistance(distance)
@@ -49,6 +60,10 @@ function TreasureDetector.patternForRank(rank)
   return { tones=tones, spacing=p.spacing, repeatDelay=p.repeatDelay }
 end
 
+function TreasureDetector.resolveVolumeMultiplier(value)
+  return VOLUME_MULTIPLIERS[tostring(value or "")] or VOLUME_MULTIPLIERS.loud
+end
+
 local function now()
   if love and love.timer and love.timer.getTime then return love.timer.getTime() end
   return os.clock()
@@ -56,12 +71,13 @@ end
 
 local toneCache={}
 
-local function sfxVolume(game)
+local function sfxVolume(game,multiplier)
   local options=game and game.save and game.save.options
   local v=tonumber(options and options.sfxVol)
-  if v==nil then return 0.42 end
+  if v==nil then v=7 end
   v=math.max(0,math.min(7,v))
-  return 0.42*(v/7)
+  local base=0.42*(v/7)
+  return math.max(0,math.min(1,base*(tonumber(multiplier) or 1)))
 end
 
 local function buildTone(hz)
@@ -83,7 +99,7 @@ local function buildTone(hz)
     local attack=math.min(1,i/math.max(1,math.floor(sampleRate*0.004)))
     local release=math.min(1,(frames-i)/math.max(1,math.floor(sampleRate*0.018)))
     local envelope=math.min(attack,release)
-    local sample=(phase<0.5 and 1 or -1)*0.32*envelope
+    local sample=(phase<0.5 and 1 or -1)*0.50*envelope
     data:setSample(i,1,sample)
     data:setSample(i,2,sample)
   end
@@ -107,6 +123,9 @@ function TreasureDetector.install(mod,runtime,_fx)
   local function setEnabled(v)
     runtime:setReusableState(TreasureDetector.ENABLED_KEY,v and true or false)
   end
+  local function configuredVolumeMultiplier()
+    return TreasureDetector.resolveVolumeMultiplier(mod.options:get(TreasureDetector.VOLUME_OPTION))
+  end
 
   local function distance()
     local pos=mod.world:current()
@@ -121,10 +140,11 @@ function TreasureDetector.install(mod,runtime,_fx)
   end
 
   local function playOne(game,hz)
+    local volume=sfxVolume(game,configuredVolumeMultiplier())
     local src=buildTone(hz)
     if src then
       pcall(src.stop,src)
-      pcall(src.setVolume,src,sfxVolume(game))
+      pcall(src.setVolume,src,volume)
       local ok=pcall(src.play,src)
       if ok then
         lastSoundStatus=("TONE %dHZ"):format(hz)
@@ -138,6 +158,9 @@ function TreasureDetector.install(mod,runtime,_fx)
       if played and fallback then
         if type(fallback.setPitch)=="function" then
           pcall(fallback.setPitch,fallback,math.max(0.65,math.min(1.8,hz/620)))
+        end
+        if type(fallback.setVolume)=="function" then
+          pcall(fallback.setVolume,fallback,volume)
         end
         lastSoundStatus=TreasureDetector.SOUND_FALLBACK
         return true
