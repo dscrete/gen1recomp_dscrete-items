@@ -4,6 +4,13 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.4.2 — 2026-09-23
+
+### Fixed
+
+- Link Cable now closes the Bag and parent Start menu immediately after **USE CABLE** is confirmed, so its connection text and native trade-evolution presentation begin without requiring the player to manually back out of the menu first.
+- Target selection and confirmation cancellation still leave the menus open and consume nothing.
+
 ## 0.4.1 — 2026-09-23
 
 ### Fixed
