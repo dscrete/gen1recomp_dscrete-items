@@ -8,6 +8,8 @@ code ownership; they do not decide how players obtain an item.
 
 - [x] Pin and document the supported Gen1Recomp compatibility floor (`>=0.2.5 <0.3.0`).
 - [x] Add a reproducible standalone build/package target.
+- [x] Make `manifest.json` the semantic-version/update-source authority and package
+      releases in Gen1Recomp's preferred `<mod-id>-<version>.zip` form.
 - [ ] Complete the minimum-supported-engine in-game smoke matrix.
 - [ ] Finish the full audit of item-use, wild-table, capture, EXP, evolution,
       trainer-defeat, hidden-item, PC, map-transition, and menu hooks as later
@@ -397,13 +399,17 @@ code ownership; they do not decide how players obtain an item.
 
 ## Build delivery
 
-- [x] `make package` creates a minimal `dist/dscrete-items-dev.zip` with the mod
-      manifest/entrypoint at the archive root.
-- [x] GitHub Actions runs standalone tests and builds the ZIP on pushes and pull
-      requests.
-- [x] Pushes to `main` update the rolling **Development Build** (`dev`) prerelease and
-      replace its attached `dscrete-items-dev.zip`.
-- [x] Repository instructions require verifying final `main` CI plus the rolling `dev`
-      tag/release for completed user-requested changes rather than tagging intermediate
-      work.
-- [ ] Add numbered/versioned release assets when tagged public releases are introduced.
+- [x] `make package` creates a minimal updater-compatible
+      `dist/gen1recomp_dscrete_items-X.Y.Z.zip` with the manifest/entrypoint at archive
+      root and derives `X.Y.Z` from `manifest.json`.
+- [x] GitHub Actions runs standalone tests and builds the versioned ZIP on pushes and
+      pull requests.
+- [x] Validate numeric `X.Y.Z` manifest versions plus the
+      `dscrete/gen1recomp_dscrete-items` GitHub update source in standalone tests.
+- [x] On `main`, publish exactly one non-prerelease `vX.Y.Z` GitHub release when that
+      manifest version has not already been released; ordinary commits at the same
+      version do not publish another update.
+- [x] Attach `gen1recomp_dscrete_items-X.Y.Z.zip` so Gen1Recomp's updater selects its
+      preferred exact `<mod-id>-<version>.zip` asset.
+- [x] Keep player-facing release history in `CHANGELOG.md` and require completed release
+      work to verify the matching tag, release, asset, CI, and final `main` commit.
