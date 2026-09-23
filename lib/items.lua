@@ -41,7 +41,7 @@ for _, item in ipairs(Items.all) do
   assert(not Items.byKey[item.key], "duplicate DScrete item key: " .. item.key)
   assert(Items.OWNERSHIP[item.ownership], "invalid ownership: " .. tostring(item.ownership))
   assert(Items.FAMILY[item.family], "invalid family: " .. tostring(item.family))
-  assert(Items.EFFECT_KIND[item.effectKind], "invalid effect kind: " .. tostring(item.key))
+  assert(Items.EFFECT_KIND[item.effectKind], "invalid effect kind: " .. tostring(item.effectKind))
   Items.byKey[item.key] = item
   if item.itemId then
     assert(not Items.byItemId[item.itemId], "duplicate bag item id: " .. item.itemId)
