@@ -2,14 +2,15 @@ local PrototypeBall=dofile("lib/prototype_ball.lua")
 local ExpBattery=dofile("lib/exp_battery.lua")
 
 local function fakeMod()
-  local effects,balls,hooks={},{},{}
+  local effects,balls,hooks,events={},{},{},{}
   return {
     content={
       item_effects={register=function(_,id,def) effects[id]=def end},
       balls={register=function(_,id,def) balls[id]=def end},
     },
     hooks={wrap=function(_,id,fn) hooks[id]=fn end},
-  },effects,balls,hooks
+    events={on=function(_,id,fn) events[id]=fn end},
+  },effects,balls,hooks,events
 end
 
 local function fakeRuntime()
@@ -68,7 +69,7 @@ test("EXP Battery multiplier is deterministic",function()
 end)
 
 test("EXP Battery arms persistently and refuses a second charge",function()
-  local mod,effects,_,hooks=fakeMod()
+  local mod,effects,_,hooks,events=fakeMod()
   local runtime,saved=fakeRuntime()
   local battery=ExpBattery.install(mod,runtime)
   local effect=effects[ExpBattery.ITEM_EFFECT_ID]
@@ -80,33 +81,55 @@ test("EXP Battery arms persistently and refuses a second charge",function()
   eq(saved[ExpBattery.STATE_KEY].multiplier,2)
   result=effect.use()
   eq(result,"failed","using another Battery while armed must not consume it")
-  check(hooks["battle.exp_award"] and hooks["exp.gain"])
+  check(hooks["exp.gain"])
+  check(events["battle.started"] and events["battle.turn_ended"] and events["battle.ended"])
+  check(not hooks["battle.exp_award"],"minimum-engine implementation must not depend on the newer award hook")
 end)
 
-test("EXP Battery doubles every share from one award then disarms",function()
-  local mod,effects,_,hooks=fakeMod()
+test("EXP Battery doubles every share from one defeated Pokemon then disarms",function()
+  local mod,effects,_,hooks,events=fakeMod()
   local runtime=fakeRuntime()
   local battery=ExpBattery.install(mod,runtime)
   effects[ExpBattery.ITEM_EFFECT_ID].use()
-  local first,second
-  hooks["battle.exp_award"](function(ctx)
-    first=hooks["exp.gain"](function() return 80 end,{mon={species="PIKACHU"}})
-    second=hooks["exp.gain"](function() return 25 end,{mon={species="BULBASAUR"}})
-  end,{battle={}})
+  local battle={}
+  events["battle.started"]({battle=battle})
+  local first=hooks["exp.gain"](function() return 80 end,{mon={species="PIKACHU"}})
+  local second=hooks["exp.gain"](function() return 25 end,{mon={species="BULBASAUR"}})
   eq(first,160)
   eq(second,50)
-  check(not battery.isArmed(),"the charge is spent after a real EXP distribution")
+  check(battery.isArmed(),"the charge stays live through every share in the payout")
+  eq(runtime.pendingExpMultiplier,2)
+  events["battle.turn_ended"]({battle=battle})
+  check(not battery.isArmed(),"the charge is spent after the payout turn finishes")
   eq(runtime.pendingExpMultiplier,nil,"the transient multiplier must not leak")
 
   local later=hooks["exp.gain"](function() return 40 end,{})
   eq(later,40,"later EXP awards remain vanilla")
 end)
 
-test("EXP Battery stays armed if an award produces no positive EXP gain",function()
-  local mod,effects,_,hooks=fakeMod()
+test("EXP Battery stays armed through turns with no positive EXP gain",function()
+  local mod,effects,_,hooks,events=fakeMod()
   local runtime=fakeRuntime()
   local battery=ExpBattery.install(mod,runtime)
   effects[ExpBattery.ITEM_EFFECT_ID].use()
-  hooks["battle.exp_award"](function() end,{battle={}})
+  local battle={}
+  events["battle.started"]({battle=battle})
+  events["battle.turn_ended"]({battle=battle})
   check(battery.isArmed())
+  eq(hooks["exp.gain"](function() return 0 end,{}),0)
+  events["battle.turn_ended"]({battle=battle})
+  check(battery.isArmed())
+end)
+
+test("EXP Battery clears a used charge if battle ends during the payout turn",function()
+  local mod,effects,_,hooks,events=fakeMod()
+  local runtime=fakeRuntime()
+  local battery=ExpBattery.install(mod,runtime)
+  effects[ExpBattery.ITEM_EFFECT_ID].use()
+  local battle={}
+  events["battle.started"]({battle=battle})
+  eq(hooks["exp.gain"](function() return 33 end,{}),66)
+  events["battle.ended"]({battle=battle})
+  check(not battery.isArmed())
+  eq(runtime.pendingExpMultiplier,nil)
 end)
