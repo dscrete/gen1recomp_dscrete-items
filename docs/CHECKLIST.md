@@ -223,6 +223,9 @@ code ownership; they do not decide how players obtain an item.
   - [x] Avoid mutating map blocks, collision, warps, or save-map data.
   - [x] Choose anomalies from all loaded Kanto Pokédex species 1-151 except Articuno,
         Zapdos, Moltres, Mewtwo, and Mew; do not use MissingNo or invalid species IDs.
+  - [x] Exclude every species native to the current map plus every species in Mystery
+        Lure's current grass-habitat pool, so Glitch encounters are deliberately
+        ecologically wrong rather than merely unusual or rare.
   - [x] Show only **INTERFERENCE DETECTED** in Silph Tracker rather than revealing the
         anomaly species.
   - [x] Clear persisted anomaly-cell state on encounter, expiry, replacement, or full
@@ -231,10 +234,12 @@ code ownership; they do not decide how players obtain an item.
         incidents/"curse" mechanics can invoke the same anomaly behavior without the
         player using or owning the bag item.
   - [x] Add deterministic tests for flash/spot presets, grass eligibility, multiple
-        unique spots, native-level selection, one-shot termination, state serialization,
-        Kanto/legendary filtering, camera transform, and world-pass injection.
+        unique spots, native-level selection, one-shot termination, habitat/native
+        species exclusion, state serialization, Kanto/legendary filtering, camera
+        transform, and world-pass injection.
   - [ ] Live-smoke 1/2/3/5 grass-only spot placement on outdoor grass maps; verify any
-        chosen spot fires the one guaranteed battle and every remaining mark disappears.
+        chosen spot fires the one guaranteed battle, is outside the local/Mystery Lure
+        habitat pools, and every remaining mark disappears.
   - [ ] Verify use fails cleanly without consumption on maps/positions with no eligible
         nearby grass, including caves and water-only locations.
   - [ ] Re-test SUBTLE/NORMAL/FREQUENT idle flicker at multiple zoom levels, map edges/
