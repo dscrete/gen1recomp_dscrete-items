@@ -4,56 +4,91 @@
 
 local Incidents={}
 
+Incidents.BADGES={
+  "BOULDERBADGE","CASCADEBADGE","THUNDERBADGE","RAINBOWBADGE",
+  "SOULBADGE","MARSHBADGE","VOLCANOBADGE","EARTHBADGE",
+}
+
+-- Named operatives own authored party tiers rather than borrowing an arbitrary
+-- vanilla ROCKET party. The framework picks a tier from story/badge progress;
+-- it deliberately does not rubber-band to the player's exact party level.
 Incidents.OPERATIVES={
-  ronnie={name="RONNIE",tagline="Talks first. Thinks later."},
-  milo={name="MILO",tagline="Rocket's least enthusiastic employee."},
-  cass={name="CASS",tagline="Competent enough to be dangerous."},
+  ronnie={
+    name="RONNIE",tagline="Talks first. Thinks later.",trainerId="OPP_DS_RONNIE",
+    parties={
+      {{species="RATTATA",level=7},{species="ZUBAT",level=7}},
+      {{species="RATICATE",level=16},{species="ZUBAT",level=15}},
+      {{species="RATICATE",level=25},{species="GOLBAT",level=24},{species="DROWZEE",level=24}},
+      {{species="RATICATE",level=34},{species="GOLBAT",level=33},{species="HYPNO",level=34}},
+    },
+  },
+  milo={
+    name="MILO",tagline="Rocket's least enthusiastic employee.",trainerId="OPP_DS_MILO",
+    parties={
+      {{species="SANDSHREW",level=8},{species="DROWZEE",level=8}},
+      {{species="DROWZEE",level=17},{species="MACHOP",level=16}},
+      {{species="HYPNO",level=25},{species="MACHOKE",level=25}},
+      {{species="HYPNO",level=34},{species="MACHOKE",level=34},{species="WEEZING",level=33}},
+    },
+  },
+  cass={
+    name="CASS",tagline="Competent enough to be dangerous.",trainerId="OPP_DS_CASS",
+    parties={
+      {{species="EKANS",level=9},{species="KOFFING",level=9}},
+      {{species="ARBOK",level=18},{species="KOFFING",level=18},{species="ZUBAT",level=17}},
+      {{species="ARBOK",level=27},{species="WEEZING",level=27},{species="GOLBAT",level=26}},
+      {{species="ARBOK",level=36},{species="WEEZING",level=36},{species="GOLBAT",level=35}},
+    },
+  },
 }
 
 local function shipmentRonnie(env)
   env:meet("ronnie")
   local mem=env:memory("ronnie")
-  if mem.rocket_wins>0 then
-    env:say("RONNIE: OH!\nIT'S YOU.\fI'VE ACTUALLY WON\nTHIS MATCHUP BEFORE.\fI'M NOT SAYING I'M\nCONFIDENT.\fBUT STATISTICALLY,\nTHIS ISN'T HOPELESS.")
-  elseif mem.player_wins>=2 then
-    env:say("RONNIE: WHY ARE YOU\nALWAYS HERE?\fDON'T YOU HAVE\nSCHOOL?")
-  elseif mem.player_wins>0 then
+  if mem.last_battle=="loss" then
+    env:say("RONNIE: OH. YOU.\fI REMEMBER THIS GOING\nVERY WELL FOR ME.\f...THAT SOUNDED LESS\nNERVOUS IN MY HEAD.")
+  elseif mem.battle_wins>=2 then
+    env:say("RONNIE: NO.\fNO, I KNOW HOW THIS\nGOES NOW.\fYOU SHOW UP. I SAY\nSOMETHING STUPID.\fTHEN I LOSE.")
+  elseif mem.last_battle=="win" then
     env:say("RONNIE: YOU AGAIN.\fDO YOU JUST WALK\nAROUND LOOKING FOR\nCRIMES?")
   else
-    env:say("RONNIE: HEY.\f...\fYOU'RE A CHILD.\fI'M CURRENTLY BEING\nINTERCEPTED BY A CHILD.\fTHIS IS GOING TO LOOK\nTERRIBLE ON MY REPORT.")
+    env:say("RONNIE: STOP.\f...YOU'RE A KID.\fTHEY SENT ME TO GUARD\nA PROTOTYPE FROM A KID?\fNO. THAT CAN'T BE\nTHE ACTUAL BRIEF.")
   end
-  env:say("RONNIE: THIS CRATE IS\nCOMPLETELY LEGITIMATE.\fIT'S FULL OF...\fOFFICE SUPPLIES.")
+  env:say("RONNIE: THIS CRATE IS\nROCKET PROPERTY.\f...FORGET I SAID\nROCKET.")
 
   local choice=env:choose("RONNIE",{
-    {label="HAND IT OVER",value="take"},
-    {label="WHAT'S INSIDE?",value="inside"},
-    {label="BOSS SENT ME",value="bluff"},
-    {label="I HEARD RADIO",value="radio"},
+    {label="ASK",value="inside"},
+    {label="TAKE IT",value="take"},
+    {label="RADIO",value="radio"},
+    {label="BLUFF",value="bluff"},
     {label="LEAVE",value="leave"},
   })
   if choice=="leave" or not choice then
-    env:say("RONNIE: GREAT.\nGOOD TALK.")
+    env:say("RONNIE: RIGHT.\fGOOD.\fA COMPLETELY NORMAL\nCONVERSATION.")
     return
   elseif choice=="inside" then
-    env:say("RONNIE: NOTHING IMPORTANT.\fCERTAINLY NOT A\nPROTOTYPE-\f...\fI SHOULD STOP TALKING.")
-    local follow=env:choose("THE CRATE",{
-      {label="KEEP ASKING",value="push"},
+    env:say("RONNIE: WHAT'S INSIDE?\fNOTHING YOU NEED.\fA PROTOTYPE.\f...I MEAN A BOX.\fA NORMAL BOX.")
+    local follow=env:choose("RONNIE",{
+      {label="PRESS",value="push"},
       {label="BACK OFF",value="leave"},
     })
-    if follow~="push" then env:say("RONNIE: EXCELLENT\nDECISION."); return end
-    env:say("RONNIE: NOPE. THAT'S IT.\nWE'RE BATTLING NOW.")
+    if follow~="push" then
+      env:say("RONNIE: GOOD.\fLET'S BOTH FORGET THE\nPROTOTYPE PART.")
+      return
+    end
+    env:say("RONNIE: NO.\fTHAT'S ENOUGH QUESTIONS.\fWE'RE DOING THE PART\nWITH POKEMON NOW.")
   elseif choice=="bluff" then
     if mem.flags.fooled then
-      env:say("RONNIE: NICE TRY.\fYOU'RE NOT DOING THAT\n'MY BOSS SENT ME'\nTHING AGAIN.")
+      env:say("RONNIE: NO.\fI WROTE 'DO NOT GIVE\nCRATES TO CHILDREN'\fON MY HAND AFTER\nLAST TIME.")
     else
-      env:say("RONNIE: THE BOSS SENT-\nWAIT.\fHE DIDN'T SAY ANYTHING\nABOUT A KID.\f...\fBUT HE ALSO SAID NOT\nTO ASK QUESTIONS.")
+      env:say("RONNIE: THE BOSS SENT\nYOU?\f...THAT DOES SOUND LIKE\nSOMETHING HE'D DO.\fWAIT. WHICH BOSS?")
       local bluff=env:choose("RONNIE",{
-        {label="HAND IT OVER",value="commit"},
-        {label="NEVER MIND",value="leave"},
+        {label="SAY NOTHING",value="commit"},
+        {label="DROP IT",value="leave"},
       })
       if bluff=="commit" then
         env:setOperativeFlag("ronnie","fooled",true)
-        env:say("RONNIE: FINE.\fIF THIS IS A TEST,\nI PASSED IT.")
+        env:say("RONNIE: RIGHT.\fNEED TO KNOW.\fI RESPECT THAT.\fHERE. TAKE IT BEFORE\nI ASK A QUESTION.")
         if env:giveCargo(0) then
           env:finish("RESOLVED_ALTERNATE","Ronnie surrendered the prototype after a bluff.")
         end
@@ -63,14 +98,14 @@ local function shipmentRonnie(env)
     end
   elseif choice=="radio" then
     env:setOperativeFlag("ronnie","radio_exposed",true)
-    env:say("RONNIE: YOU HEARD THAT?\fTHE WHOLE THING?\f...\fOH, I AM SO FIRED.\fACTUALLY, FIRST I'M\nGOING TO BATTLE YOU.")
+    env:say("RONNIE: YOU HEARD THE\nRADIO?\fTHE WHOLE THING?\f...OH, I AM SO FIRED.\fACTUALLY, FIRST I'M\nGOING TO BATTLE YOU.")
   else
-    env:say("RONNIE: I CAN'T JUST\nHAND OVER ROCKET PROPERTY!\fDO YOU KNOW WHAT\nTHEY'D DO TO ME?\f...\fACTUALLY, YOU DON'T.\nAND I'M NOT TELLING.")
+    env:say("RONNIE: I'M NOT JUST\nHANDING IT OVER.\fTHAT WOULD BE A VERY\nSHORT CAREER.")
   end
 
-  local result=env:trainerBattle(5)
+  local result=env:trainerBattle("ronnie")
   if result=="win" then
-    env:say("RONNIE: OH, COME ON.\fTHEY GAVE ME ONE JOB.\fYOU KNOW YOU'RE TAKING\nTHIS FROM TEAM ROCKET,\nRIGHT?\fWE'RE CRIMINALS.\f...\fTHAT SOUNDED MORE\nTHREATENING IN MY HEAD.")
+    env:say("RONNIE: ...THERE IT IS.\fTHE PART OF THE JOB I\nWAS WORRIED ABOUT.\fTAKE THE CRATE.\fI'M GOING TO PRACTICE\nNOT EXPLAINING THIS.")
     env:setPhase("reward")
   else
     env:finish("ROCKET_SUCCESS","Ronnie delivered the prototype shipment.")
@@ -79,47 +114,73 @@ end
 
 local function shipmentCrate(env)
   if env:phase()=="reward" then
-    env:say("The Rocket crate is\nstill sealed.\fA SILPH prototype label\nhas been scratched out.")
-    if env:giveCargo(300) then env:finish("RESOLVED_WIN","The intercepted prototype shipment was recovered.") end
+    env:say("The crate is still\nsealed.\fA SILPH prototype label\nhas been scratched out.")
+    if env:giveCargo(300) then
+      env:finish("RESOLVED_WIN","The intercepted prototype shipment was recovered.")
+    end
   else
-    env:say("RONNIE: HEY!\fDON'T TOUCH THE\nNOT-PACKAGE!")
+    env:say("RONNIE: HEY.\fTHE CRATE IS THE ONE\nTHING YOU'RE DEFINITELY\nNOT SUPPOSED TO TOUCH.")
   end
 end
 
 local function cacheMilo(env)
   env:meet("milo")
   local mem=env:memory("milo")
-  if mem.rocket_wins>0 then
-    env:say("MILO: YOU AGAIN.\fFOR WHAT IT'S WORTH,\nLAST TIME WAS THE BEST\nSHIFT I'VE HAD ALL MONTH.")
-  elseif mem.player_wins>0 then
-    env:say("MILO: OH, GOOD.\fMY FAVORITE WORKPLACE\nHAZARD.")
+  if mem.last_battle=="win" then
+    env:say("MILO: I REMEMBER YOU.\fI ALSO REMEMBER HOW\nLAST TIME ENDED.\fSO I'M OPEN TO A LESS\nPHYSICAL DISCUSSION.")
+  elseif mem.last_battle=="loss" then
+    env:say("MILO: BACK AGAIN?\fI WAS HOPING OUR LAST\nMEETING HAD SETTLED\nTHE MATTER.")
+  elseif mem.met>1 then
+    env:say("MILO: YOU AGAIN.\fTHIS JOB HAS A VERY\nSPECIFIC KIND OF\nREPETITION.")
   else
-    env:say("MILO: YOU KNOW WHAT'S\nREALLY IMPRESSIVE?\fI'VE BEEN SENT TO HIDE\nSOMETHING THAT WAS\nALREADY HIDDEN.")
+    env:say("MILO: YOU'RE EARLY.\fOR I'M LATE.\fEITHER WAY, THAT'S\nGOING IN SOMEONE'S\nREPORT.")
   end
-  env:say("MILO: LOOK, KID.\fI DON'T WANT TO FIGHT.\nYOU DON'T WANT TO FIGHT.\fMY BOSS, UNFORTUNATELY,\nIS VERY PRO-FIGHTING.")
+  env:say("MILO: THIS IS A DEAD DROP.\fYOU DIDN'T SEE IT.\nI DIDN'T SEE YOU.\fWE COULD BOTH HAVE A\nVERY SHORT DAY.")
+
   local choice=env:choose("MILO",{
-    {label="WHERE'S CACHE?",value="ask"},
-    {label="FIGHT",value="fight"},
-    {label="WALK AWAY",value="leave"},
+    {label="TALK",value="talk"},
+    {label="MOVE ASIDE",value="fight"},
+    {label="LEAVE",value="leave"},
   })
-  if choice=="leave" or not choice then env:say("MILO: FINALLY.\nA SENSIBLE PERSON."); return end
-  if choice=="ask" then
-    env:say("MILO: HYPOTHETICALLY?\fSOMEWHERE NEAR THE\nMARKER IN THE MESSAGE.\fALSO HYPOTHETICALLY,\nI'M TIRED OF STANDING\nNEXT TO IT.")
-    local follow=env:choose("MILO",{
-      {label="SPLIT IT",value="split"},
-      {label="NO DEAL",value="fight"},
-      {label="LEAVE",value="leave"},
-    })
-    if follow=="split" then
-      env:say("MILO: YOU TAKE THE\nPROTOTYPE.\fI KEEP THE REST.\fTHAT WAY WE'RE BOTH\nONLY PARTLY IN TROUBLE.")
-      if env:giveCargo(100) then env:finish("RESOLVED_ALTERNATE","Milo traded the prototype for a quiet exit.") end
-      return
-    elseif follow~="fight" then return end
+  if choice=="leave" or not choice then
+    env:say("MILO: FINALLY.\fA PLAN WITH NO\nPAPERWORK.")
+    return
   end
-  env:say("MILO: RIGHT.\fAPPARENTLY WE'RE DOING\nTHE COMPANY-POLICY\nVERSION.")
-  local result=env:trainerBattle(5)
+
+  if choice=="talk" then
+    if mem.last_battle=="win" then
+      env:say("MILO: LAST TIME I DID\nTHIS BY THE BOOK,\fYOU PUT ME ON THE\nGROUND.\fSO HERE'S MY OFFER.\fYOU TAKE THE PROTOTYPE.\nI KEEP THE REST.\fWE BOTH LEAVE.")
+      local follow=env:choose("MILO",{
+        {label="AGREE",value="split"},
+        {label="REFUSE",value="fight"},
+        {label="LEAVE",value="leave"},
+      })
+      if follow=="split" then
+        env:say("MILO: GOOD.\fA TRANSACTION IN WHICH\nNO ONE GETS KICKED.\fI COULD GET USED TO\nTHAT.")
+        if env:giveCargo(100) then
+          env:finish("RESOLVED_ALTERNATE","Milo traded the prototype for a quiet exit.")
+        end
+        return
+      elseif follow~="fight" then
+        return
+      end
+    else
+      env:say("MILO: A DEAL?\fWE DON'T HAVE A DEAL.\fI DON'T KNOW YOU WELL\nENOUGH TO BET MY JOB\nON YOUR DISCRETION.")
+      if mem.last_battle=="loss" then
+        env:say("MILO: ESPECIALLY NOT\nAFTER LAST TIME.")
+      end
+      local follow=env:choose("MILO",{
+        {label="INSIST",value="fight"},
+        {label="LEAVE",value="leave"},
+      })
+      if follow~="fight" then return end
+    end
+  end
+
+  env:say("MILO: ALL RIGHT.\fWE'LL DO THIS THE\nCOMPANY-POLICY WAY.")
+  local result=env:trainerBattle("milo")
   if result=="win" then
-    env:say("MILO: FINE.\fTHE CACHE IS YOURS.\fI'M PUTTING THIS DOWN\nAS 'LOGISTICS FAILURE.'")
+    env:say("MILO: ALL RIGHT.\fTHE DROP IS YOURS.\fI'M WRITING 'FOUND\nEMPTY' AND GOING HOME.")
     env:setPhase("reward")
   else
     env:finish("ROCKET_SUCCESS","Milo collected the cache and cleared the drop.")
@@ -130,51 +191,70 @@ local function cacheBox(env)
   if env:phase()=="reward" then
     env:say("The dead drop has been\nleft behind.")
   else
-    env:say("A Rocket dead drop.\fThe marker matches the\ndecoded transmission.")
-    local c=env:choose("HIDDEN CACHE",{{label="OPEN IT",value="open"},{label="LEAVE",value="leave"}})
+    env:say("A small container is\ntucked against the old\nforest marker.\fIt matches the decoded\ntransmission.")
+    local c=env:choose("DEAD DROP",{
+      {label="OPEN",value="open"},
+      {label="LEAVE",value="leave"},
+    })
     if c~="open" then return end
     env:meet("milo")
-    env:say("MILO: ...\fYOU FOUND IT FIRST.\fTHAT SAVES ME A LOT OF\nPAPERWORK AND CREATES\nA DIFFERENT KIND.")
+    local mem=env:memory("milo")
+    if mem.last_battle=="win" then
+      env:say("MILO: ...YOU FOUND IT\nFIRST.\fAND, GIVEN OUR HISTORY,\nI'M NOT GOING TO PRETEND\nI CAN TAKE IT BACK.")
+    else
+      env:say("MILO: ...THAT'S THE\nDROP.\fAND YOU'VE ALREADY\nOPENED IT.\fI'M MAKING A RARE\nPROFESSIONAL DECISION\nAND LEAVING.")
+    end
   end
-  if env:giveCargo(500) then env:finish("RESOLVED_WIN","The Rocket dead drop was found before it could be moved.") end
+  if env:giveCargo(500) then
+    env:finish("RESOLVED_WIN","The Rocket dead drop was found before it could be moved.")
+  end
 end
 
 local function experimentCass(env)
   env:meet("cass")
   local mem=env:memory("cass")
-  if mem.rocket_wins>0 then
-    env:say("CASS: YOU'RE PERSISTENT.\fI'LL GIVE YOU THAT.\fNOT SUCCESSFUL.\nBUT PERSISTENT.")
+  if mem.last_battle=="loss" then
+    env:say("CASS: YOU CAME BACK.\fGOOD.\fI WAS BEGINNING TO\nTHINK THE FIRST TIME\nHAD TAUGHT YOU CAUTION.")
   elseif mem.flags.sabotaged then
-    env:say("CASS: I CHECKED THE\nMACHINE THREE TIMES\nAFTER LAST TIME.\fYOU MOVED ONE SWITCH.")
-  elseif mem.player_wins>0 then
-    env:say("CASS: YOU ALWAYS DO THIS\nTHE LOUD WAY, DON'T YOU?")
+    env:say("CASS: HANDS WHERE I CAN\nSEE THEM.\fI REMEMBER WHAT ONE\nSWITCH COST US.")
+  elseif mem.last_battle=="win" then
+    env:say("CASS: I KNOW WHO YOU ARE.\fTHIS TIME, YOU DON'T\nGET NEAR THE EQUIPMENT.")
   else
-    env:say("CASS: SO YOU'RE THE CHILD\nTHE RADIO KEEPS\nMENTIONING.")
-  end
-  local choice=env:choose("CASS",{
-    {label="CHALLENGE",value="fight"},
-    {label="WHAT HAPPENED?",value="ask"},
-    {label="CHECK MACHINE",value="check"},
-    {label="LEAVE",value="leave"},
-  })
-  if choice=="leave" or not choice then env:say("CASS: SMARTER THAN THE\nREPORTS SUGGEST."); return
-  elseif choice=="ask" then
-    env:say("CASS: IT WAS BUILT TO\nATTRACT STRONG POKEMON.\fIT HAS INSTEAD ATTRACTED\nRATTATA.\fAN IMPRESSIVE NUMBER\nOF RATTATA.")
-    env:setIncidentFlag("observed",true); env:setStage(4); return
-  elseif choice=="check" then
-    if env:incidentFlag("observed") then
-      env:say("One frequency switch is\nset one notch low.\fThe machine is amplifying\nthe wrong signal.")
-      return
-    end
-    env:say("CASS: DON'T TOUCH THAT.\fSCIENTIST: ACTUALLY-\nLET THE KID LOOK.\fCASS: WHY?\fSCIENTIST: BECAUSE THE\nKID NOTICED THE SWITCH.")
-    env:setIncidentFlag("observed",true); env:setStage(4); return
+    env:say("CASS: STOP THERE.\fTHIS SITE IS CLOSED.\fSCIENTIST: TECHNICALLY,\nIT WAS NEVER OPEN.\fCASS: NOT NOW.")
   end
 
-  env:say("CASS: FINE.\fLET'S SEE IF THE REPORTS\nEXAGGERATED.")
-  local result=env:trainerBattle(5)
+  local choice=env:choose("CASS",{
+    {label="ASK",value="ask"},
+    {label="MACHINE",value="check"},
+    {label="CHALLENGE",value="fight"},
+    {label="LEAVE",value="leave"},
+  })
+  if choice=="leave" or not choice then
+    env:say("CASS: SENSIBLE.")
+    return
+  elseif choice=="ask" then
+    env:say("CASS: A PROTOTYPE\nATTRACTOR.\fIT WAS SUPPOSED TO DRAW\nSTRONG SPECIMENS.\fSCIENTIST: IT IS DRAWING\nSPECIMENS VERY WELL.\fCASS: THEY'RE RATTATA.\fSCIENTIST: YES.\fA REMARKABLE NUMBER.")
+    env:setIncidentFlag("observed",true)
+    env:setStage(4)
+    return
+  elseif choice=="check" then
+    if env:incidentFlag("observed") then
+      env:say("One switch sits a notch\nbelow the marked\nfrequency.")
+      return
+    end
+    env:say("CASS: DON'T TOUCH IT.\fSCIENTIST: ACTUALLY...\nLET THEM LOOK.\fCASS: WHY?\fSCIENTIST: BECAUSE THEY\nNOTICED THE SWITCH.")
+    env:setIncidentFlag("observed",true)
+    env:setStage(4)
+    return
+  end
+
+  env:say("CASS: FINE.\fIF YOU WANT TO MAKE\nTHIS SIMPLE.")
+  local result=env:trainerBattle("cass")
   if result=="win" then
-    env:say("CASS: PACK IT UP.\fTHE TEST IS COMPROMISED.\fSCIENTIST: BY THE CHILD?\fCASS: DO NOT PUT THAT\nIN THE REPORT.")
-    if env:giveCargo(400) then env:finish("RESOLVED_WIN","Cass abandoned the experiment and its prototype equipment.") end
+    env:say("CASS: PACK IT UP.\fTHE TEST IS OVER.\fSCIENTIST: BECAUSE OF\nTHE CHILD?\fCASS: THAT WORD DOES NOT\nAPPEAR IN THE REPORT.")
+    if env:giveCargo(400) then
+      env:finish("RESOLVED_WIN","Cass abandoned the experiment and its prototype equipment.")
+    end
   else
     env:finish("ROCKET_SUCCESS","Cass secured the experiment and moved the results.")
   end
@@ -182,38 +262,44 @@ end
 
 local function experimentScientist(env)
   env:say("SCIENTIST: THE ATTRACTOR\nIS WORKING PERFECTLY.\fCASS: IT'S ATTRACTING\nRATTATA.\fSCIENTIST: I SAID\nWORKING.\fI DID NOT SAY\nCORRECTLY.")
-  env:setIncidentFlag("observed",true); env:setStage(4)
+  env:setIncidentFlag("observed",true)
+  env:setStage(4)
 end
 
 local function experimentDevice(env)
   env:say("The prototype attractor\nhums at an unpleasant\nfrequency.")
   local observed=env:incidentFlag("observed")
   local rows={
-    {label=observed and "FIX SWITCH" or "OBSERVE",value=observed and "sabotage" or "observe"},
+    {label=observed and "RETUNE" or "OBSERVE",value=observed and "sabotage" or "observe"},
     {label="LEAVE",value="leave"},
   }
   local choice=env:choose("ATTRACTOR",rows)
   if choice=="leave" or not choice then return end
   if choice=="observe" then
-    env:say("A scratched frequency\nlabel doesn't match the\nswitch position.")
-    env:setIncidentFlag("observed",true); env:setStage(4); return
+    env:say("One switch is set a\nnotch below the marked\nfrequency.")
+    env:setIncidentFlag("observed",true)
+    env:setStage(4)
+    return
   end
 
   env:meet("cass")
   env:setOperativeFlag("cass","sabotaged",true)
-  env:say("You move the switch one\nnotch.\fThe machine SHRIEKS.\fCASS: WHAT DID YOU DO?\fSCIENTIST: TECHNICALLY?\nCORRECTED THE TUNING.")
-  local result=env:wildBattle("RATTATA",18)
+  env:say("You move the switch one\nnotch.\fThe machine SHRIEKS.\fCASS: DON'T-\fSCIENTIST: THAT'S THE\nCORRECT FREQUENCY.\fCASS: THEN WHY IS IT\nSCREAMING?")
+  local result=env:wildBattle("RATTATA",{10,18,26,34})
   if result=="loss" then
     env:finish("ROCKET_SUCCESS","Rocket recovered the attractor after the experiment broke loose.")
     return
   end
-  env:say("CASS: WE'RE DONE HERE.\fSCIENTIST: SHOULD WE TAKE\nTHE ATTRACTOR?\fCASS: NOT IF YOU WANT\nTO CARRY IT.")
-  if env:giveCargo(150) then env:finish("RESOLVED_ALTERNATE","The attractor was retuned and Rocket abandoned the experiment.") end
+  env:say("CASS: WE'RE DONE.\fSCIENTIST: SHOULD WE TAKE\nTHE ATTRACTOR?\fCASS: YOU CARRY IT.\fSCIENTIST: ...WE'RE DONE.")
+  if env:giveCargo(150) then
+    env:finish("RESOLVED_ALTERNATE","The attractor was retuned and Rocket abandoned the experiment.")
+  end
 end
 
 Incidents.ALL={
   intercepted_shipment={
     id="intercepted_shipment",title="INTERCEPTED SHIPMENT",operative="ronnie",expiry=2500,
+    minTrainerTier=2,
     prototypePool={"prism_scent","elusive_scent","mystery_lure","species_whistle","prototype_resonator","glitch_detector"},
     locations={{
       id="route5",mapId="ROUTE_5",
@@ -224,7 +310,7 @@ Incidents.ALL={
     transmissions={
       "ROCKET BAND TRANSMISSION\f???: YOU HAVE THE\nPACKAGE?\fRONNIE: YES.\f???: THEN STOP SAYING\n'PACKAGE' OVER RADIO.\fRONNIE: RIGHT.\fI HAVE THE...\nNOT-PACKAGE.",
       "SIGNAL QUALITY IMPROVED\f???: TAKE IT SOUTH.\nUSE THE QUIET ROUTE.\fRONNIE: THE ONE BY THE\nUNDERGROUND PATH?\f???: ...\fYES, RONNIE.\fTHE SECRET QUIET ROUTE\nYOU JUST NAMED.",
-      "SIGNAL: VERY STRONG\fRONNIE: I'M IN POSITION.\f???: GOOD. STAY OUT\nOF SIGHT.\fRONNIE: THERE'S A KID\nSTARING AT ME.\f???: THEN ACT NORMAL.\fRONNIE: HOW?",
+      "SIGNAL: VERY STRONG\fRONNIE: THERE'S A KID\nHERE.\f???: THEN ACT NORMAL.\fRONNIE: I AM.\f???: YOU'RE WHISPERING\nINTO THE RADIO.",
     },
     actors={
       {role="ronnie",name="DS_ROCKET_RONNIE",sprite="SPRITE_ROCKET",text="TEXT_DS_ROCKET_SHIPMENT_RONNIE",dx=0,dy=0,phases={active=true}},
@@ -235,6 +321,7 @@ Incidents.ALL={
 
   hidden_cache={
     id="hidden_cache",title="HIDDEN CACHE",operative="milo",expiry=2800,
+    minTrainerTier=1,
     prototypePool={"prism_scent","elusive_scent","mystery_lure","species_whistle","prototype_resonator","safari_kit","glitch_detector"},
     locations={{
       id="forest",mapId="VIRIDIAN_FOREST",
@@ -245,7 +332,7 @@ Incidents.ALL={
     transmissions={
       "DROP CONFIRMED.\fNO CONTACT.\fMARKER IS STILL\nIN PLACE.\fSOURCE ESTIMATE:\nVIRIDIAN SECTOR.",
       "SIGNAL QUALITY IMPROVED\fMILO: YOU MOVED IT,\nRIGHT?\f???: NO.\fMILO: GREAT.\fSO EITHER IT'S STILL\nTHERE OR SOMEONE STOLE\nOUR STOLEN GOODS.",
-      "LOCAL FRAGMENT\fCHECK NEAR THE OLD\nFOREST MARKER.\fMILO: I'VE BEEN SENT TO\nHIDE SOMETHING THAT WAS\nALREADY HIDDEN.",
+      "LOCAL FRAGMENT\f???: USE THE OLD\nFOREST MARKER.\fMILO: WHICH OLD\nFOREST MARKER?\f???: THE ONE BY THE DROP.\fMILO: VERY HELPFUL.",
     },
     actors={
       {role="milo",name="DS_ROCKET_MILO",sprite="SPRITE_ROCKET",text="TEXT_DS_ROCKET_CACHE_MILO",dx=2,dy=0,phases={active=true}},
@@ -256,6 +343,7 @@ Incidents.ALL={
 
   illegal_experiment={
     id="illegal_experiment",title="ILLEGAL EXPERIMENT",operative="cass",expiry=3000,
+    minTrainerTier=2,
     prototypePool={"prism_scent","elusive_scent","mystery_lure","species_whistle","prototype_resonator","glitch_detector"},
     locations={{
       id="rock",mapId="ROCK_TUNNEL_1F",

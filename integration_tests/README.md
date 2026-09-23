@@ -52,14 +52,24 @@ not pretend to validate engine hooks.
   once each to validate runtime actor placement and cleanup on their authored maps;
 - open ACTIVE SIGNAL before entering the region, within the broad region, and on the
   incident map to verify staged transmission decoding;
+- confirm conversation reply menus are compact bordered overlays that leave the
+  overworld visible rather than opaque full-screen lists;
 - exercise multiple conversation paths, including Ronnie's bluff/radio branches,
-  Milo's split/fight paths, and Cass's observe/check/sabotage paths;
+  Milo's talk/fight paths, and Cass's ask/machine/sabotage paths;
+- on a first Milo encounter, confirm no cooperative split is offered; beat Milo in an
+  actual trainer battle, meet him again, and confirm the split becomes available;
+- after Milo later beats the player, confirm the split is unavailable again until the
+  player wins another trainer battle against him;
+- verify Ronnie, Milo and Cass use distinct named trainer parties rather than the same
+  vanilla Rocket party;
+- exercise early/mid/late badge states and confirm their teams move through the four
+  authored progression tiers without matching the player's exact Pokémon levels;
 - verify battle victory, alternate resolution, battle loss and timer expiry produce
   distinct terminal outcomes and remove the live incident;
 - save/reload with an active incident and confirm location, stage, remaining steps,
   phase and rolled prototype cargo remain stable rather than rerolling;
-- after later Ronnie/Milo/Cass encounters, confirm remembered win/loss/alternate flags
-  change dialogue and OPERATIVE DATA counters appropriately;
+- after later Ronnie/Milo/Cass encounters, confirm actual battle records and incident
+  outcomes independently change dialogue and OPERATIVE DATA counters appropriately;
 - confirm TRANSMISSIONS retains completed incident summaries while expired incidents
   remain distinguishable from direct Rocket victories; and
 - verify a full DScrete persistent-state reset clears active incident state, archives,
