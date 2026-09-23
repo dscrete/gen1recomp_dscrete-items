@@ -17,6 +17,12 @@ test("Trainer Beacon badge tiers use authored additive boosts",function()
   end
 end)
 
+test("Trainer Beacon cooldown option defaults to 500 and accepts configured presets",function()
+  eq(Beacon.cooldownSteps({options={get=function() return nil end}}),500)
+  eq(Beacon.cooldownSteps({options={get=function(_,key) eq(key,"trainer_beacon_cooldown"); return "250" end}}),250)
+  eq(Beacon.cooldownSteps({options={get=function() return "1000" end}}),1000)
+end)
+
 test("Trainer Beacon preserves party composition while applying level evolutions",function()
   local data={pokemon={
     CATERPIE={evolutions={{method="LEVEL",level=7,species="METAPOD"}}},
@@ -66,12 +72,29 @@ test("Trainer Beacon cooldown state is per trainer and step based",function()
   eq(Beacon.remainingCooldown(state,"missing"),0)
 end)
 
-test("Trainer Beacon dialogue ships exactly ten first and ten later variants per class",function()
-  local classes=Dialogue.supportedClasses()
-  check(#classes>=20,"expected broad ordinary trainer-class coverage")
-  for _,classId in ipairs(classes) do
-    eq(#Dialogue.variants(classId,"first"),10,classId.." first")
-    eq(#Dialogue.variants(classId,"later"),10,classId.." later")
+test("Trainer Beacon dialogue covers ordinary Gen 1 classes with unique 10 plus 10 pools",function()
+  local expected={
+    "OPP_YOUNGSTER","OPP_BUG_CATCHER","OPP_LASS","OPP_SAILOR",
+    "OPP_JR_TRAINER_M","OPP_JR_TRAINER_F","OPP_POKEMANIAC","OPP_SUPER_NERD",
+    "OPP_HIKER","OPP_BIKER","OPP_BURGLAR","OPP_ENGINEER","OPP_JUGGLER_X",
+    "OPP_FISHER","OPP_SWIMMER","OPP_CUE_BALL","OPP_GAMBLER","OPP_BEAUTY",
+    "OPP_PSYCHIC_TR","OPP_ROCKER","OPP_JUGGLER","OPP_TAMER","OPP_BIRD_KEEPER",
+    "OPP_BLACKBELT","OPP_SCIENTIST","OPP_COOLTRAINER_M","OPP_COOLTRAINER_F",
+    "OPP_GENTLEMAN","OPP_CHANNELER",
+  }
+  local have={}
+  for _,id in ipairs(Dialogue.supportedClasses()) do have[id]=true end
+  for _,classId in ipairs(expected) do
+    check(have[classId],"missing dialogue class "..classId)
+    for _,phase in ipairs({"first","later"}) do
+      local rows=Dialogue.variants(classId,phase)
+      eq(#rows,10,classId.." "..phase)
+      local unique={}
+      for _,line in ipairs(rows) do
+        check(not unique[line],classId.." has duplicate "..phase.." line")
+        unique[line]=true
+      end
+    end
   end
   eq(#Dialogue.variants("OPP_FAKE_MOD_CLASS","first"),10,"modded fallback first")
   eq(#Dialogue.variants("OPP_FAKE_MOD_CLASS","later"),10,"modded fallback later")
@@ -83,6 +106,10 @@ test("Trainer Beacon dialogue substitutes generated strongest Pokemon and fits G
   check(not text:find("{STRONGEST}",1,true),"raw token should not remain")
   for line in text:gmatch("[^\n\f]+") do
     check(#line<=18,"dialogue line wider than 18 chars: "..line)
+  end
+  local long=Dialogue.render("{STRONGEST} is ready.",{STRONGEST="RIDICULOUSLYLONGFAKEMONNAME"})
+  for line in long:gmatch("[^\n\f]+") do
+    check(#line<=18,"long Fakemon token must split safely: "..line)
   end
 end)
 
