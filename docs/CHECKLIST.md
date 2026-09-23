@@ -201,17 +201,20 @@ code ownership; they do not decide how players obtain an item.
 - [x] **Glitch Detector** — create visible, safe encounter anomalies on specific tiles.
   - [x] Implement as a consumable timed field effect mutually exclusive with the other
         normal field effects.
-  - [x] Keep exactly one nearby passable/water anomaly cell active at a time and persist
-        the active map plus tile coordinate through save/load under the item reusable key.
-  - [x] Keep the anomaly within Manhattan distance 2-6 of the current position when
-        possible so the player can plausibly notice and investigate it.
-  - [x] When the player reaches the anomaly cell, suppress that cell's ordinary random
-        roll and start one guaranteed wild battle through `mod.world:startWildBattle()`;
-        consume the visible anomaly immediately and seed a new one afterward.
-  - [x] Preserve the map's native encounter-level distribution while replacing only the
-        species with a random nonlegendary Kanto Pokédex species.
+  - [x] Restrict every anomaly spot to an actual live `isGrassCell()` tile; do not mark
+        ordinary paths, cave floor, or water just because those cells are walkable.
+  - [x] Expose **1 / 2 / 3 / 5** simultaneous anomaly spots through **GLITCH DET. SPOTS**,
+        defaulting to one; all spots are alternate entrances to the same one-shot event.
+  - [x] Keep chosen spots within Manhattan distance 2-8 of the activation point and
+        exclude warps/hidden-item markers so they remain discoverable and safe.
+  - [x] When the player reaches any anomaly spot, suppress that cell's ordinary random
+        roll and start one guaranteed wild battle through `mod.world:startWildBattle()`.
+  - [x] End the Glitch Detector field effect immediately after that battle starts and
+        remove all remaining anomaly spots; never automatically generate another spot.
+  - [x] Preserve the map's native grass encounter-level distribution while replacing
+        only the species with a random nonlegendary Kanto Pokédex species.
   - [x] Render only an intermittent 8x8 corruption fragment; no permanent marker remains
-        now that finding the spot guarantees an encounter.
+        now that finding any spot guarantees the single encounter.
   - [x] Add configurable **SUBTLE (~4s) / NORMAL (~2s) / FREQUENT (~1s)** flash cadence,
         defaulting to SUBTLE while retaining FREQUENT for live debugging.
   - [x] Inject anomaly rendering into `drawWorld()` before `endWorldPass()` so saved
@@ -222,12 +225,18 @@ code ownership; they do not decide how players obtain an item.
         Zapdos, Moltres, Mewtwo, and Mew; do not use MissingNo or invalid species IDs.
   - [x] Show only **INTERFERENCE DETECTED** in Silph Tracker rather than revealing the
         anomaly species.
-  - [x] Clear persisted anomaly-cell state on expiry/replacement/full DScrete reset.
-  - [x] Add deterministic tests for flash presets, single-tile selection, consumed-tile
-        exclusion, native-level selection, state serialization, Kanto/legendary filtering,
-        camera transform, and world-pass injection.
-  - [ ] Live-smoke guaranteed anomaly battles on outdoor routes, caves, water maps, and
-        passable non-encounter terrain; verify one battle fires and the mark relocates.
+  - [x] Clear persisted anomaly-cell state on encounter, expiry, replacement, or full
+        DScrete reset.
+  - [x] Expose a save-safe `glitchDetector.activate(opts)` seam so future authored
+        incidents/"curse" mechanics can invoke the same anomaly behavior without the
+        player using or owning the bag item.
+  - [x] Add deterministic tests for flash/spot presets, grass eligibility, multiple
+        unique spots, native-level selection, one-shot termination, state serialization,
+        Kanto/legendary filtering, camera transform, and world-pass injection.
+  - [ ] Live-smoke 1/2/3/5 grass-only spot placement on outdoor grass maps; verify any
+        chosen spot fires the one guaranteed battle and every remaining mark disappears.
+  - [ ] Verify use fails cleanly without consumption on maps/positions with no eligible
+        nearby grass, including caves and water-only locations.
   - [ ] Re-test SUBTLE/NORMAL/FREQUENT idle flicker at multiple zoom levels, map edges/
         camera boundaries, and save/reboot; verify it stays on one world tile and does
         not interfere with battles, menus, transitions, or Wilds.
