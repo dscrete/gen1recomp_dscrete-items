@@ -65,7 +65,7 @@ return function(mod)
   local whistle=SpeciesWhistle.install(mod,runtime,Weights)
   local resonator=PrototypeResonator.install(mod,runtime,Weights)
   local safariKit=SafariKit.install(mod,runtime,Weights)
-  local glitch=GlitchDetector.install(mod,runtime,fx)
+  local glitch=GlitchDetector.install(mod,runtime,fx,MysteryLure)
   local treasure=TreasureDetector.install(mod,runtime,fx)
   local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit)
   local trackerScan=tracker.scan
