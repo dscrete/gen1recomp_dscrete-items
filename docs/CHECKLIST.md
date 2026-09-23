@@ -265,13 +265,18 @@ code ownership; they do not decide how players obtain an item.
         do not reveal the item name or a direction arrow.
   - [x] Use Manhattan distance bands: **FAINT** within 10, **SIGNAL** within 6,
         **STRONG** within 3, **VERY STRONG** at 1, and **DIRECTLY HERE** at 0.
-  - [x] While passive mode is enabled, emit feedback only when movement crosses into a
-        stronger band; moving within a band or farther away does not spam feedback.
+  - [x] While passive mode is enabled and a hidden item is in range, repeat detector
+        pulses persistently even while standing still; re-read the marker state every
+        frame so collecting the item stops the signal immediately.
+  - [x] Use a metal-detector cadence that becomes progressively more urgent by band:
+        roughly 3.2s FAINT, 2.0s SIGNAL, 1.05s STRONG, 0.5s VERY STRONG, and 0.22s
+        DIRECTLY HERE, with higher/denser tone patterns in the closer tiers.
+  - [x] Suppress and reset persistent detector audio while normal field actions are
+        busy (menus, battles, transitions, etc.), then resume from the current reading.
   - [x] Use audio-only passive feedback after live testing showed screen-space text was
         too dependent on zoom/camera presentation.
   - [x] Replace the ordinary `Tink` SFX with generated short electronic detector tones;
-        use clearly different pitch/rhythm signatures for all five proximity bands and
-        reserve an alternating four-tone high pattern for **DIRECTLY HERE**.
+        keep clearly different pitch/rhythm signatures across the five proximity bands.
   - [x] Respect the player's SFX-volume setting for generated tones and fall back to the
         Gen 1 **Switch** sound if runtime tone synthesis is unavailable.
   - [x] Keep a manual GADGETS screen for the current reading plus **PASSIVE ON/OFF**.
@@ -279,9 +284,11 @@ code ownership; they do not decide how players obtain an item.
         **INSPECT** so marker detection and audio failures can be separated in-game.
   - [x] Persist the passive toggle under the item reusable-state key so save/load keeps
         the setting and full DScrete reset restores the default ON state.
-  - [x] Add deterministic nearest-hidden-item, distance-band, and tone-pattern tests.
-  - [ ] Re-test audio-only proximity feedback from >10 cells through **DIRECTLY HERE**,
-        confirming every band is audibly distinguishable at normal music volume.
+  - [x] Add deterministic nearest-hidden-item, distance-band, persistent-cadence, and
+        tone-pattern tests.
+  - [ ] Re-test persistent audio from >10 cells through **DIRECTLY HERE**, confirming
+        every band is audibly distinguishable at normal music volume and pauses become
+        noticeably shorter as distance closes.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
