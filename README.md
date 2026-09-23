@@ -16,11 +16,12 @@ reward systems can distribute the same item definitions without rewriting their 
 ## Engine compatibility
 
 DScrete Items is a standalone **Mod API 2** mod for Gen1Recomp. The supported engine
-range is `>=0.2.5 <0.3.0`; the minimum-version verifier targets the `v0.2.5` tag.
-Full in-game smoke testing at the compatibility floor remains tracked separately from
-standalone implementation status.
+range is `>=0.2.5 <1.0.0`, which includes current 0.3.x releases such as **v0.3.3**.
+The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved as the
+next explicit compatibility-review boundary rather than imposing an arbitrary minor
+version ceiling.
 
-Current numbered release: **v0.4.0**.
+Current numbered release: **v0.4.1**.
 
 ## Versioning and updates
 
