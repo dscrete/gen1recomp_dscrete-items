@@ -12,15 +12,14 @@ local BANDS = {
   { max=10, name="FAINT", rank=1 },
 }
 
--- Distinct electronic signatures instead of reusing a common overworld SFX.
--- Frequency rises with proximity and the rhythm becomes denser. Rank 5 uses
--- an alternating high pair so standing directly on the item is unmistakable.
+-- Metal-detector cadence: farther signals are sparse, while proximity makes
+-- both the pitch/rhythm and the repeat interval progressively more urgent.
 local PATTERNS = {
-  [1]={ tones={390}, spacing=0.30 },
-  [2]={ tones={500,500}, spacing=0.25 },
-  [3]={ tones={620,760}, spacing=0.17 },
-  [4]={ tones={780,930,780}, spacing=0.12 },
-  [5]={ tones={1050,1320,1050,1320}, spacing=0.09 },
+  [1]={ tones={390}, spacing=0.08, repeatDelay=3.20 },
+  [2]={ tones={500}, spacing=0.08, repeatDelay=2.00 },
+  [3]={ tones={620,760}, spacing=0.12, repeatDelay=1.05 },
+  [4]={ tones={820,940}, spacing=0.09, repeatDelay=0.50 },
+  [5]={ tones={1050,1320}, spacing=0.07, repeatDelay=0.22 },
 }
 
 function TreasureDetector.bandForDistance(distance)
@@ -45,9 +44,9 @@ end
 function TreasureDetector.patternForRank(rank)
   rank=math.floor(tonumber(rank) or 0)
   local p=PATTERNS[rank]
-  if not p then return {tones={},spacing=0.30} end
+  if not p then return {tones={},spacing=0.30,repeatDelay=math.huge} end
   local tones={}; for i,v in ipairs(p.tones) do tones[i]=v end
-  return { tones=tones, spacing=p.spacing }
+  return { tones=tones, spacing=p.spacing, repeatDelay=p.repeatDelay }
 end
 
 local function now()
@@ -96,8 +95,9 @@ local function buildTone(hz)
 end
 
 function TreasureDetector.install(mod,runtime,_fx)
-  local lastMap,lastX,lastY,lastRank=nil,nil,nil,0
-  local pendingTones,pendingIndex,pendingSpacing,nextBeepAt={},1,0.30,0
+  local activeRank=0
+  local pendingTones,pendingIndex,pendingSpacing={},1,0.30
+  local nextToneAt,nextPatternAt=0,0
   local lastSoundStatus="NEVER"
   local lastTriggerBand="NONE"
 
@@ -148,39 +148,68 @@ function TreasureDetector.install(mod,runtime,_fx)
     return false
   end
 
-  local function queuePattern(band)
+  local function clearSchedule()
+    pendingTones={}
+    pendingIndex=1
+    nextToneAt=0
+    nextPatternAt=0
+  end
+
+  local function queuePattern(band,t)
     local p=TreasureDetector.patternForRank(band.rank)
     pendingTones=p.tones
     pendingIndex=1
     pendingSpacing=p.spacing
-    nextBeepAt=0
+    nextToneAt=t or now()
+    nextPatternAt=0
     lastTriggerBand=band.name
   end
 
-  local function serviceBeeps(game)
-    if pendingIndex>#pendingTones then return end
-    local t=now()
-    if t<nextBeepAt then return end
-    local hz=pendingTones[pendingIndex]
-    if not playOne(game,hz) then
-      pendingIndex=#pendingTones+1
-      return
-    end
-    pendingIndex=pendingIndex+1
-    nextBeepAt=t+pendingSpacing
+  local function fieldAvailable()
+    if not (mod.world and type(mod.world.availableFieldActions)=="function") then return true end
+    local ok,_,busy=pcall(mod.world.availableFieldActions,mod.world)
+    return ok and busy==nil
   end
 
-  local function passiveStep(game)
-    if not runtime:isUnlocked(TreasureDetector.KEY) or not enabled() then return end
-    local pos=mod.world:current()
-    if not pos or not pos.mapId or pos.x==nil or pos.y==nil then return end
-    if pos.mapId==lastMap and pos.x==lastX and pos.y==lastY then return end
-    local mapChanged=pos.mapId~=lastMap
-    if mapChanged then lastRank=0 end
-    lastMap,lastX,lastY=pos.mapId,pos.x,pos.y
+  local function serviceBeeps(game)
+    if not runtime:isUnlocked(TreasureDetector.KEY) or not enabled() or not fieldAvailable() then
+      activeRank=0
+      clearSchedule()
+      return
+    end
+
+    -- Re-read every frame, not only on movement. This stops the detector as
+    -- soon as a hidden item is collected and lets it keep pulsing while idle.
     local band=reading()
-    if band.rank>lastRank and band.rank>0 then queuePattern(band) end
-    lastRank=band.rank
+    local t=now()
+    if band.rank<=0 then
+      activeRank=0
+      clearSchedule()
+      return
+    end
+
+    if band.rank~=activeRank then
+      activeRank=band.rank
+      queuePattern(band,t)
+    elseif pendingIndex>#pendingTones and (nextPatternAt==0 or t>=nextPatternAt) then
+      queuePattern(band,t)
+    end
+
+    if pendingIndex>#pendingTones or t<nextToneAt then return end
+    local hz=pendingTones[pendingIndex]
+    if not playOne(game,hz) then
+      clearSchedule()
+      activeRank=0
+      return
+    end
+
+    pendingIndex=pendingIndex+1
+    if pendingIndex<=#pendingTones then
+      nextToneAt=t+pendingSpacing
+    else
+      local p=TreasureDetector.patternForRank(activeRank)
+      nextPatternAt=t+p.repeatDelay
+    end
   end
 
   local function open(game)
@@ -196,6 +225,8 @@ function TreasureDetector.install(mod,runtime,_fx)
         if not row then return end
         if row.value=="toggle" then
           setEnabled(not enabled())
+          activeRank=0
+          clearSchedule()
           if menu then menu:close() end
           open(game)
         elseif row.value=="close" then if menu then menu:close() end end
@@ -207,7 +238,6 @@ function TreasureDetector.install(mod,runtime,_fx)
 
   mod.hooks:wrap("input.step",function(next,game,dt)
     local r=next(game,dt)
-    passiveStep(game)
     serviceBeeps(game)
     return r
   end)
