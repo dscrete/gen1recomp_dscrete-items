@@ -153,6 +153,19 @@ test("Link Cable selector exposes only eligible party Pokemon",function()
   eq(rows[2].slot,3); eq(rows[2].to,"BARMON")
 end)
 
+test("Link Cable confirmed use unwinds Bag and Start menu",function()
+  local calls={}
+  local list={
+    close=function() calls[#calls+1]="bag" end,
+    closeStartMenu=function() calls[#calls+1]="start" end,
+  }
+  LinkCable.closeItemFlow(list)
+  eq(#calls,2)
+  eq(calls[1],"bag","Bag should close first")
+  eq(calls[2],"start","Start menu should close after Bag")
+  LinkCable.closeItemFlow(nil)
+end)
+
 test("Link Cable implementation does not hardcode vanilla trade species",function()
   local f=assert(io.open("lib/link_cable.lua","r")); local source=f:read("*a"); f:close()
   for _,name in ipairs({"KADABRA","MACHOKE","GRAVELER","HAUNTER"}) do
@@ -160,4 +173,6 @@ test("Link Cable implementation does not hardcode vanilla trade species",functio
   end
   check(source:find('kind = "trade"',1,true),"semantic trade trigger must remain explicit")
   check(source:find('"TRADE"',1,true),"native evolution screen should receive trade semantics")
+  check(source:find("LinkCable.closeItemFlow(list)\n              next(game, battle, id, row.mon",1,true),
+    "confirmed Link Cable use must unwind the item menus before vanilla dispatch")
 end)

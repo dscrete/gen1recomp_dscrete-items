@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.4.1**.
+Current numbered release: **v0.4.2**.
 
 ## Versioning and updates
 
@@ -228,9 +228,10 @@ evolution method accepts the standard trade trigger, so compatible Fakemon/modde
 trade evolutions work automatically.
 
 Target selection and the final **USE CABLE** confirmation can be cancelled without
-consuming anything. After confirmation the Cable is consumed, a short link connection
-message is shown, and Gen1Recomp's native evolution presentation runs with genuine
-trade semantics. That means the committed evolution cannot be cancelled with B.
+consuming anything. After confirmation the Bag and parent Start menu close automatically,
+the Cable is consumed, a short link connection message is shown, and Gen1Recomp's
+native evolution presentation runs with genuine trade semantics. That means the
+committed evolution cannot be cancelled with B.
 
 ## Item catalogue
 

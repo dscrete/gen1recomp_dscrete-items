@@ -454,19 +454,20 @@ code ownership; they do not decide how players obtain an item.
   - [x] Allow modded/Fakemon trade evolutions automatically when their merged evolution
         method responds to the standard trade trigger and the target species exists.
   - [x] Permit cancel from the target selector and confirmation without consuming the item.
-  - [x] After **USE CABLE** confirmation, consume one Cable and show a short link-connection
-        message before opening the native evolution presentation.
+  - [x] After **USE CABLE** confirmation, close the Bag and parent Start menu before
+        normal item dispatch consumes one Cable and shows the link-connection message,
+        so the native evolution presentation no longer waits behind an open menu.
   - [x] Pass `via="TRADE"` to the native evolution screen so a confirmed Cable evolution
         keeps real trade semantics: native animation/apply/move-learning and no B-cancel
         once the connection has committed.
   - [x] Fail cleanly without consumption when the party has no eligible trade evolution.
   - [x] Add deterministic tests for standard TRADE, custom semantic trade methods,
-        non-trade exclusion, eligible-only party filtering, and a regression guard
-        against reintroducing a hard-coded vanilla species list.
+        non-trade exclusion, eligible-only party filtering, confirmed menu unwind, and
+        a regression guard against reintroducing a hard-coded vanilla species list.
   - [ ] In-game smoke Kadabra/Machoke/Graveler/Haunter plus at least one compatible
-        modded trade evolution, selector/confirmation cancellation, item consumption,
-        native animation, evolved-species move learning, Pokédex flags, save state, and
-        inability to B-cancel after confirmation.
+        modded trade evolution, selector/confirmation cancellation, immediate Bag/Start
+        menu unwind after confirmation, item consumption, native animation, evolved-species
+        move learning, Pokédex flags, save state, and inability to B-cancel after confirmation.
 
 - [ ] **Move Recorder** — offer an eligible missed level-up move.
 - [ ] **Fossil Catalyst** — apply a disclosed modifier during fossil revival.

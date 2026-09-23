@@ -47,6 +47,17 @@ function LinkCable.eligibleParty(game)
   return rows
 end
 
+-- A confirmed Link Cable should behave like field items that transition into
+-- another presentation: dismiss the Bag and its parent Start menu first. If
+-- the Bag remains open, availableFieldActions() correctly reports the field as
+-- busy and the queued evolution appears to do nothing until the player backs
+-- out manually.
+function LinkCable.closeItemFlow(list)
+  if not list then return end
+  if type(list.close) == "function" then list:close() end
+  if type(list.closeStartMenu) == "function" then list.closeStartMenu() end
+end
+
 function LinkCable.install(mod)
   local selected = nil
   local pendingEvolution = nil
@@ -91,6 +102,11 @@ function LinkCable.install(mod)
           { label = "USE CABLE", onSelect = function()
               closeConfirm()
               selected = row
+              -- The selector and confirmation have already validated this
+              -- target synchronously, so unwind the item UI now. Vanilla item
+              -- dispatch still owns consumption/messages; this only makes the
+              -- resulting field evolution visible without another manual B.
+              LinkCable.closeItemFlow(list)
               next(game, battle, id, row.mon, list, moveIndex, picker)
             end },
           { label = "CANCEL", onSelect = function() closeConfirm() end },
