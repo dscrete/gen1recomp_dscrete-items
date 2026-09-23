@@ -136,15 +136,23 @@ until resolved or expired.
 
 - ID/title and eligibility locations;
 - broad-region maps and local anchor;
-- optional progression requirements;
+- optional progression requirements and minimum trainer tier;
 - authored transmission stages;
 - additive temporary actors/interactables;
 - a curated implemented-consumable prototype pool; and
 - interaction functions containing dialogue branches and outcomes.
 
-`lib/rocket_decoder.lua` owns scheduling, serialization, runtime NPC lifecycle,
-decoder screens, battle/item command adapters and operative memory. Future incidents
-should add content to the catalogue rather than introduce another bespoke scheduler.
+Named operative records also own distinct trainer IDs and four authored party tiers.
+`lib/rocket_decoder.lua` registers those trainer classes using the normal Rocket
+portrait and selects the effective party tier from badge progress plus the incident's
+minimum tier. It deliberately does **not** inspect the player's current Pokémon levels,
+so underleveled players can lose and overleveled players can eventually outgrow early
+encounters instead of meeting invisible rubber-banding.
+
+`lib/rocket_decoder.lua` otherwise owns scheduling, serialization, runtime NPC
+lifecycle, decoder screens, battle/item command adapters and operative memory. Future
+incidents should add content to the catalogue rather than introduce another bespoke
+scheduler.
 
 #### Decoder stages and UI
 
@@ -157,16 +165,26 @@ interactions can expose further stages. The Decoder provides:
 - **OPERATIVE DATA** — records for recurring named Rockets already encountered.
 
 Developer mode also exposes a force-incident menu for deterministic live testing.
+Decoder/archive management remains a full-screen list where that is appropriate.
+Incident *conversation choices* use the compact bordered `mod.ui.Menu` surface so the
+NPC and overworld remain visible while the player chooses a reply.
 
-#### Operative memory and outcomes
+#### Operative memory, conditioned dialogue and outcomes
 
 The initial recurring cast is Ronnie, Milo and Cass. Memory is intentionally small and
-authored: encounter count, player wins, Rocket wins, alternate resolutions, last
-outcome and selected boolean flags. It is enough for later dialogue to remember being
-fooled, beaten, victorious or sabotaged without introducing a numeric relationship
-simulation.
+authored: encounter count, incident wins, Rocket wins, alternate resolutions, last
+incident outcome, actual trainer-battle wins/losses, last trainer-battle result and
+selected boolean flags. It is enough for later dialogue to remember being fooled,
+beaten, victorious or sabotaged without introducing a numeric relationship simulation.
 
-Terminal outcomes are distinct:
+Conversation rows may also carry authored conditions, allowing a later option to be
+shown only when the incident/operative state warrants it. Hidden Cache uses actual
+battle history rather than overall incident completion for negotiation: Milo's split
+becomes available only when the player's **most recent trainer battle against Milo was
+a win**. If Milo later beats the player, that offer closes again until the player wins
+a subsequent battle.
+
+Terminal outcomes remain distinct:
 
 - `RESOLVED_WIN`
 - `RESOLVED_ALTERNATE`
@@ -180,12 +198,15 @@ expired does not falsely become a remembered battle victory.
 
 1. **Intercepted Shipment** — Ronnie transports a randomly selected implemented
    DScrete prototype. Multiple conversation paths include direct confrontation,
-   questioning, a boss bluff, and exposing the intercepted radio traffic.
+   questioning, a boss bluff, and exposing the intercepted radio traffic. Ronnie's
+   dialogue leans nervous/incompetent without making every Rocket scene a joke.
 2. **Hidden Cache** — Milo and a Rocket dead drop emphasize decoded environmental
-   clues, finding the cache first, negotiation and optional combat.
+   clues, finding the cache first, history-conditioned negotiation and optional combat.
+   Milo's voice is dry and pragmatic rather than generic interrogation text.
 3. **Illegal Experiment** — Cass and a scientist test a mis-tuned attractor. The player
-   can investigate, fight or reason through the setup; sabotage produces an authored
-   wild encounter and an alternate resolution.
+   can investigate, fight or reason through the setup; retuning produces an authored
+   wild encounter and an alternate resolution. Cass remains more controlled and
+   threatening while the scientist supplies much of the absurdity.
 
 The three templates deliberately exercise different framework capabilities so later
 incidents can expand content without first expanding the core engine.
@@ -221,8 +242,8 @@ Compatibility is optional and composable rather than dependency-based.
 Standalone deterministic tests cover catalogue metadata, persistence/migrations,
 field-effect transactions, encounter weighting, all current encounter tools, detector
 logic, Pokedex Chip level/fishing calculations and native-entry wiring, plus Rocket
-Decoder serialization, progression gates, placement, reward pools and authored path
-coverage.
+Decoder serialization, progression gates, placement, conditioned dialogue, compact
+conversation UI, authored party tiers, reward pools and memory paths.
 
 Those tests are not a substitute for engine execution. The unchecked matrix in
 `integration_tests/README.md` still covers controller navigation, rendering, native
