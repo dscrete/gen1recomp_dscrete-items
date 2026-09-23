@@ -255,7 +255,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Build the permanent **GADGETS** menu and unlock handling.
   - [x] Add **GADGETS** to the Start menu only when at least one implemented
         permanent/reusable DScrete gadget is unlocked.
-  - [x] Route Silph Tracker and Treasure Detector through the GADGETS menu.
+  - [x] Route all implemented permanent/reusable tools through GADGETS, including
+        Silph Tracker, Treasure Detector, Pokedex Chip help, and Rocket Decoder.
   - [x] Hide unlocked-but-unimplemented catalogue gadgets from the player-facing menu.
   - [ ] Complete minimum-engine/in-game menu navigation smoke testing.
 
@@ -294,8 +295,66 @@ code ownership; they do not decide how players obtain an item.
   - [ ] Verify hidden-item collection immediately removes the signal and that maps
         with no remaining hidden items stay silent.
 
-- [ ] **Pokedex Chip** — display encounter statistics in Pokedex information.
-- [ ] **Rocket Decoder** — detect and decode authored temporary incidents.
+- [x] **Pokedex Chip** — display live encounter statistics from seen Pokédex entries.
+  - [x] Implement as a permanent gadget with no bag slot.
+  - [x] Keep encounter data locked until the species has been SEEN; ownership is not
+        required.
+  - [x] Open a dedicated **AREA DATA** experience from the native Pokédex entry with
+        SELECT; keep the GADGETS row as help/discoverability rather than a second dex.
+  - [x] Show all locations represented by merged encounter/fishing data with encounter
+        method, effective species share, and effective level range.
+  - [x] Reflect merged/effective tables plus active Elusive Scent, Mystery Lure,
+        Species Whistle, Safari Kit weighting, and Prototype Resonator level shifts.
+  - [x] Treat rod percentages as species share conditional on successful catch
+        selection rather than pretending to include the separate no-bite chance.
+  - [x] Preserve runtime fishing replacement semantics for local/non-local Species
+        Whistle and Mystery Lure previews.
+  - [x] Use a dedicated scrolling Gen-1-style screen with the native menu cursor.
+  - [x] Add deterministic level-range, fishing-distribution, replacement-share, and
+        native-dex-entry navigation regression tests.
+  - [ ] Smoke-test SELECT entry navigation, seen/not-seen gating, long location names,
+        land/surf/rod rows, scrolling, and live field-effect changes in game.
+
+- [x] **Rocket Decoder** — enable and decode authored temporary Rocket incidents.
+  - [x] Spawn no incidents while the Decoder is locked; after unlock, maintain at most
+        one active incident globally.
+  - [x] Use a progression-gated semi-random scheduler with a generous step-based
+        incident window and cooldown between events.
+  - [x] Gate locations from actual Gen1Recomp progression evidence: nearby fly-town
+        visit flags, optional required items, and current-region presence; do not treat
+        `save.visited` as a nonexistent route/dungeon history table.
+  - [x] Keep the incident catalogue data-driven: locations/progression, actors,
+        transmissions, prototype pools, dialogue interactions, and outcomes are
+        authored content layered on one reusable framework.
+  - [x] Support multi-stage decoded transmissions: initial broad signal, improved
+        region clue, local signal, and incident-specific additional stages.
+  - [x] Add only temporary runtime NPCs/interactables and remove them on map leave,
+        resolution, expiry, reset/reload as appropriate; never permanently rewrite
+        map blocks, collision, warps, or map save data.
+  - [x] Persist active incident ID, chosen location, stage, phase, remaining window,
+        randomized cargo, recent transmission archive, and operative memory.
+  - [x] Add recurring named operatives **Ronnie**, **Milo**, and **Cass** with authored
+        personality dialogue and lightweight memory for meetings, player wins, Rocket
+        wins, alternate resolutions, last outcome, and selected incident flags.
+  - [x] Support multiple authored conversation paths and meaningful non-battle
+        resolutions rather than forcing every incident into one trainer battle.
+  - [x] Distinguish `RESOLVED_WIN`, `RESOLVED_ALTERNATE`, `ROCKET_SUCCESS`, and
+        `EXPIRED` so a direct loss can affect later dialogue without treating a missed
+        event as a remembered Rocket victory.
+  - [x] Roll the incident's primary prototype cargo once at spawn from an authored pool
+        of implemented DScrete consumables; never include permanent gadgets and never
+        reroll the cargo on save/load.
+  - [x] Add **ACTIVE SIGNAL**, **TRANSMISSIONS**, and **OPERATIVE DATA** Decoder views
+        plus a developer-only force-incident menu.
+  - [x] Ship three initial templates with distinct gameplay verbs:
+        **Intercepted Shipment** (Ronnie/dialogue/hunt), **Hidden Cache**
+        (Milo/decode/search), and **Illegal Experiment** (Cass/investigate/sabotage).
+  - [x] Add deterministic tests for state serialization, progression gates,
+        current-region eligibility, safe open-cell actor placement, initial incident
+        templates, random prototype pools, and multiple conversation/memory paths.
+  - [ ] In-game smoke all three incidents through win/alternate/loss/expiry paths,
+        staged signals, save/reload, map leave/re-entry, actor cleanup, reward delivery,
+        archive entries, and remembered later dialogue.
 
 ## 4. Battle tools — Battle
 
@@ -344,4 +403,7 @@ code ownership; they do not decide how players obtain an item.
       requests.
 - [x] Pushes to `main` update the rolling **Development Build** (`dev`) prerelease and
       replace its attached `dscrete-items-dev.zip`.
+- [x] Repository instructions require verifying final `main` CI plus the rolling `dev`
+      tag/release for completed user-requested changes rather than tagging intermediate
+      work.
 - [ ] Add numbered/versioned release assets when tagged public releases are introduced.
