@@ -45,14 +45,16 @@ test("Prototype Ball registers Poké Ball baseline math and delegates the stock 
   eq(ball.wobbleFactor,255)
   eq(ball.tossAnim,"TOSS_ANIM")
   local observed
-  local caught,shakes=ball.attempt({
+  local ctx
+  ctx={
     targetMon={status="PSN"}, targetDef={catchRate=60}, rateOverride=nil,
     vanillaAttempt=function()
-      observed=120
+      observed=ctx.rateOverride
       return "caught",3
     end,
-  })
-  eq(observed,120)
+  }
+  local caught,shakes=ball.attempt(ctx)
+  eq(observed,120,"the custom ball must pass its boosted rate into vanilla math")
   eq(caught,"caught"); eq(shakes,3)
   local use=effects[PrototypeBall.ITEM_EFFECT_ID]
   eq(use.field,false); eq(use.battle,true); eq(use.needsTarget,false)
