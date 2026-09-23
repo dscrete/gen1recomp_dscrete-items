@@ -336,8 +336,19 @@ code ownership; they do not decide how players obtain an item.
   - [x] Persist active incident ID, chosen location, stage, phase, remaining window,
         randomized cargo, recent transmission archive, and operative memory.
   - [x] Add recurring named operatives **Ronnie**, **Milo**, and **Cass** with authored
-        personality dialogue and lightweight memory for meetings, player wins, Rocket
-        wins, alternate resolutions, last outcome, and selected incident flags.
+        personality dialogue and lightweight memory for meetings, incident outcomes,
+        actual trainer-battle wins/losses, last battle result, and selected flags.
+  - [x] Support conditional authored conversation paths so previous outcomes and
+        operative history can expose or remove later resolutions.
+  - [x] Make Milo's cooperative cache split available only when the player's most
+        recent actual trainer battle against Milo was a win; a later loss closes that
+        offer again until Milo is beaten.
+  - [x] Present incident conversation choices in a compact bordered menu over the
+        overworld instead of an opaque full-screen `ListMenu`; keep Decoder archive/
+        management screens full-screen where appropriate.
+  - [x] Give Ronnie, Milo, and Cass distinct authored trainer classes with four party
+        tiers selected from badge/story progress plus incident minimum tiers; do not
+        scale directly to the player's exact Pokémon levels.
   - [x] Support multiple authored conversation paths and meaningful non-battle
         resolutions rather than forcing every incident into one trainer battle.
   - [x] Distinguish `RESOLVED_WIN`, `RESOLVED_ALTERNATE`, `ROCKET_SUCCESS`, and
@@ -351,11 +362,14 @@ code ownership; they do not decide how players obtain an item.
   - [x] Ship three initial templates with distinct gameplay verbs:
         **Intercepted Shipment** (Ronnie/dialogue/hunt), **Hidden Cache**
         (Milo/decode/search), and **Illegal Experiment** (Cass/investigate/sabotage).
+  - [x] Complete a dialogue-quality pass across all three initial incidents so player
+        prompts read naturally and each recurring operative has a distinct voice.
   - [x] Add deterministic tests for state serialization, progression gates,
-        current-region eligibility, safe open-cell actor placement, initial incident
-        templates, random prototype pools, and multiple conversation/memory paths.
+        current-region eligibility, safe open-cell actor placement, party tiers,
+        compact conversation UI, conditioned paths, prototype pools, and memories.
   - [ ] In-game smoke all three incidents through win/alternate/loss/expiry paths,
-        staged signals, save/reload, map leave/re-entry, actor cleanup, reward delivery,
+        staged signals, compact conversation menus, party tiers, conditioned Milo
+        negotiation, save/reload, map leave/re-entry, actor cleanup, reward delivery,
         archive entries, and remembered later dialogue.
 
 ## 4. Battle tools — Battle
@@ -370,7 +384,7 @@ code ownership; they do not decide how players obtain an item.
       presentation and a safe return to item flow.
 - [ ] **Move Recorder** — offer an eligible missed level-up move.
 - [ ] **Fossil Catalyst** — apply a disclosed modifier during fossil revival.
-- [ ] **DNA Stabilizer** — improve DVs within bounded, shiny-safe rules.
+- [ ] **DNA Stabilizer** — improve DVs within bounded shiny-safe rules.
 - [ ] **Mutation Capsule** — preview and reroll one random DV.
 - [ ] **Blank TM** — record and teach one move using data-driven compatibility.
 
