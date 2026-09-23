@@ -221,18 +221,27 @@ incidents can expand content without first expanding the core engine.
 ### Prototype Ball
 
 Prototype Ball is a real consumable bag item registered as both an item effect and a
-`content.balls` record. Its ball definition intentionally copies the ordinary Poké
-Ball factors (`randMax=255`, `hpFactor=12`, `wobbleFactor=255`) and the normal toss
-animation. The custom attempt callback changes only one input: if the target already
-has any major status condition, its effective species catch rate is doubled and
-clamped to 255. The callback then calls `ctx.vanillaAttempt()` so Gen1Recomp still owns
-HP scaling, status bonuses, wobble calculation, capture storage and all normal battle
-side effects. Existing catch-rate overrides remain the baseline before the 2× modifier.
+`content.balls` record. Its ball definition intentionally keeps the ordinary Poké Ball
+factors (`randMax=255`, `hpFactor=12`, `wobbleFactor=255`) and normal toss animation,
+then rewrites only the effective species catch-rate input according to the target's
+current HP percentage:
+
+- above 50% HP: 0.5× catch-rate input;
+- 26–50% HP: 1×;
+- 11–25% HP: 2×; and
+- 10% HP or less: 3×, capped at 255.
+
+This makes the Ball deliberately worse than a Poké Ball when thrown carelessly, but
+substantially stronger than an Ultra Ball on a badly weakened target. Existing
+catch-rate overrides are treated as the baseline before applying the HP-band
+multiplier. The callback then calls `ctx.vanillaAttempt()`, so Gen1Recomp still owns
+the ordinary HP factor, status catch bonuses, wobble calculation, capture storage and
+all normal battle side effects. Status therefore stacks naturally with the Prototype
+Ball rather than being the condition that activates it.
 
 The item effect is battle-only and returns the engine's ordinary `ball` result, leaving
 bag consumption, trainer-ball refusal, throw animation and turn cost to the stock bag
-and battle flow. With no target status the Ball is deliberately equivalent to a Poké
-Ball rather than a universally stronger capture item.
+and battle flow.
 
 ### EXP Battery
 
@@ -289,8 +298,8 @@ Compatibility is optional and composable rather than dependency-based.
 Standalone deterministic tests cover catalogue metadata, persistence/migrations,
 field-effect transactions, encounter weighting, all current encounter tools, detector
 logic, Pokedex Chip level/fishing calculations and native-list/entry wiring, Rocket
-Decoder serialization/progression/dialogue/rewards, Prototype Ball catch-rate and
-registration behavior, and EXP Battery persistence/distribution grouping.
+Decoder serialization/progression/dialogue/rewards, Prototype Ball HP-band/catch-rate
+and registration behavior, and EXP Battery persistence/distribution grouping.
 
 Those tests are not a substitute for engine execution. The unchecked matrix in
 `integration_tests/README.md` still covers controller navigation, rendering, native
