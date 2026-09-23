@@ -78,5 +78,42 @@ not pretend to validate engine hooks.
 - verify a full DScrete persistent-state reset clears active incident state, archives,
   operative memory and temporary actors.
 
+## Prototype Ball smoke matrix
+
+- grant a Prototype Ball through the developer NPC and confirm it occupies a normal bag
+  slot, can be tossed outside battle, and decrements exactly once when thrown;
+- against an unstatused wild Pokémon, compare behavior to a normal Poké Ball and confirm
+  the standard toss/wobble/caught flow is preserved;
+- inflict PAR, SLP, PSN, BRN, or FRZ, throw a Prototype Ball, and verify the statused
+  target receives the documented doubled effective species catch-rate input while the
+  engine's normal HP/status math still runs;
+- test a high-catch-rate species and confirm the doubled species rate caps at 255;
+- throw one at a trainer-owned Pokémon and confirm the normal trainer-ball refusal,
+  animation, item consumption, and turn cost remain stock behavior;
+- capture with a full party and confirm normal party/PC storage, Pokédex registration,
+  nickname prompt, and post-capture cleanup are unchanged.
+
+## EXP Battery smoke matrix
+
+- use an EXP Battery in the field and confirm one copy is consumed and INSPECT reports
+  `EXP BAT ARMED`; attempting to use a second while armed must fail without consumption;
+- save and reload while armed and confirm the charge remains armed;
+- defeat a wild Pokémon with one participant and confirm the displayed battle EXP is
+  exactly doubled, then verify the charge is no longer armed;
+- switch between two or more participating party members before the knockout and verify
+  every normal share from that defeated Pokémon receives the same 2× multiplier rather
+  than only the first recipient;
+- where EXP.ALL is available, verify its additional payout shares belong to the same
+  one-charge distribution;
+- complete ordinary battle turns without defeating anything and confirm the Battery is
+  not consumed;
+- verify trainer battle EXP also doubles and that subsequent enemy Pokémon in the same
+  trainer battle receive ordinary EXP after the first charged payout;
+- verify a charged payout can cross a level-up and move-learning prompt without losing
+  or double-applying the multiplier;
+- use Rare Candy or another non-battle growth path while armed and confirm it neither
+  receives nor consumes the Battery bonus;
+- verify full DScrete persistent-state reset clears an armed Battery.
+
 As more items land, engine-facing regression drivers should be added beside this
 matrix rather than duplicating Gen1Recomp internals in standalone Python models.
