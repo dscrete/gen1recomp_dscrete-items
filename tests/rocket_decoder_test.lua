@@ -10,9 +10,36 @@ test("Rocket Decoder state roundtrips delimiter-safe scalar values",function()
   eq(decoded.summary,"A|B=C%")
 end)
 
+test("Rocket Decoder progression gates use fly-town progress rather than route save.visited bits",function()
+  local early={visited={VIRIDIAN_CITY=true},inventory={}}
+  local rows=RocketDecoder.eligibleIncidents(Incidents,early,{})
+  eq(#rows,1)
+  eq(rows[1].id,"hidden_cache")
+
+  local cerulean={visited={CERULEAN_CITY=true},inventory={}}
+  rows=RocketDecoder.eligibleIncidents(Incidents,cerulean,{})
+  eq(#rows,1)
+  eq(rows[1].id,"intercepted_shipment")
+
+  local late={visited={VERMILION_CITY=true},inventory={CASCADEBADGE=1,HM_CUT=1}}
+  rows=RocketDecoder.eligibleIncidents(Incidents,late,{})
+  eq(#rows,1)
+  eq(rows[1].id,"illegal_experiment")
+end)
+
+test("Rocket Decoder current-region presence proves an incident location is reachable",function()
+  local progress={visited={},inventory={},currentMap="ROUTE_5"}
+  local rows=RocketDecoder.eligibleIncidents(Incidents,progress,{})
+  eq(#rows,1)
+  eq(rows[1].id,"intercepted_shipment")
+end)
+
 test("Rocket Decoder selects fresh reachable incidents before repeats",function()
-  local visited={ROUTE_5=true,VIRIDIAN_FOREST=true,ROCK_TUNNEL_1F=true}
-  local rows=RocketDecoder.eligibleIncidents(Incidents,visited,{last_id="hidden_cache",done_hidden_cache="1"})
+  local progress={
+    visited={VIRIDIAN_CITY=true,CERULEAN_CITY=true,VERMILION_CITY=true},
+    inventory={CASCADEBADGE=1,HM_CUT=1},
+  }
+  local rows=RocketDecoder.eligibleIncidents(Incidents,progress,{last_id="hidden_cache",done_hidden_cache="1"})
   eq(#rows,2)
   local ids={}
   for _,row in ipairs(rows) do ids[row.id]=true end
@@ -49,6 +76,7 @@ test("Rocket incidents ship three distinct extensible templates and named operat
   check(Incidents.ALL.intercepted_shipment.interact.ronnie~=nil)
   check(Incidents.ALL.hidden_cache.interact.cache~=nil)
   check(Incidents.ALL.illegal_experiment.interact.device~=nil)
+  eq(Incidents.ALL.illegal_experiment.actors[2].sprite,"SPRITE_SUPER_NERD")
 end)
 
 test("Shipment prototype reward is randomized from implemented-style DScrete item keys",function()

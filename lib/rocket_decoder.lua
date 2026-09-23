@@ -3,19 +3,19 @@
 -- global active incident, scheduling, Decoder UI, runtime actors and lightweight
 -- operative memory.
 
-local RocketDecoder = {}
+local RocketDecoder={}
 
-RocketDecoder.KEY = "rocket_decoder"
-RocketDecoder.STATE_VERSION = 1
-RocketDecoder.DEFAULT_EXPIRY = 2500
-RocketDecoder.INITIAL_COOLDOWN = 128
-RocketDecoder.REPEAT_COOLDOWN = 512
-RocketDecoder.FORCE_AFTER_READY = 256
-RocketDecoder.ROLL_DENOMINATOR = 64
+RocketDecoder.KEY="rocket_decoder"
+RocketDecoder.STATE_VERSION=1
+RocketDecoder.DEFAULT_EXPIRY=2500
+RocketDecoder.INITIAL_COOLDOWN=128
+RocketDecoder.REPEAT_COOLDOWN=512
+RocketDecoder.FORCE_AFTER_READY=256
+RocketDecoder.ROLL_DENOMINATOR=64
 
-local STATE_KEY = RocketDecoder.KEY
-local INTERACT_COMMAND = "dscrete_items:rocket_interact"
-local ARCHIVE_MAX = 6
+local STATE_KEY=RocketDecoder.KEY
+local INTERACT_COMMAND="dscrete_items:rocket_interact"
+local ARCHIVE_MAX=6
 
 local function esc(v)
   return tostring(v or ""):gsub("%%","%%25"):gsub("|","%%7C"):gsub("=","%%3D")
@@ -53,6 +53,11 @@ end
 
 local function truth(v) return v=="1" or v==1 or v==true or v=="true" end
 
+local function contains(list,value)
+  for _,candidate in ipairs(list or {}) do if candidate==value then return true end end
+  return false
+end
+
 function RocketDecoder.findOpenCell(overview,x,y,occupied)
   if type(overview)~="table" or type(overview.rows)~="table" then return x,y end
   occupied=occupied or {}
@@ -75,13 +80,40 @@ function RocketDecoder.findOpenCell(overview,x,y,occupied)
   return nil,nil
 end
 
-function RocketDecoder.eligibleIncidents(Incidents,visited,state)
+-- Gen1Recomp's save.visited is the fly-town bitset, not a record of every route
+-- and dungeon the player has entered. Incident locations therefore declare
+-- progression towns explicitly. Current-map membership is also accepted because
+-- being physically inside the region is stronger evidence than any progression bit.
+function RocketDecoder.locationEligible(loc,progress)
+  if type(loc)~="table" then return false end
+  progress=progress or {}
+  local visited=progress.visited or progress
+  local inventory=progress.inventory or {}
+  local currentMap=progress.currentMap
+  if currentMap and contains(loc.regionMaps,currentMap) then return true end
+
+  local unlockVisited=loc.unlockVisited or {}
+  if #unlockVisited>0 then
+    local reached=false
+    for _,mapId in ipairs(unlockVisited) do
+      if visited and visited[mapId] then reached=true break end
+    end
+    if not reached then return false end
+  end
+  for _,itemId in ipairs(loc.requiredItems or {}) do
+    local value=inventory and inventory[itemId]
+    if value==nil or value==false or value==0 then return false end
+  end
+  return true
+end
+
+function RocketDecoder.eligibleIncidents(Incidents,progress,state)
   local fresh,repeatable={},{}
   for _,id in ipairs(Incidents.ORDER or {}) do
     local def=Incidents.ALL[id]
     local location
     for i,loc in ipairs(def and def.locations or {}) do
-      if visited and visited[loc.mapId] then location=i break end
+      if RocketDecoder.locationEligible(loc,progress) then location=i break end
     end
     if def and location then
       local row={id=id,location=location}
@@ -146,6 +178,7 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
 
   local function spawnActors()
     clearActors()
+    if not runtime:isUnlocked(RocketDecoder.KEY) then return end
     local def=incident()
     local loc=location(def)
     local pos=mod.world:current()
@@ -267,7 +300,7 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
     return pool[love.math.random(1,#pool)]
   end
 
-  local function startIncident(id,locIndex,game)
+  local function startIncident(id,locIndex)
     local def=Incidents.ALL[id]
     local loc=def and def.locations and def.locations[locIndex]
     if not def or not loc then return false end
@@ -288,24 +321,35 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
     return true
   end
 
+  local function progressFor(game)
+    local save=game and game.save or {}
+    local current=mod.world:current()
+    return {
+      visited=save.visited or {},
+      inventory=save.inventory or {},
+      currentMap=current and current.mapId or nil,
+    }
+  end
+
   local function chooseIncident(game,forcedId)
-    local visited=game and game.save and game.save.visited or {}
     if forcedId then
       local def=Incidents.ALL[forcedId]
       if not def then return false end
       local idx=1
+      local current=mod.world:current()
       for i,loc in ipairs(def.locations or {}) do
-        if visited[loc.mapId] then idx=i break end
+        if current and contains(loc.regionMaps,current.mapId) then idx=i break end
       end
-      return startIncident(forcedId,idx,game)
+      return startIncident(forcedId,idx)
     end
-    local eligible=RocketDecoder.eligibleIncidents(Incidents,visited,state)
+    local eligible=RocketDecoder.eligibleIncidents(Incidents,progressFor(game),state)
     if #eligible==0 then return false end
     local pick=eligible[love.math.random(1,#eligible)]
-    return startIncident(pick.id,pick.location,game)
+    return startIncident(pick.id,pick.location)
   end
 
   local function advanceForMap(mapId)
+    if not runtime:isUnlocked(RocketDecoder.KEY) then clearActors(); return end
     local def=incident()
     local loc=location(def)
     if not def or not loc then return end
@@ -547,9 +591,9 @@ function RocketDecoder.install(mod,runtime,Items,Incidents)
   function RocketDecoder.status()
     loadState()
     return {
-      active=state.active, stage=n(state.stage,0), phase=state.phase,
-      remaining=n(state.remaining,0), cargo=state.cargo,
-      cooldown=n(state.cooldown,0), ready=n(state.ready,0),
+      active=state.active,stage=n(state.stage,0),phase=state.phase,
+      remaining=n(state.remaining,0),cargo=state.cargo,
+      cooldown=n(state.cooldown,0),ready=n(state.ready,0),
     }
   end
 

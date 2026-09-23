@@ -22,6 +22,16 @@ test("Pokedex Chip fishing distributions preserve duplicate candidate weight",fu
   eq(dist.POLIWAG,1)
 end)
 
+test("Pokedex Chip replacement preview matches post-selection fishing modifiers",function()
+  local dist=PokedexChip.applyFishingReplacement(Weights,{GOLDEEN=1,POLIWAG=1},"GOLDEEN",0.30)
+  local total=Weights.total(dist)
+  local share=dist.GOLDEEN/total
+  check(math.abs(share-0.65)<0.00001,"native 50% plus 30% replacement should end at 65%")
+  local nonlocal=PokedexChip.applyFishingReplacement(Weights,{GOLDEEN=1,POLIWAG=1},"PIKACHU",0.02)
+  local nonlocalTotal=Weights.total(nonlocal)
+  check(math.abs(nonlocal.PIKACHU/nonlocalTotal-0.02)<0.00001,"nonlocal replacement share should be exact")
+end)
+
 test("Pokedex Chip is wired to the native dex entry instead of only GADGETS",function()
   local f=assert(io.open("lib/pokedex_chip.lua","r"))
   local src=f:read("*a"); f:close()
@@ -33,4 +43,6 @@ test("Pokedex Chip is wired to the native dex entry instead of only GADGETS",fun
     "seen species with no current encounter source needs a clear empty state")
   check(src:find("PrototypeResonator.raiseLevel",1,true)~=nil,
     "live level ranges should reflect an active Prototype Resonator")
+  check(src:find("Font.drawCode(Theme.cursor",1,true)~=nil,
+    "chip should use the native menu cursor glyph")
 end)
