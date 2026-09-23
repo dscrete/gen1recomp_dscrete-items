@@ -25,19 +25,40 @@ local function fakeRuntime()
   return runtime,saved
 end
 
-test("Prototype Ball doubles only a statused target's effective catch rate",function()
-  local def={catchRate=75}
-  local rate,boosted=PrototypeBall.effectiveCatchRate({status=nil},def,nil)
-  eq(rate,75); eq(boosted,false)
-  rate,boosted=PrototypeBall.effectiveCatchRate({status="PAR"},def,nil)
-  eq(rate,150); eq(boosted,true)
-  rate=PrototypeBall.effectiveCatchRate({status="SLP"},{catchRate=200},nil)
-  eq(rate,255,"status boost must clamp to the Gen-1 catch-rate byte")
-  rate=PrototypeBall.effectiveCatchRate({status="BRN"},def,40)
-  eq(rate,80,"an existing rate override remains the baseline")
+test("Prototype Ball uses authored health bands",function()
+  local def={catchRate=80}
+  local cases={
+    {hp=100,max=100,rate=40,mult=0.5,band="HIGH"},
+    {hp=51,max=100,rate=40,mult=0.5,band="HIGH"},
+    {hp=50,max=100,rate=80,mult=1.0,band="MID"},
+    {hp=26,max=100,rate=80,mult=1.0,band="MID"},
+    {hp=25,max=100,rate=160,mult=2.0,band="LOW"},
+    {hp=11,max=100,rate=160,mult=2.0,band="LOW"},
+    {hp=10,max=100,rate=240,mult=3.0,band="CRITICAL"},
+    {hp=1,max=100,rate=240,mult=3.0,band="CRITICAL"},
+  }
+  for _,c in ipairs(cases) do
+    local rate,mult,band=PrototypeBall.effectiveCatchRate(
+      {hp=c.hp,stats={hp=c.max}},def,nil)
+    eq(rate,c.rate,"rate at "..c.hp.."/"..c.max)
+    eq(mult,c.mult,"multiplier at "..c.hp.."/"..c.max)
+    eq(band,c.band,"band at "..c.hp.."/"..c.max)
+  end
 end)
 
-test("Prototype Ball registers Poké Ball baseline math and delegates the stock roll",function()
+test("Prototype Ball clamps low-HP power and respects existing rate overrides",function()
+  local rate=PrototypeBall.effectiveCatchRate(
+    {hp=5,stats={hp=100}},{catchRate=200},nil)
+  eq(rate,255,"critical-HP boost must clamp to the Gen-1 catch-rate byte")
+  rate=PrototypeBall.effectiveCatchRate(
+    {hp=100,stats={hp=100}},{catchRate=200},40)
+  eq(rate,20,"high-HP drawback applies to an existing catch-rate override")
+  rate=PrototypeBall.effectiveCatchRate(
+    {hp=10,stats={hp=100}},{catchRate=200},40)
+  eq(rate,120,"critical-HP bonus applies to an existing catch-rate override")
+end)
+
+test("Prototype Ball keeps Poké Ball factors and delegates stock HP/status math",function()
   local mod,effects,balls=fakeMod()
   PrototypeBall.install(mod)
   local ball=balls[PrototypeBall.ITEM_ID]
@@ -48,14 +69,14 @@ test("Prototype Ball registers Poké Ball baseline math and delegates the stock 
   local observed
   local ctx
   ctx={
-    targetMon={status="PSN"}, targetDef={catchRate=60}, rateOverride=nil,
+    targetMon={hp=6,stats={hp=60},status="PSN"}, targetDef={catchRate=60}, rateOverride=nil,
     vanillaAttempt=function()
       observed=ctx.rateOverride
       return "caught",3
     end,
   }
   local caught,shakes=ball.attempt(ctx)
-  eq(observed,120,"the custom ball must pass its boosted rate into vanilla math")
+  eq(observed,180,"critical health must pass the 3x rate into vanilla math")
   eq(caught,"caught"); eq(shakes,3)
   local use=effects[PrototypeBall.ITEM_EFFECT_ID]
   eq(use.field,false); eq(use.battle,true); eq(use.needsTarget,false)
