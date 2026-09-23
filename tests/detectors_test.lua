@@ -191,3 +191,24 @@ test("Treasure Detector runtime rechecks every frame for persistent pulse and co
   check(src:find("availableFieldActions",1,true)~=nil,
     "persistent detector should suppress audio when field actions are busy")
 end)
+
+test("Treasure Detector volume presets scale upward and default safely", function()
+  eq(TreasureDetector.VOLUME_OPTION,"treasure_detector_volume")
+  local quiet=TreasureDetector.resolveVolumeMultiplier("quiet")
+  local normal=TreasureDetector.resolveVolumeMultiplier("normal")
+  local loud=TreasureDetector.resolveVolumeMultiplier("loud")
+  local maximum=TreasureDetector.resolveVolumeMultiplier("max")
+  eq(quiet,1.00)
+  eq(normal,1.50)
+  eq(loud,2.25)
+  eq(maximum,3.25)
+  check(quiet<normal and normal<loud and loud<maximum,
+    "detector volume presets must increase monotonically")
+  eq(TreasureDetector.resolveVolumeMultiplier("bad"),loud)
+  local f=assert(io.open("main.lua","r"))
+  local src=f:read("*a"); f:close()
+  check(src:find('key="treasure_detector_volume"',1,true)~=nil,
+    "Treasure Detector volume option must be registered")
+  check(src:find('default="loud"',1,true)~=nil,
+    "Treasure Detector volume should default to LOUD")
+end)
