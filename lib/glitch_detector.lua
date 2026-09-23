@@ -108,6 +108,33 @@ function GlitchDetector.kantoPool(pokemon)
   return out
 end
 
+function GlitchDetector.nativeSpecies(encDef)
+  local out={}
+  for _,terrain in ipairs({"grass","water"}) do
+    local row=type(encDef)=="table" and encDef[terrain] or nil
+    for _,slot in ipairs((row and row.slots) or {}) do
+      if slot and slot.species then out[slot.species]=true end
+    end
+  end
+  return out
+end
+
+-- A glitch should look ecologically wrong, not merely rare. Exclude every
+-- species native to this map and every species Mystery Lure considers normal
+-- for the current grass habitat before choosing from the remaining Kanto pool.
+function GlitchDetector.anomalyPool(pokemon,encDef,MysteryLure,mapId)
+  local excluded=GlitchDetector.nativeSpecies(encDef)
+  if MysteryLure and type(MysteryLure.candidates)=="function" then
+    local habitat=MysteryLure.candidates({pokemon=pokemon},nil,mapId,"grass",false)
+    for _,species in ipairs(habitat or {}) do excluded[species]=true end
+  end
+  local out={}
+  for _,species in ipairs(GlitchDetector.kantoPool(pokemon)) do
+    if not excluded[species] then out[#out+1]=species end
+  end
+  return out
+end
+
 -- Pick one native slot while deliberately ignoring only the map's encounter
 -- frequency. The anomaly forces the battle but retains an ordinary local level
 -- distribution. Species is replaced afterward by the anomaly pool.
@@ -129,7 +156,7 @@ function GlitchDetector.nativeEncounter(encDef,rng)
   return slot and { species=slot.species, level=slot.level } or nil
 end
 
-function GlitchDetector.install(mod,runtime,fx)
+function GlitchDetector.install(mod,runtime,fx,MysteryLure)
   local currentMap,currentTiles=GlitchDetector.decodeState(
     runtime:getReusableState(GlitchDetector.STATE_KEY,nil))
 
@@ -201,9 +228,10 @@ function GlitchDetector.install(mod,runtime,fx)
     if not pos or pos.mapId~=currentMap
         or not GlitchDetector.isAnomalyTile(currentTiles,pos.x,pos.y) then return false end
 
-    local native=GlitchDetector.nativeEncounter(encounterDef(pos.mapId))
+    local def=encounterDef(pos.mapId)
+    local native=GlitchDetector.nativeEncounter(def)
     if not native or not native.level then return false end
-    local pool=GlitchDetector.kantoPool(game and game.data and game.data.pokemon)
+    local pool=GlitchDetector.anomalyPool(game and game.data and game.data.pokemon,def,MysteryLure,pos.mapId)
     if #pool==0 then return false end
     local species=pool[love.math.random(1,#pool)]
 
