@@ -64,6 +64,8 @@ return function(mod)
   local TrainerBeaconDialogue=loadLocal(mod,"lib/trainer_beacon_dialogue.lua")
   local TrainerBeacon=loadLocal(mod,"lib/trainer_beacon.lua")
   local LinkCable=loadLocal(mod,"lib/link_cable.lua")
+  local MoveRecorder=loadLocal(mod,"lib/move_recorder.lua")
+  local FossilCatalyst=loadLocal(mod,"lib/fossil_catalyst.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -97,6 +99,8 @@ return function(mod)
   local expBattery=ExpBattery.install(mod,runtime)
   local trainerBeacon=TrainerBeacon.install(mod,runtime,TrainerBeaconDialogue)
   local linkCable=LinkCable.install(mod)
+  local moveRecorder=MoveRecorder.install(mod)
+  local fossilCatalyst=FossilCatalyst.install(mod)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -129,6 +133,8 @@ return function(mod)
   mod.exports.trainerBeacon=trainerBeacon
   mod.exports.trainerBeaconDialogue=TrainerBeaconDialogue
   mod.exports.linkCable=linkCable
+  mod.exports.moveRecorder=moveRecorder
+  mod.exports.fossilCatalyst=fossilCatalyst
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end

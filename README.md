@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.4.2**.
+Current numbered release: **v0.5.0**.
 
 ## Versioning and updates
 
@@ -233,6 +233,38 @@ the Cable is consumed, a short link connection message is shown, and Gen1Recomp'
 native evolution presentation runs with genuine trade semantics. That means the
 committed evolution cannot be cancelled with B.
 
+### Move Recorder
+
+A consumable that recovers one missed natural move. Its party selector only displays
+Pokémon that currently have something eligible to recall. The move list is built from
+the merged evolutionary ancestry: starting moves and level-up moves at or below the
+Pokémon's current level are eligible even when they belonged to an earlier stage, so an
+early evolution can still recover a skipped pre-evolution move. Already-known moves
+and non-natural sources such as TM/HM/tutor/event moves are excluded.
+
+After a move is selected, Gen1Recomp's native learn/forget flow takes over. Pokémon
+with fewer than four moves learn it normally; Pokémon with four moves get the standard
+replacement screen and HM-forget protection. Cancelling either selector or abandoning
+the native learn flow keeps the Recorder. One Recorder is consumed only when the move
+is actually learned.
+
+### Fossil Catalyst
+
+A consumable Cinnabar Lab upgrade offered while collecting a completed fossil revival.
+If accepted, the revival is overclocked to a progression target of **Lv.35 / 40 / 45 /
+50** across the same four broad badge tiers used by Trainer Beacon. A modded revival
+that already starts above that target is never lowered.
+
+The overclocked level recursively applies only ordinary level evolutions that have been
+reached. The resulting Pokémon then goes through Gen1Recomp's normal gift construction,
+storage, nickname and Pokédex path, so its natural starting/level-up moves are the
+normal four-move set appropriate to the resulting species and reconstructed level.
+Stone, trade and other special evolutions are not inferred. The integration keys off
+the pending Cinnabar fossil state rather than a fossil-species whitelist, allowing
+compatible modded fossil revivals to participate. Declining the offer or failing to
+store the revived Pokémon consumes nothing; one Catalyst is spent only after a
+successful handover.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -252,8 +284,8 @@ committed evolution cannot be cancelled with B.
 | EXP Battery | Consumable | Battle | Doubles the full next defeated-Pokémon battle EXP payout. |
 | Trainer Beacon | Consumable | Battle | Rematches a faced defeated ordinary trainer with a progression-boosted evolved team. |
 | Link Cable | Consumable | Pokémon | Triggers any compatible semantic trade evolution in the party. |
-| Move Recorder | Consumable | Pokémon | Offers an eligible missed level-up move. |
-| Fossil Catalyst | Consumable | Pokémon | Applies a disclosed modifier during fossil revival. |
+| Move Recorder | Consumable | Pokémon | Recalls one missed natural starting/level-up move from the current evolutionary ancestry. |
+| Fossil Catalyst | Consumable | Pokémon | Overclocks Cinnabar revival to Lv.35/40/45/50 with reached level evolutions. |
 | DNA Stabilizer | Consumable | Pokémon | Improves DVs within bounded shiny-safe rules. |
 | Mutation Capsule | Consumable | Pokémon | Rerolls one random DV with preview. |
 | Blank TM | Consumable | Pokémon | Records and teaches one compatible move. |
@@ -267,8 +299,9 @@ Current acquisition remains deliberately development-oriented while behavior is 
 stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
-tools. Prototype Ball, EXP Battery, Trainer Beacon and Link Cable also have direct
-GET ITEMS entries, and INSPECT shows whether an EXP Battery charge is currently armed.
+tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder and
+Fossil Catalyst also have direct GET ITEMS entries, and INSPECT shows whether an EXP
+Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
 scenario can be tested deterministically rather than waiting for the normal scheduler.
