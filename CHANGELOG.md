@@ -4,6 +4,21 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.5.0 — 2026-09-24
+
+### Added
+
+- Move Recorder, a consumable party tool that lists only Pokémon with an eligible missed natural move, then offers starting/level-up moves from the Pokémon's merged evolutionary ancestry at or below its current level. Earlier-stage moves remain available after evolution, including moves skipped by evolving early; TM/HM/tutor/event-only compatibility is excluded.
+- Move Recorder delegates the final choice to Gen1Recomp's native move-learning flow, including normal four-move replacement, HM-forget protection, learned-move presentation and cancellation. The Recorder is consumed only after a move is actually learned.
+- Fossil Catalyst, an optional consumable offered during the real Cinnabar fossil handover. Accepting it overclocks revival to Lv.35 / 40 / 45 / 50 across the same four broad badge tiers used by Trainer Beacon, never lowering a modded revival that already starts higher.
+- Fossil Catalyst recursively applies only ordinary level evolutions reached by the overclocked level. The resulting gift then uses Gen1Recomp's normal Pokémon construction, storage, nickname and Pokédex path, so its natural reconstructed moveset is the normal four-move set appropriate to the resulting species and level.
+- Fossil Catalyst is data-driven: the Cinnabar integration keys off the pending lab fossil state rather than a Helix/Dome/Old Amber species list, allowing compatible modded fossil species to participate.
+- Direct developer-harness grants for Move Recorder and Fossil Catalyst.
+
+### Changed
+
+- The implemented Pokémon-tool catalogue now includes Link Cable, Move Recorder and Fossil Catalyst.
+
 ## 0.4.2 — 2026-09-23
 
 ### Fixed
