@@ -71,6 +71,8 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="PROTO BALL", value="proto_ball" },
       { label="EXP BATTERY", value="exp_battery" },
       { label="LINK CABLE", value="link_cable" },
+      { label="MOVE RECORDER", value="move_recorder" },
+      { label="FOSSIL CAT.", value="fossil_catalyst" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -98,6 +100,10 @@ function Debug.install(mod, Items, runtime, diagnostics)
       giveItem(ctx, Items.byKey.exp_battery.itemId, 1)
     elseif action == "link_cable" then
       giveItem(ctx, Items.byKey.link_cable.itemId, 1)
+    elseif action == "move_recorder" then
+      giveItem(ctx, Items.byKey.move_recorder.itemId, 1)
+    elseif action == "fossil_catalyst" then
+      giveItem(ctx, Items.byKey.fossil_catalyst.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
