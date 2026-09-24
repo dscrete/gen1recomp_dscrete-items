@@ -66,6 +66,9 @@ return function(mod)
   local LinkCable=loadLocal(mod,"lib/link_cable.lua")
   local MoveRecorder=loadLocal(mod,"lib/move_recorder.lua")
   local FossilCatalyst=loadLocal(mod,"lib/fossil_catalyst.lua")
+  local DvTools=loadLocal(mod,"lib/dv_tools.lua")
+  local DNAStabilizer=loadLocal(mod,"lib/dna_stabilizer.lua")
+  local MutationCapsule=loadLocal(mod,"lib/mutation_capsule.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -101,6 +104,8 @@ return function(mod)
   local linkCable=LinkCable.install(mod)
   local moveRecorder=MoveRecorder.install(mod)
   local fossilCatalyst=FossilCatalyst.install(mod)
+  local dnaStabilizer=DNAStabilizer.install(mod,DvTools)
+  local mutationCapsule=MutationCapsule.install(mod,runtime,DvTools)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -135,6 +140,9 @@ return function(mod)
   mod.exports.linkCable=linkCable
   mod.exports.moveRecorder=moveRecorder
   mod.exports.fossilCatalyst=fossilCatalyst
+  mod.exports.dvTools=DvTools
+  mod.exports.dnaStabilizer=dnaStabilizer
+  mod.exports.mutationCapsule=mutationCapsule
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end
