@@ -36,6 +36,8 @@ test("implemented Pokemon tools have registered effects", function()
     link_cable="DS_LINK_CABLE_EFFECT",
     move_recorder="DS_MOVE_RECORDER_EFFECT",
     fossil_catalyst="DS_FOSSIL_CATALYST_EFFECT",
+    dna_stabilizer="DS_DNA_STABILIZER_EFFECT",
+    mutation_capsule="DS_MUTATION_CAPSULE_EFFECT",
   }
   for key,effect in pairs(expected) do
     local item=Items.byKey[key]
@@ -57,7 +59,7 @@ end)
 
 test("implemented filters expose only built content", function()
   local consumables=Items.consumables(true)
-  eq(#consumables,13)
+  eq(#consumables,15)
   eq(consumables[1].key,"prism_scent")
   eq(consumables[2].key,"elusive_scent")
   eq(consumables[3].key,"mystery_lure")
@@ -70,5 +72,7 @@ test("implemented filters expose only built content", function()
   eq(consumables[10].key,"link_cable")
   eq(consumables[11].key,"move_recorder")
   eq(consumables[12].key,"fossil_catalyst")
-  eq(consumables[13].key,"glitch_detector")
+  eq(consumables[13].key,"dna_stabilizer")
+  eq(consumables[14].key,"mutation_capsule")
+  eq(consumables[15].key,"glitch_detector")
 end)
