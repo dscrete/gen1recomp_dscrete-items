@@ -46,7 +46,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
       **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
-      **PROTO BALL**, **EXP BATTERY**, and **LINK CABLE** grants.
+      **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**, and
+      **FOSSIL CAT.** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -469,8 +470,55 @@ code ownership; they do not decide how players obtain an item.
         menu unwind after confirmation, item consumption, native animation, evolved-species
         move learning, Pokédex flags, save state, and inability to B-cancel after confirmation.
 
-- [ ] **Move Recorder** — offer an eligible missed level-up move.
-- [ ] **Fossil Catalyst** — apply a disclosed modifier during fossil revival.
+- [x] **Move Recorder** — recall one missed natural move from the current evolutionary ancestry.
+  - [x] Implement as a consumable field-use party tool with no level requirement of its own.
+  - [x] Show only party Pokémon that currently have at least one eligible missed move.
+  - [x] Build ancestry from merged evolution data rather than a hard-coded species line,
+        so stone/trade/custom evolutionary parents and compatible Fakemon are included.
+  - [x] Offer starting moves plus natural level-up moves from any ancestry stage whose
+        learn level is at or below the Pokémon's current level, including moves skipped
+        because the Pokémon evolved before the pre-evolution would normally learn them.
+  - [x] Hide moves already known and exclude TM/HM/tutor/event-only sources by reading
+        only `level1Moves` and natural level-up `learnset` rows.
+  - [x] Delegate the selected move to Gen1Recomp's native `learn` item result so normal
+        four-move replacement, HM-forget protection, learned-move presentation and
+        Pikachu happiness behavior remain engine-owned.
+  - [x] Permit cancellation from either DScrete selector and from the native learn/forget
+        flow without consuming the Recorder; consume one only after a move is learned.
+  - [x] Add deterministic tests for merged ancestry, pre-evolution moves, known/above-
+        level exclusions, eligible-party filtering and absence of vanilla species lists.
+  - [ ] In-game smoke a forgotten current-stage move, an evolved-early pre-evolution
+        move, a Pokémon with fewer than four moves, four-move replacement and abandon,
+        HM-forget refusal, successful-only consumption, and at least one compatible
+        modded/Fakemon evolutionary line.
+
+- [x] **Fossil Catalyst** — overclock one Cinnabar fossil revival.
+  - [x] Offer the Catalyst during the real Cinnabar fossil `give_pokemon` handover through
+        the public `script.command` hook rather than adding a separate replacement revival.
+  - [x] Identify the pending revival from the lab's `labFossilMon` state and fossil-room
+        flags instead of hard-coding Omanyte, Kabuto, Aerodactyl, or fossil item IDs.
+  - [x] Use the Trainer Beacon-style badge bands to target **Lv.35 / 40 / 45 / 50** for
+        0-1 / 2-3 / 4-5 / 6-8 badges, while never lowering a modded revival whose normal
+        starting level is already higher.
+  - [x] Recursively apply only ordinary **LEVEL** evolutions reached by the reconstructed
+        level; do not infer stone, trade, or custom special evolutions from level alone.
+  - [x] Feed the resulting species and level back through native `give_pokemon`, preserving
+        ordinary Pokémon construction, the natural newest-four starting/level-up moveset,
+        storage, nickname prompts, Pokédex handling, OT data and other gift hooks.
+  - [x] Clearly disclose the target revival level and possible level evolution before the
+        player accepts the Catalyst.
+  - [x] Consume exactly one Catalyst only after native gift storage succeeds; declining
+        the offer or a party+box-full refusal consumes nothing.
+  - [x] Make manual Bag use fail without consumption and direct the player to use it when
+        collecting a revived fossil.
+  - [x] Keep the integration on `script.command`, which exists at the Gen1Recomp v0.2.5
+        compatibility floor, and add deterministic tests for tiers, level evolutions,
+        modded higher-level revivals, transaction behavior and no fossil species list.
+  - [ ] In-game smoke Helix/Dome/Old Amber revivals across the level tiers, an automatic
+        level evolution and a non-evolving fossil, decline/cancel, party+box-full refusal,
+        nickname/storage/Pokédex flow, successful-only consumption, and at least one
+        compatible modded fossil revival.
+
 - [ ] **DNA Stabilizer** — improve DVs within bounded shiny-safe rules.
 - [ ] **Mutation Capsule** — preview and reroll one random DV.
 - [ ] **Blank TM** — record and teach one move using data-driven compatibility.
