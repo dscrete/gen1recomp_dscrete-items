@@ -73,37 +73,28 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="LINK CABLE", value="link_cable" },
       { label="MOVE RECORDER", value="move_recorder" },
       { label="FOSSIL CAT.", value="fossil_catalyst" },
+      { label="DNA STABILIZER", value="dna_stabilizer" },
+      { label="MUTATE CAP.", value="mutation_capsule" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
       { label="BACK", value="back" },
     })
-    if action == "prism" then
-      giveItem(ctx, Items.byKey.prism_scent.itemId, 1)
-    elseif action == "elusive" then
-      giveItem(ctx, Items.byKey.elusive_scent.itemId, 1)
-    elseif action == "mystery" then
-      giveItem(ctx, Items.byKey.mystery_lure.itemId, 1)
-    elseif action == "whistle" then
-      giveItem(ctx, Items.byKey.species_whistle.itemId, 1)
-    elseif action == "resonator" then
-      giveItem(ctx, Items.byKey.prototype_resonator.itemId, 1)
-    elseif action == "safari" then
-      giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
-    elseif action == "glitch" then
-      giveItem(ctx, Items.byKey.glitch_detector.itemId, 1)
-    elseif action == "trainer_beacon" then
-      giveItem(ctx, Items.byKey.trainer_beacon.itemId, 1)
-    elseif action == "proto_ball" then
-      giveItem(ctx, Items.byKey.prototype_ball.itemId, 1)
-    elseif action == "exp_battery" then
-      giveItem(ctx, Items.byKey.exp_battery.itemId, 1)
-    elseif action == "link_cable" then
-      giveItem(ctx, Items.byKey.link_cable.itemId, 1)
-    elseif action == "move_recorder" then
-      giveItem(ctx, Items.byKey.move_recorder.itemId, 1)
-    elseif action == "fossil_catalyst" then
-      giveItem(ctx, Items.byKey.fossil_catalyst.itemId, 1)
+    if action == "prism" then giveItem(ctx, Items.byKey.prism_scent.itemId, 1)
+    elseif action == "elusive" then giveItem(ctx, Items.byKey.elusive_scent.itemId, 1)
+    elseif action == "mystery" then giveItem(ctx, Items.byKey.mystery_lure.itemId, 1)
+    elseif action == "whistle" then giveItem(ctx, Items.byKey.species_whistle.itemId, 1)
+    elseif action == "resonator" then giveItem(ctx, Items.byKey.prototype_resonator.itemId, 1)
+    elseif action == "safari" then giveItem(ctx, Items.byKey.safari_kit.itemId, 1)
+    elseif action == "glitch" then giveItem(ctx, Items.byKey.glitch_detector.itemId, 1)
+    elseif action == "trainer_beacon" then giveItem(ctx, Items.byKey.trainer_beacon.itemId, 1)
+    elseif action == "proto_ball" then giveItem(ctx, Items.byKey.prototype_ball.itemId, 1)
+    elseif action == "exp_battery" then giveItem(ctx, Items.byKey.exp_battery.itemId, 1)
+    elseif action == "link_cable" then giveItem(ctx, Items.byKey.link_cable.itemId, 1)
+    elseif action == "move_recorder" then giveItem(ctx, Items.byKey.move_recorder.itemId, 1)
+    elseif action == "fossil_catalyst" then giveItem(ctx, Items.byKey.fossil_catalyst.itemId, 1)
+    elseif action == "dna_stabilizer" then giveItem(ctx, Items.byKey.dna_stabilizer.itemId, 1)
+    elseif action == "mutation_capsule" then giveItem(ctx, Items.byKey.mutation_capsule.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -148,7 +139,6 @@ function Debug.install(mod, Items, runtime, diagnostics)
     local unlocked = #state.unlocked > 0 and table.concat(state.unlocked, ", ") or "none"
     local effect = state.activeFieldEffect or "none"
     local selected = runtime:getReusableState("species_whistle_target", nil) or state.selectedSpecies or "none"
-    -- Safari Kit session state is persisted under the catalogue key itself.
     local safari = runtime:getReusableState("safari_kit", nil) or "none"
     local expWindow = state.pendingExpMultiplier or "none"
     local expBattery = diagnostics.expBattery
