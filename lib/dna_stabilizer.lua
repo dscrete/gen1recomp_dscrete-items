@@ -162,10 +162,15 @@ function DNAStabilizer.install(mod, DvTools)
       if not plan or not DvTools.apply(ctx.data, ctx.target, plan.after, Stats) then
         return "failed", { "The DNA STABILIZER\nhad no safe effect." }
       end
-      return "consumed", {
-        plan.shinyAfter and "DNA stabilized!\fIts shiny pattern\nremained stable."
-          or "DNA stabilized!\fIts natural DVs\nwere improved."
-      }, { useJingle=true }
+      local message
+      if plan.shinyBefore then
+        message = "DNA stabilized!\fIts shiny pattern\nremained stable."
+      elseif plan.shinyAfter then
+        message = "DNA stabilized!\fIts new DVs form a\nshiny pattern!"
+      else
+        message = "DNA stabilized!\fIts natural DVs\nwere improved."
+      end
+      return "consumed", { message }, { useJingle=true }
     end,
   })
 
