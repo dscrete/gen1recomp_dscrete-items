@@ -46,8 +46,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Keep the harness absent from ordinary player mode.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
       **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
-      **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**, and
-      **FOSSIL CAT.** grants.
+      **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**,
+      **FOSSIL CAT.**, **DNA STABILIZER**, and **MUTATE CAP.** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -519,8 +519,54 @@ code ownership; they do not decide how players obtain an item.
         nickname/storage/Pokédex flow, successful-only consumption, and at least one
         compatible modded fossil revival.
 
-- [ ] **DNA Stabilizer** — improve DVs within bounded shiny-safe rules.
-- [ ] **Mutation Capsule** — preview and reroll one random DV.
+- [x] **DNA Stabilizer** — improve DVs deterministically without destroying an existing shiny.
+  - [x] Implement as a consumable field-use party tool and omit targets with no remaining
+        valid improvement.
+  - [x] For non-shiny Pokémon, raise Attack/Defense/Speed/Special by **+1**, capped at 15.
+  - [x] For an existing shiny, use Gen1Recomp's own `Stats.isShiny` rule: keep Defense,
+        Speed and Special at 10 and advance Attack only to the next higher accepted shiny
+        Attack DV; never convert a shiny target into a non-shiny result.
+  - [x] Recompute the derived HP DV from the four stored primary DVs after every change.
+  - [x] Rebuild party stats immediately; preserve full-health state, keep damaged HP as
+        an absolute value clamped to the new maximum, and leave fainted Pokémon fainted.
+  - [x] Show the exact before/after primary DVs, HP DV and shiny status before final
+        confirmation; cancellation consumes nothing.
+  - [x] Revalidate the target's DV signature at item dispatch and consume exactly one
+        Stabilizer only after the safe mutation is successfully applied.
+  - [x] Keep the implementation species-agnostic and use the shiny predicate present at
+        the v0.2.5 compatibility floor rather than hard-coding a presentation mod's rule.
+  - [x] Add deterministic tests for caps, HP-DV derivation, shiny preservation, maxed
+        targets, stat recalculation, damaged/fainted HP handling and species-list absence.
+  - [ ] In-game smoke ordinary low/high/max DVs, an existing shiny across several valid
+        Attack values, target/confirmation cancellation, successful-only consumption,
+        stat-screen refresh, damaged/fainted targets, save/reload, and compatibility with
+        the configured shiny sprite/sparkle presentation mods.
+
+- [x] **Mutation Capsule** — preview and reroll exactly one random primary DV.
+  - [x] Implement as a consumable field-use party tool with a party target selector.
+  - [x] Choose Attack/Defense/Speed/Special uniformly, then choose uniformly from the
+        other 15 possible values so the selected DV always changes.
+  - [x] Preview the exact selected DV before/after value, derived HP DV before/after,
+        and shiny status before/after before the player can commit the mutation.
+  - [x] Treat shiny creation or loss as a disclosed possible outcome rather than silently
+        protecting the risky mutation path; DNA Stabilizer remains the preservation tool.
+  - [x] Persist each generated preview by a Pokémon/DV signature so cancelling and
+        reopening, reordering the party, or gaining levels/EXP cannot generate free
+        rerolls for the same unchanged Pokémon.
+  - [x] Keep a bounded set of pending previews, clear the accepted target's preview after
+        application, and clear all Mutation Capsule state through the normal DScrete reset.
+  - [x] Cancel target/preview/confirmation without consuming the item; consume one only
+        after the previewed mutation still matches and is successfully applied.
+  - [x] Recompute HP DV/stats with the same full/damaged/fainted HP preservation rules as
+        DNA Stabilizer.
+  - [x] Add deterministic tests for one-stat-only rerolls, no same-value outcome,
+        preview persistence across level changes, explicit shiny creation/loss, and
+        species-list absence.
+  - [ ] In-game smoke all four possible selected stats, better/worse outcomes, shiny
+        creation/loss previews, repeated cancel/reopen plus party reorder and save/reload,
+        successful-only consumption, stat-screen refresh, damaged/fainted targets, and
+        full DScrete reset of pending previews.
+
 - [ ] **Blank TM** — record and teach one move using data-driven compatibility.
 
 ## 6. Travel tools — Travel

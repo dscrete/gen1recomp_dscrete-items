@@ -37,6 +37,7 @@ dofile("tests/rocket_decoder_test.lua")
 dofile("tests/battle_tools_test.lua")
 dofile("tests/trainer_beacon_link_cable_test.lua")
 dofile("tests/pokemon_tools_test.lua")
+dofile("tests/dv_tools_test.lua")
 
 io.write(("%d passed, %d failed\n"):format(passed, failed))
 if failed > 0 then os.exit(1) end

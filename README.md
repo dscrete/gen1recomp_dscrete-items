@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.5.0**.
+Current numbered release: **v0.6.0**.
 
 ## Versioning and updates
 
@@ -265,6 +265,36 @@ compatible modded fossil revivals to participate. Declining the offer or failing
 store the revived Pokémon consumes nothing; one Catalyst is spent only after a
 successful handover.
 
+### DNA Stabilizer
+
+A deterministic consumable genetics upgrade. For a non-shiny Pokémon, one Stabilizer
+raises each stored primary Gen-1 DV — Attack, Defense, Speed and Special — by **+1**,
+with a hard cap of 15. The derived HP DV and stored party stats are recalculated
+immediately afterward.
+
+Existing shinies use a stricter rule based on Gen1Recomp's own shiny predicate:
+Defense, Speed and Special remain fixed at 10, while Attack advances only to the next
+higher shiny-compatible Attack DV. This means the Stabilizer will not destroy an
+existing shiny. A shiny that has no higher safe Attack value, or any other Pokémon with
+no remaining improvement, is omitted from the target list. Full-health Pokémon remain
+full after recalculation; damaged and fainted Pokémon are not healed by the item.
+
+### Mutation Capsule
+
+A risky consumable genetics experiment. After choosing a party Pokémon, the Capsule
+randomly selects exactly one of Attack, Defense, Speed or Special and rerolls that DV
+uniformly to one of the **other 15 possible values**. Before anything is committed, a
+preview shows the exact primary-DV change, the resulting derived HP DV, and whether
+shiny status changes.
+
+The preview can be declined without consuming the Capsule, but the generated result is
+locked to that Pokémon/DV signature and persisted. Reopening the bag, reordering the
+party, or gaining levels/EXP shows the same offer rather than generating free rerolls.
+Accepting the mutation applies the new DVs, immediately rebuilds party stats, consumes
+one Capsule, and clears the stored offer. Because this is intentionally the risky tool,
+a preview may improve or worsen the DV and may create or destroy shiny status; that
+change is disclosed before the final confirmation.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -286,8 +316,8 @@ successful handover.
 | Link Cable | Consumable | Pokémon | Triggers any compatible semantic trade evolution in the party. |
 | Move Recorder | Consumable | Pokémon | Recalls one missed natural starting/level-up move from the current evolutionary ancestry. |
 | Fossil Catalyst | Consumable | Pokémon | Overclocks Cinnabar revival to Lv.35/40/45/50 with reached level evolutions. |
-| DNA Stabilizer | Consumable | Pokémon | Improves DVs within bounded shiny-safe rules. |
-| Mutation Capsule | Consumable | Pokémon | Rerolls one random DV with preview. |
+| DNA Stabilizer | Consumable | Pokémon | Raises non-shiny primary DVs by +1 while preserving existing shiny DV patterns. |
+| Mutation Capsule | Consumable | Pokémon | Previews and applies one locked random primary-DV reroll. |
 | Blank TM | Consumable | Pokémon | Records and teaches one compatible move. |
 | PC Transfer Unit | Consumable | Travel | Opens portable PC access once and safely returns. |
 | Emergency Teleporter | Consumable | Travel | Returns to the last valid Pokémon Center. |
@@ -299,9 +329,9 @@ Current acquisition remains deliberately development-oriented while behavior is 
 stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
-tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder and
-Fossil Catalyst also have direct GET ITEMS entries, and INSPECT shows whether an EXP
-Battery charge is currently armed.
+tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder, Fossil
+Catalyst, DNA Stabilizer and Mutation Capsule also have direct GET ITEMS entries, and
+INSPECT shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
 scenario can be tested deterministically rather than waiting for the normal scheduler.

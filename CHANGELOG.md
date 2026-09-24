@@ -4,6 +4,21 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.6.0 — 2026-09-24
+
+### Added
+
+- DNA Stabilizer, a consumable party genetics tool that improves non-shiny Pokémon by +1 in each stored primary Gen-1 DV, capped at 15, then immediately rebuilds the derived HP DV and party stats.
+- Existing shiny Pokémon use a stricter preservation rule: Defense/Speed/Special stay at the engine-required value of 10 and Attack advances only to the next higher Attack DV accepted by Gen1Recomp's shiny predicate. If no shiny-safe improvement remains, the Pokémon is not offered as a target.
+- Mutation Capsule, a consumable party tool that randomly chooses one of Attack/Defense/Speed/Special and rerolls it uniformly to one of the other 15 possible DV values. The exact DV change, derived HP DV change, and shiny-status change are previewed before confirmation.
+- Mutation Capsule previews are persisted by Pokémon/DV signature. Cancelling keeps the item and preserves that exact pending result across bag reopen, party reordering, and level/EXP changes instead of allowing free reroll fishing; accepting consumes one Capsule and clears the stored offer.
+- Both genetics tools immediately recalculate party stats while preserving full-health state, keeping damaged HP as an absolute value, and leaving fainted Pokémon fainted.
+- Direct developer-harness grants for DNA Stabilizer and Mutation Capsule.
+
+### Changed
+
+- The implemented Pokémon-tool catalogue now includes Link Cable, Move Recorder, Fossil Catalyst, DNA Stabilizer and Mutation Capsule.
+
 ## 0.5.0 — 2026-09-24
 
 ### Added
