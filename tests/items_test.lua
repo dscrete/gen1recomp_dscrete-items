@@ -31,6 +31,21 @@ test("implemented encounter consumables have effects", function()
   end
 end)
 
+test("implemented Pokemon tools have registered effects", function()
+  local expected={
+    link_cable="DS_LINK_CABLE_EFFECT",
+    move_recorder="DS_MOVE_RECORDER_EFFECT",
+    fossil_catalyst="DS_FOSSIL_CATALYST_EFFECT",
+  }
+  for key,effect in pairs(expected) do
+    local item=Items.byKey[key]
+    eq(item.effect,effect,key)
+    eq(item.ownership,"CONSUMABLE",key)
+    eq(item.effectKind,"POKEMON",key)
+    check(item.implemented,key)
+  end
+end)
+
 test("implemented permanent gadgets include all four detection tools", function()
   local gadgets=Items.permanent(true)
   eq(#gadgets,4)
@@ -42,7 +57,7 @@ end)
 
 test("implemented filters expose only built content", function()
   local consumables=Items.consumables(true)
-  eq(#consumables,11)
+  eq(#consumables,13)
   eq(consumables[1].key,"prism_scent")
   eq(consumables[2].key,"elusive_scent")
   eq(consumables[3].key,"mystery_lure")
@@ -53,5 +68,7 @@ test("implemented filters expose only built content", function()
   eq(consumables[8].key,"prototype_ball")
   eq(consumables[9].key,"exp_battery")
   eq(consumables[10].key,"link_cable")
-  eq(consumables[11].key,"glitch_detector")
+  eq(consumables[11].key,"move_recorder")
+  eq(consumables[12].key,"fossil_catalyst")
+  eq(consumables[13].key,"glitch_detector")
 end)
