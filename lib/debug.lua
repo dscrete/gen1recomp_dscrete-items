@@ -97,6 +97,8 @@ function Debug.install(mod, Items, runtime, diagnostics)
     elseif action == "fossil_catalyst" then giveItem(ctx, Items.byKey.fossil_catalyst.itemId, 1)
     elseif action == "dna_stabilizer" then giveItem(ctx, Items.byKey.dna_stabilizer.itemId, 1)
     elseif action == "mutation_capsule" then giveItem(ctx, Items.byKey.mutation_capsule.itemId, 1)
+    elseif action == "blank_tm" then giveItem(ctx, Items.byKey.blank_tm.itemId, 1)
+    elseif action == "teleporter" then giveItem(ctx, Items.byKey.emergency_teleporter.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
