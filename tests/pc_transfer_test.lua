@@ -25,8 +25,8 @@ local function fakeMod(openResult)
       end},
     },
     hooks={wrap=function(_,name,fn) hooks[name]=fn end},
-    ui={TextBox={new=function(_,text,onDone)
-      local box={text=text,onDone=onDone}
+    ui={TextBox={new=function(_,text,onDone,opts)
+      local box={text=text,onDone=onDone,opts=opts}
       textBoxes[#textBoxes+1]=box
       return box
     end}},
@@ -76,6 +76,8 @@ test("PC Transfer registers field-only effect and closes bag flow",function()
   hooks["input.step"](function() return "tick" end,g,0)
   eq(#boxes,1)
   check(boxes[1].text:find("Connecting",1,true)~=nil)
+  eq(boxes[1].opts.auto.delay,12,
+    "connection handoff should auto-advance briefly")
   eq(opens(),0)
   eq(g.save.inventory[PCTransfer.ITEM_ID],1,
     "connecting text must not consume before storage opens")
