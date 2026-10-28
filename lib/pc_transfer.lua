@@ -72,7 +72,7 @@ function PCTransfer.install(mod, TravelSafety, opts)
         else
           fail(game, "Could not connect to\nPOKEMON STORAGE.")
         end
-      end)
+      end, { auto = { delay = 12 } })
     game.stack:push(connecting)
     return true, function() return opened end
   end
