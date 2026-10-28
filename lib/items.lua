@@ -26,7 +26,7 @@ Items.all = {
   { key="pc_transfer_unit", itemId="DS_PC_TRANSFER", name="PC TRANSFER", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAVEL", effect="DS_PC_TRANSFER_EFFECT", implemented=true },
   { key="blank_tm", itemId="DS_BLANK_TM", name="BLANK TM", ownership="CONSUMABLE", family="SILPH_CO", effectKind="POKEMON", effect="DS_BLANK_TM_EFFECT", implemented=true },
   { key="emergency_teleporter", itemId="DS_TELEPORTER", name="TELEPORTER", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAVEL", effect="DS_TELEPORTER_EFFECT", implemented=true },
-  { key="map_beacon", itemId="DS_MAP_BEACON", name="MAP BEACON", ownership="CONSUMABLE_PAIR", family="EXPLORATION", effectKind="TRAVEL" },
+  { key="map_beacon", itemId="DS_MAP_BEACON", name="MAP BEACON", ownership="CONSUMABLE_PAIR", family="EXPLORATION", effectKind="TRAVEL", effect="DS_MAP_BEACON_EFFECT", implemented=true },
   { key="move_recorder", itemId="DS_MOVE_RECORDER", name="MOVE RECORDER", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON", effect="DS_MOVE_RECORDER_EFFECT", implemented=true },
   { key="fossil_catalyst", itemId="DS_FOSSIL_CATALYST", name="FOSSIL CAT.", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON", effect="DS_FOSSIL_CATALYST_EFFECT", implemented=true },
   { key="dna_stabilizer", itemId="DS_DNA_STABILIZER", name="DNA STABILIZER", ownership="CONSUMABLE", family="CINNABAR_LAB", effectKind="POKEMON", effect="DS_DNA_STABILIZER_EFFECT", implemented=true },
