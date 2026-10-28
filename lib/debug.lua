@@ -77,6 +77,7 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="MUTATE CAP.", value="mutation_capsule" },
       { label="BLANK TM", value="blank_tm" },
       { label="TELEPORTER", value="teleporter" },
+      { label="PC TRANSFER", value="pc_transfer" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -99,6 +100,7 @@ function Debug.install(mod, Items, runtime, diagnostics)
     elseif action == "mutation_capsule" then giveItem(ctx, Items.byKey.mutation_capsule.itemId, 1)
     elseif action == "blank_tm" then giveItem(ctx, Items.byKey.blank_tm.itemId, 1)
     elseif action == "teleporter" then giveItem(ctx, Items.byKey.emergency_teleporter.itemId, 1)
+    elseif action == "pc_transfer" then giveItem(ctx, Items.byKey.pc_transfer_unit.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
