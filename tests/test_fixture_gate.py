@@ -26,6 +26,8 @@ class FixtureGateTests(unittest.TestCase):
         output = fixture_output([missing(i) for i in range(EXPECTED_MISSING_COUNT)])
         ok, _ = accepted_output(2, output)
         self.assertTrue(ok)
+        self.assertTrue(accepted_output(1, output)[0],
+                        "modkit currently exits 1 for validation findings")
 
     def test_unrelated_missing_item_is_fatal(self):
         lines = [missing(i) for i in range(EXPECTED_MISSING_COUNT)]

@@ -4,6 +4,31 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.9.1 — 2026-10-28
+
+### Fixed
+
+- Stat changes from DNA Stabilizer and Mutation Capsule now calculate and validate
+  new Pokémon stats before modifying the live DVs, avoiding partial mutation if
+  a modded stat calculator fails.
+- Map Beacon rejects corrupt, fractional, negative and infinite saved positions.
+- Blank TM and Recorded TM refuse inconsistent bag/save record counts instead
+  of consuming items or silently losing a recorded move.
+- The integration verification target now correctly selects and checks exact
+  Gen1Recomp v0.2.5, v0.2.74 or v0.3.3 commits rather than requiring only v0.2.5.
+
+### Tests
+
+- Add a ROM-free real-engine modkit validation job for each pinned engine release,
+  using a strict exception only for the 33 documented missing vanilla trainer
+  references in the fixture data. Release packaging now depends on those jobs.
+- Add cross-item regression tests for bag registrations, malformed and reloaded
+  state, Recorded TM desynchronization, atomic DV failures, persistent mutation
+  offers and full resets.
+- Keep imported-data engine validation and in-game smoke checks as outstanding
+  gates; fixture validation does not certify live gameplay compatibility.
+- Document the outstanding modkit private-engine-import warnings.
+
 ## 0.9.0 — 2026-10-28
 
 ### Added

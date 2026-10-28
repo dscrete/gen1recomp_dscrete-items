@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.9.0**.
+Current numbered release: **v0.9.1**.
 
 ## Versioning and updates
 
