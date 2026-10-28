@@ -54,6 +54,7 @@ test("implemented travel tools have registered effects", function()
   local expected={
     pc_transfer_unit="DS_PC_TRANSFER_EFFECT",
     emergency_teleporter="DS_TELEPORTER_EFFECT",
+    map_beacon="DS_MAP_BEACON_EFFECT",
   }
   for key,effect in pairs(expected) do
     local item=Items.byKey[key]
@@ -75,7 +76,7 @@ end)
 
 test("implemented filters expose only built content", function()
   local consumables=Items.consumables(true)
-  eq(#consumables,18)
+  eq(#consumables,19)
   eq(consumables[1].key,"prism_scent")
   eq(consumables[2].key,"elusive_scent")
   eq(consumables[3].key,"mystery_lure")
@@ -89,9 +90,10 @@ test("implemented filters expose only built content", function()
   eq(consumables[11].key,"pc_transfer_unit")
   eq(consumables[12].key,"blank_tm")
   eq(consumables[13].key,"emergency_teleporter")
-  eq(consumables[14].key,"move_recorder")
-  eq(consumables[15].key,"fossil_catalyst")
-  eq(consumables[16].key,"dna_stabilizer")
-  eq(consumables[17].key,"mutation_capsule")
-  eq(consumables[18].key,"glitch_detector")
+  eq(consumables[14].key,"map_beacon")
+  eq(consumables[15].key,"move_recorder")
+  eq(consumables[16].key,"fossil_catalyst")
+  eq(consumables[17].key,"dna_stabilizer")
+  eq(consumables[18].key,"mutation_capsule")
+  eq(consumables[19].key,"glitch_detector")
 end)
