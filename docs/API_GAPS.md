@@ -111,3 +111,14 @@ live save/bag behavior by itself. `make test-integration` requires the pinned ex
 Gen1Recomp checkout and runs Gen1Recomp's own `modkit.py validate`; the smoke matrix in
 `integration_tests/README.md` must still be exercised in-game before those validation
 items are checked off.
+
+
+## ROM-free fixture validation warnings
+
+The fixture-backed engine loader cannot resolve the vanilla Rocket NPC trainer
+portraits and party species needed by DScrete's three authored operatives. The
+CI fixture gate accepts only those 33 specifically scoped missing vanilla
+trainer references; all other `MKxxx ERROR` diagnostics remain fatal. It prints
+the complete modkit output and the outstanding `MK006` private-import warnings.
+These warnings need API/permission review before full compatibility can be
+claimed. Imported-base validation cannot be replaced with the fixture gate.

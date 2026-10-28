@@ -694,6 +694,9 @@ code ownership; they do not decide how players obtain an item.
       separate.
 - [x] Add cross-item save/reload, malformed-state, inventory-integrity and
       failed-DV-application regression coverage.
+- [ ] Review and eliminate or explicitly authorize modkit MK006 warnings for
+      private engine requires (Bag, Game, Font and Theme) without breaking the
+      advertised minimum API floor.
 - [ ] Run imported-data engine validation at all three pins and resolve any
       version-specific API/merged-content issues.
 - [ ] Verify the full in-game regression matrix against unmodified Gen1Recomp

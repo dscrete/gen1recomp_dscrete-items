@@ -14,7 +14,11 @@ make test-fixture ENGINE_TARGET=v0.3.3          # ROM-free loader check
 
 Every target verifies its exact upstream commit before invoking the engine's real
 `modkit.py validate`. CI tests all three versions against the **fixture** base;
-that exercises the engine loader without requiring a ROM. Imported-base checks
+that exercises the engine loader without requiring a ROM. The fixture omits
+real vanilla trainer IDs/species, so a narrowly scoped diagnostic gate accepts
+only the 33 known `MK102` errors for the authored Rocket trainer parties.
+New modkit error categories or references outside that exact fixture gap fail CI;
+the `MK006` private-import warnings are preserved in the logs for review. Imported-base checks
 remain necessary for native Gen 1 IDs and full merged-data validation and require
 a user-owned imported cache. Fixture validation is not a claim of live gameplay
 compatibility; the smoke matrix below remains unchecked until executed in-game.

@@ -15,7 +15,7 @@ test-lua:
 	$(LUA) tests/run.lua
 
 test-static:
-	$(PYTHON) -m unittest tests.test_manifest tests.test_repository_boundaries tests.test_verify_upstream -v
+	$(PYTHON) -m unittest tests.test_manifest tests.test_repository_boundaries tests.test_verify_upstream tests.test_fixture_gate -v
 
 verify-upstream:
 	$(PYTHON) tools/verify_upstream.py --target $(ENGINE_TARGET)
@@ -26,7 +26,7 @@ test-integration: verify-upstream
 
 # ROM-free loader check for CI; fixture data is not an imported game cache.
 test-fixture: verify-upstream
-	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base fixture
+	$(PYTHON) tools/fixture_gate.py "$(GEN1RECOMP_ROOT)" "$(CURDIR)"
 
 # Build the exact ZIP shape preferred by Gen1Recomp's GitHub mod updater:
 # <manifest id>-<manifest version>.zip, with manifest.json beside main.lua at
