@@ -1,8 +1,10 @@
-.PHONY: test test-lua test-static verify-upstream test-integration package clean-package
+.PHONY: test test-lua test-static verify-upstream test-integration test-fixture package clean-package
 
 PYTHON ?= python3
 LUA ?= luajit
 ZIP ?= zip
+ENGINE_TARGET ?= v0.2.74
+ENGINE_BASE ?= imported
 VERSION = $(shell $(PYTHON) -c 'import json; print(json.load(open("manifest.json"))["version"])')
 PACKAGE = dist/gen1recomp_dscrete_items-$(VERSION).zip
 
@@ -16,12 +18,15 @@ test-static:
 	$(PYTHON) -m unittest tests.test_manifest tests.test_repository_boundaries tests.test_verify_upstream -v
 
 verify-upstream:
-	$(PYTHON) tools/verify_upstream.py
+	$(PYTHON) tools/verify_upstream.py --target $(ENGINE_TARGET)
 
-# Integration: requires GEN1RECOMP_ROOT pointing at the pinned v0.2.74 checkout
-# and an imported Gen 1 cache for modkit's imported base.
+# Full integration uses a selected, SHA-verified engine checkout and imported base.
 test-integration: verify-upstream
-	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base imported
+	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base $(ENGINE_BASE)
+
+# ROM-free loader check for CI; fixture data is not an imported game cache.
+test-fixture: verify-upstream
+	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base fixture
 
 # Build the exact ZIP shape preferred by Gen1Recomp's GitHub mod updater:
 # <manifest id>-<manifest version>.zip, with manifest.json beside main.lua at

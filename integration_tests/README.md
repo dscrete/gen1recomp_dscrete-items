@@ -1,16 +1,23 @@
 # Engine integration tests
 
-These checks require an external Gen1Recomp checkout pinned to **v0.2.74** / commit
-`9545ebbb839a8a7ea28472b626681154ab222623`. Set `GEN1RECOMP_ROOT` and run:
+Integration validation supports three exact pinned Gen1Recomp checkouts:
+**v0.2.5** (minimum supported), **v0.2.74** (default regression pin), and
+**v0.3.3** (reviewed 0.3.x release). Set `GEN1RECOMP_ROOT` to the selected
+external checkout and run:
 
 ```sh
-make test-integration
+make test-integration                           # v0.2.74, imported game base
+make test-integration ENGINE_TARGET=v0.2.5      # minimum supported
+make test-integration ENGINE_TARGET=v0.3.3      # reviewed 0.3.x
+make test-fixture ENGINE_TARGET=v0.3.3          # ROM-free loader check
 ```
 
-The target first verifies the exact upstream revision, then runs Gen1Recomp's own
-`modkit.py validate` against this repository with the imported Gen 1 base. That is
-the authoritative load/schema/cross-reference check; the standalone Lua tests do
-not pretend to validate engine hooks.
+Every target verifies its exact upstream commit before invoking the engine's real
+`modkit.py validate`. CI tests all three versions against the **fixture** base;
+that exercises the engine loader without requiring a ROM. Imported-base checks
+remain necessary for native Gen 1 IDs and full merged-data validation and require
+a user-owned imported cache. Fixture validation is not a claim of live gameplay
+compatibility; the smoke matrix below remains unchecked until executed in-game.
 
 ## Existing field-effect smoke matrix
 

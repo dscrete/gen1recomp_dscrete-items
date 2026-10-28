@@ -1,8 +1,8 @@
 # DScrete Items implementation status and contracts
 
-Target compatibility: Gen1Recomp **>=0.2.5 <0.3.0**, Mod API 2, Gen 1.
-The minimum-version verifier targets tag `v0.2.5`; the repeatable integration harness
-currently pins v0.2.74. The ordered delivery backlog lives in
+Target compatibility: Gen1Recomp **>=0.2.5 <1.0.0**, Mod API 2, Gen 1.
+The version verifier pins v0.2.5, v0.2.74 and v0.3.3; the default imported-data
+integration harness targets v0.2.74. CI loads the mod on all three engines using ROM-free fixtures. The ordered delivery backlog lives in
 [CHECKLIST.md](CHECKLIST.md).
 
 ## Shared runtime and delivery

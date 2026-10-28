@@ -1,8 +1,7 @@
 # Public API status and remaining gaps
 
-DScrete Items supports Gen1Recomp **>=0.2.5 <0.3.0** with Mod API 2. The integration
-harness is currently pinned to **v0.2.74** / commit
-`9545ebbb839a8a7ea28472b626681154ab222623` for repeatable validation.
+DScrete Items supports Gen1Recomp **>=0.2.5 <1.0.0** with Mod API 2. CI fixture-load tests cover exact tags **v0.2.5**, **v0.2.74** and **v0.3.3**;
+imported-data engine checks and in-game smoke tests are separate gates.
 
 ## Public surfaces in use
 

@@ -8,6 +8,29 @@ permissions:
   contents: write
 
 jobs:
+  engine-fixture:
+    name: Engine loader fixture (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [v0.2.5, v0.2.74, v0.3.3]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+      - name: Fetch pinned Gen1Recomp checkout
+        uses: actions/checkout@v4
+        with:
+          repository: bryanthaboi/gen1recomp
+          ref: ${{ matrix.target }}
+          path: upstream
+      - name: Validate engine and mod with fixture data
+        env:
+          GEN1RECOMP_ROOT: ${{ github.workspace }}/upstream
+          ENGINE_TARGET: ${{ matrix.target }}
+        run: make test-fixture
+
   test-and-package:
     runs-on: ubuntu-latest
     steps:
