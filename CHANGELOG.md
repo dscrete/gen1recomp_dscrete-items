@@ -4,6 +4,23 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.9.0 — 2026-10-28
+
+### Added
+
+- Map Beacon, a one-point persistent field anchor storing exact map, tile and facing. First use offers SET BEACON; later uses offer RETURN / RELOCATE / CANCEL.
+- SET, RELOCATE and RETURN each consume exactly one Beacon only after the action commits successfully. A successful return keeps the saved anchor for later reuse.
+- RETURN previews the saved map name, relocation confirms the old/new location, and successful placement reports that the Beacon location was recorded.
+- Shared destination validation now rechecks merged map/tileset collision, bounds, warp/door cells, engine-exposed map markers and visible objects before Beacon travel; active-map destinations additionally reject live NPC occupancy.
+- Beacon placement/return refuses Safari, link rooms, S.S. Anne and Vermilion Dock, one-way Elite Four progression rooms, and busy/scripted field states, while allowing ordinary permanent interiors, gyms, caves and dungeons independently of Escape Rope rules.
+- Map Beacon remains pure travel: HP, status, money and active DScrete effects are preserved, and changed/invalid/occupied destinations fail without consumption.
+- Direct developer grant supplies two Beacons for immediate SET+RETURN testing, with deterministic coverage for persistence, relocation, successful-only consumption, collision/object/NPC validation and failed warps.
+
+### Changed
+
+- The shared travel-safety layer now supports reusable exact-tile destination validation for player-defined travel anchors.
+- Every planned catalogue item now has an implemented behavior path; catalogue-wide validation, naming, balance/source decisions and in-game smoke work remain tracked separately.
+
 ## 0.8.0 — 2026-10-28
 
 ### Added

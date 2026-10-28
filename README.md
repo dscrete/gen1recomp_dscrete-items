@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.8.0**.
+Current numbered release: **v0.9.0**.
 
 ## Versioning and updates
 
@@ -342,6 +342,28 @@ and other world state are left untouched. The Unit refuses battle, Safari, link 
 scripts, forced movement, transitions and other busy field states. It is consumed only
 after the native storage screen successfully opens; failed connections consume nothing.
 
+### Map Beacon
+
+A consumable-pair travel tool with one persistent player-defined anchor. With no saved
+point, using a Beacon offers to record the exact current map, tile and facing. Once an
+anchor exists, the item offers **RETURN / RELOCATE / CANCEL**. SET, RELOCATE and RETURN
+each consume one Beacon only after the requested action successfully commits, while a
+successful return leaves the saved anchor available for later Beacons.
+
+Beacon placement and return are deliberately conservative. The saved cell is checked
+against the current merged map and tileset data for bounds, walkability, warp/door
+tiles, engine-exposed map markers and visible objects; an active destination is also
+checked for live NPC occupancy. If a mod/update changes the destination or it becomes
+unsafe, RETURN fails without consuming anything rather than guessing a nearby tile.
+Safari, link rooms, S.S. Anne/temporary ship space, Vermilion Dock and the one-way
+Elite Four progression rooms are prohibited, as are scripts, transitions and other
+busy field states. Ordinary permanent interiors, gyms, caves and dungeons remain valid
+even when Escape Rope would not be.
+
+Map Beacon travel does not heal, cure status, change money or clear active DScrete
+effects. The destination name is shown before RETURN, relocation requires confirmation,
+and a successful placement reports that the Beacon location was recorded.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -368,7 +390,7 @@ after the native storage screen successfully opens; failed connections consume n
 | Blank TM | Consumable | Pokémon | Copies one currently known non-HM move into a non-overwritable Recorded TM. |
 | PC Transfer Unit | Consumable | Travel | Opens one native Pokémon-storage session in place, then returns to the unchanged field. |
 | Emergency Teleporter | Consumable | Travel | Returns to the exterior landing of the last valid Pokémon Center without healing. |
-| Map Beacon | Consumable pair | Travel | Records a valid field tile and later returns to it. |
+| Map Beacon | Consumable pair | Travel | Sets one exact reusable field anchor; SET, RELOCATE and RETURN each cost one Beacon. |
 
 ## Development access
 
@@ -377,7 +399,7 @@ stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
 tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder, Fossil
-Catalyst, DNA Stabilizer, Mutation Capsule, Blank TM, Emergency Teleporter and PC Transfer Unit also have direct GET ITEMS entries, and
+Catalyst, DNA Stabilizer, Mutation Capsule, Blank TM, Emergency Teleporter, PC Transfer Unit and Map Beacon also have direct GET ITEMS entries, and
 INSPECT shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored

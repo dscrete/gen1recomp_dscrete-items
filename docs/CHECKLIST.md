@@ -48,7 +48,7 @@ code ownership; they do not decide how players obtain an item.
       **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
       **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**,
       **FOSSIL CAT.**, **DNA STABILIZER**, **MUTATE CAP.**, **BLANK TM**,
-      **TELEPORTER**, and **PC TRANSFER** grants.
+      **TELEPORTER**, **PC TRANSFER**, and **MAP BEACON** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -601,9 +601,9 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add a reusable conservative travel-safety foundation for link rooms, active
       Safari sessions and the public field-readiness gate used to reject scripts,
       transitions, forced movement, trainer engagement and other busy states.
-- [ ] Extend shared travel validation for arbitrary future destination tiles required
-      by Map Beacon; PC Transfer needs no destination-tile validation because it opens
-      storage in place without warping.
+- [x] Extend shared travel validation for Map Beacon exact-tile destinations using
+      merged map/tileset collision data, warp/door and engine-exposed marker checks,
+      visible static objects, and live NPC occupancy when the destination is active.
 - [x] **Emergency Teleporter** — return to the last valid Pokemon Center.
   - [x] Derive the destination from Gen1Recomp's canonical `save.lastHeal` state and
         prefer the associated exterior town's canonical fly landing without hard-coded
@@ -651,7 +651,41 @@ code ownership; they do not decide how players obtain an item.
         activation tile/facing, connection text, successful-only consumption, active
         timed DScrete effects, poisoned/damaged party state, Safari/link/script/busy
         refusal, and save/reload around stored Pokémon changes.
-- [ ] **Map Beacon** — record a valid field tile and later return to it.
+- [x] **Map Beacon** — record one exact safe field anchor and later return to it.
+  - [x] Persist one global `mapId + x + y + facing` anchor in reusable mod state and
+        keep it after successful returns until the player explicitly relocates it.
+  - [x] With no saved anchor, go directly to a SET BEACON confirmation; with an anchor,
+        offer **RETURN / RELOCATE / CANCEL** and require explicit confirmation before
+        replacing the existing location.
+  - [x] Consume exactly one Beacon for each successful SET, RELOCATE or RETURN only
+        after that action commits; cancellation, invalid context and failed warps consume
+        nothing.
+  - [x] Show the destination map name before RETURN and report successful placement with
+        a short **Beacon location recorded.** message.
+  - [x] Validate placement and return against merged map/tileset bounds and walkability,
+        reject door/warp cells and engine-exposed active item/hidden/warp markers, and
+        reject visible static objects occupying the exact destination cell.
+  - [x] Revalidate the saved point on every RETURN so mod/update collision or map changes
+        fail closed rather than guessing or searching for a nearby safe tile.
+  - [x] When the destination map is already active, reject an NPC currently standing or
+        moving into the exact saved cell.
+  - [x] Refuse Safari, link rooms, S.S. Anne / Vermilion Dock temporary story space,
+        one-way Elite Four progression rooms, scripts, forced movement, transitions and
+        other busy field states.
+  - [x] Allow ordinary permanent interiors, gyms, caves, buildings and dungeons even
+        where Escape Rope would not normally be usable.
+  - [x] Preserve HP/status, poison, money and active DScrete timed effects; returning is
+        ordinary travel rather than healing or blackout behavior.
+  - [x] Add a direct two-copy developer grant plus deterministic tests for exact
+        persistence, SET/RELOCATE/RETURN transactions, destination names, story/map
+        restrictions, changed collision, static objects, live NPC occupancy, failed
+        warps and successful-only consumption.
+  - [ ] In-game smoke first SET, RETURN, repeated reuse, RELOCATE/cancel, save/reload,
+        outdoor/interior/cave/dungeon/gym anchors, Escape-Rope-prohibited areas,
+        warp/door/event spots, changed/blocked destinations, moving NPC occupancy,
+        Safari/link/S.S. Anne/Elite Four/busy refusal, poison/damaged party state,
+        active timed DScrete effects, exact facing restoration and successful-only
+        consumption.
 
 ## 7. Catalogue completion
 
