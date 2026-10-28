@@ -47,7 +47,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
       **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
       **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**,
-      **FOSSIL CAT.**, **DNA STABILIZER**, and **MUTATE CAP.** grants.
+      **FOSSIL CAT.**, **DNA STABILIZER**, **MUTATE CAP.**, **BLANK TM**, and
+      **TELEPORTER** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -567,13 +568,64 @@ code ownership; they do not decide how players obtain an item.
         successful-only consumption, stat-screen refresh, damaged/fainted targets, and
         full DScrete reset of pending previews.
 
-- [ ] **Blank TM** — record and teach one move using data-driven compatibility.
+- [x] **Blank TM** — record and teach one move using data-driven compatibility.
+  - [x] Record only one of the selected party Pokémon's currently known moves and copy
+        it without removing the move from the source Pokémon.
+  - [x] Exclude HM moves from recording using merged HM/machine data rather than a
+        hard-coded HM move list.
+  - [x] Convert one Blank TM into a separate persistent **RECORDED TM** only after the
+        source/move choice is confirmed; cancellation consumes nothing.
+  - [x] Keep each recorded move immutable/non-overwritable and allow multiple different
+        recordings to coexist persistently.
+  - [x] Determine teaching compatibility from the target species's merged TM/HM move
+        compatibility plus natural starting/level-up learn data; do not infer by type,
+        family, vanilla species lists, or special/signature-move whitelists.
+  - [x] Allow compatible Fakemon/modded species and moves automatically through merged
+        data, including natural moves that do not have an ordinary vanilla TM.
+  - [x] Hide targets that already know the move or have no legitimate compatibility.
+  - [x] Delegate final teaching to the native `learn` flow for four-move replacement,
+        HM-forget protection, learned-move presentation and successful-only consumption.
+  - [x] Keep the Recorded TM when target selection or the native learn/forget flow is
+        cancelled/abandoned; remove only the matching stored recording after success.
+  - [x] Add deterministic tests for HM exclusion, copy-not-forget behavior, transactional
+        Blank→Recorded conversion, merged machine/natural/modded compatibility,
+        immutable multiple recordings and native learn delegation.
+  - [ ] In-game smoke recording from level-up/TM/tutor/event-like current moves, HM
+        exclusion, multiple simultaneous recordings, selector cancellation, compatible
+        and incompatible recipients, fewer-than-four teaching, four-move replace/abandon,
+        HM-forget refusal, successful-only consumption, save/reload, and a compatible
+        modded Pokémon/move.
 
 ## 6. Travel tools — Travel
 
-- [ ] Add shared validation for battles, link rooms, scripted movement, Safari
-      transitions, invalid tiles, and other unsafe map states.
-- [ ] **Emergency Teleporter** — return to the last valid Pokemon Center.
+- [x] Add a reusable conservative travel-safety foundation for link rooms, active
+      Safari sessions and the public field-readiness gate used to reject scripts,
+      transitions, forced movement, trainer engagement and other busy states.
+- [ ] Extend shared travel validation for arbitrary future destination tiles and the
+      PC Transfer Unit / Map Beacon cases as those tools are implemented.
+- [x] **Emergency Teleporter** — return to the last valid Pokemon Center.
+  - [x] Derive the destination from Gen1Recomp's canonical `save.lastHeal` state and
+        prefer the associated exterior town's canonical fly landing without hard-coded
+        Center/town tables.
+  - [x] Treat the Teleporter as travel only: do not heal/cure the party, change money,
+        invoke blackout logic, or clear active DScrete field effects/incidents.
+  - [x] Permit ordinary safe free-roam use outdoors, in caves, buildings and dungeons
+        even where Escape Rope itself would not be valid.
+  - [x] Refuse battle, Safari, link rooms, scripts, forced movement, transitions and
+        other busy/unsafe states conservatively through public world readiness.
+  - [x] Permit use while poisoned and preserve the existing HP/status state.
+  - [x] Show no destination confirmation; fail without consumption when no valid
+        last-Center exterior landing exists.
+  - [x] Close the Bag/Start flow before travel, request the public teleport-arrival warp,
+        and consume exactly one Teleporter only after that warp request succeeds.
+  - [x] Keep the item if destination validation changes or the warp request fails.
+  - [x] Add deterministic tests for exterior destination derivation, Safari/link/busy
+        refusal, poison/state preservation, public teleport arrival and successful-only
+        consumption.
+  - [ ] In-game smoke outdoor/cave/building/dungeon use, no-Center refusal, poison,
+        active timed DScrete effects, Safari/link/script/busy refusal, failed destination,
+        exterior landing/teleport presentation, successful-only consumption, and
+        save/reload around the last-heal destination.
 - [ ] **PC Transfer Unit** — provide one portable PC session and safely restore the map.
 - [ ] **Map Beacon** — record a valid field tile and later return to it.
 
