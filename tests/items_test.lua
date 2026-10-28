@@ -51,11 +51,17 @@ end)
 
 
 test("implemented travel tools have registered effects", function()
-  local item=Items.byKey.emergency_teleporter
-  eq(item.effect,"DS_TELEPORTER_EFFECT")
-  eq(item.ownership,"CONSUMABLE")
-  eq(item.effectKind,"TRAVEL")
-  check(item.implemented)
+  local expected={
+    pc_transfer_unit="DS_PC_TRANSFER_EFFECT",
+    emergency_teleporter="DS_TELEPORTER_EFFECT",
+  }
+  for key,effect in pairs(expected) do
+    local item=Items.byKey[key]
+    eq(item.effect,effect,key)
+    eq(item.ownership,"CONSUMABLE",key)
+    eq(item.effectKind,"TRAVEL",key)
+    check(item.implemented,key)
+  end
 end)
 
 test("implemented permanent gadgets include all four detection tools", function()
@@ -69,7 +75,7 @@ end)
 
 test("implemented filters expose only built content", function()
   local consumables=Items.consumables(true)
-  eq(#consumables,17)
+  eq(#consumables,18)
   eq(consumables[1].key,"prism_scent")
   eq(consumables[2].key,"elusive_scent")
   eq(consumables[3].key,"mystery_lure")
@@ -80,11 +86,12 @@ test("implemented filters expose only built content", function()
   eq(consumables[8].key,"prototype_ball")
   eq(consumables[9].key,"exp_battery")
   eq(consumables[10].key,"link_cable")
-  eq(consumables[11].key,"blank_tm")
-  eq(consumables[12].key,"emergency_teleporter")
-  eq(consumables[13].key,"move_recorder")
-  eq(consumables[14].key,"fossil_catalyst")
-  eq(consumables[15].key,"dna_stabilizer")
-  eq(consumables[16].key,"mutation_capsule")
-  eq(consumables[17].key,"glitch_detector")
+  eq(consumables[11].key,"pc_transfer_unit")
+  eq(consumables[12].key,"blank_tm")
+  eq(consumables[13].key,"emergency_teleporter")
+  eq(consumables[14].key,"move_recorder")
+  eq(consumables[15].key,"fossil_catalyst")
+  eq(consumables[16].key,"dna_stabilizer")
+  eq(consumables[17].key,"mutation_capsule")
+  eq(consumables[18].key,"glitch_detector")
 end)
