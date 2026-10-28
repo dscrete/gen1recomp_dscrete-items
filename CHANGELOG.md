@@ -4,6 +4,37 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.9.2 — 2026-10-28
+
+### Fixed
+
+- Map Beacon delays charging until the public engine warp-completion callback
+  confirms arrival at the intended walkable, unoccupied tile. A newly spawned
+  destination actor triggers a best-effort return without consuming the item.
+- Loaded neighboring-map NPCs are checked through public live handles; moving
+  actors and unavailable dynamic actors are conservatively refused.
+- Map Beacon SET/RELOCATE restores the previous anchor if the manual
+  consumption command fails.
+- Emergency Teleporter also defers its one-unit charge until a confirmed
+  Pokemon Center exterior arrival and refuses malformed destination data.
+- Blank TM conversion restores full bag contents and acquisition order if a
+  Bag override fails during conversion.
+- RECORDED TM native learn keeps a durable pending record that reconciles
+  the move list after an interrupted save/reload, without losing a recording
+  or applying a successful learn twice.
+- Native PC storage exceptions do not consume PC Transfer Units.
+
+### Tests and integration
+
+- Expanded deterministic rollback, interruption, neighbor NPC, sparse save,
+  conversion failure and delayed warp-completion regression coverage.
+- Added `make test-imported-matrix`: pins and verifies v0.2.5, v0.2.74,
+  v0.3.3 and runs each engine's real `--base imported` validator.
+- Public CI continues to pass on all three pinned ROM-free fixture validations
+  and the standalone test suite. The imported-cache matrix still requires
+  an actual user-owned Gen 1 cache; it has not been executed here.
+- Tracked remaining live gameplay and private-engine-import validation tasks.
+
 ## 0.9.1 — 2026-10-28
 
 ### Fixed

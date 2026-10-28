@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.9.1**.
+Current numbered release: **v0.9.2**.
 
 ## Versioning and updates
 
@@ -413,6 +413,16 @@ content cross-reference checks still require an imported game cache; visual and
 input smoke testing still requires gameplay. Recorded TM inventory/state
 mismatches are refused without deleting recordings; DV edits now calculate new
 stats before committing changes.
+
+The v0.9.2 reliability pass defers Map Beacon and Emergency Teleporter
+consumption until confirmed arrival, checks live neighboring NPC positions,
+and protects Recorded TM inventory/recording consistency across interrupted
+native learn flows and bag failures.
+
+Run `make test-imported-matrix` with the three pinned external Gen1Recomp
+checkouts and **user-owned imported Gen 1 data** to perform full native
+integration validation. Public CI verifies the ROM-free fixture loader and
+standalone regressions; it cannot certify imported-data or live gameplay.
 
 See [integration_tests/README.md](integration_tests/README.md) for the version
 matrix and remaining live scenarios.

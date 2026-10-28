@@ -54,9 +54,11 @@ class ImportedMatrixTests(unittest.TestCase):
 
             self.assertFalse(run_matrix(checkouts, root, run))
             self.assertEqual(len(calls), 5)
-            self.assertFalse(any("v0.2.74" in str(args[0]) and
-                                 "modkit.py" in str(args[0])
-                                 for args in calls))
+            self.assertFalse(any(
+                "modkit.py" in " ".join(args)
+                and "v0.2.74" in " ".join(args)
+                for args in calls
+            ))
 
 
 if __name__ == "__main__":
