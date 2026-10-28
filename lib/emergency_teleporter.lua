@@ -24,7 +24,9 @@ function EmergencyTeleporter.destination(data, save)
   local fly = field.flyWarps and field.flyWarps[out.id]
   local x = fly and fly.x or out.x
   local y = fly and fly.y or out.y
-  if type(x) ~= "number" or type(y) ~= "number" then return nil end
+  if type(x) ~= "number" or type(y) ~= "number"
+      or x < 0 or y < 0 or x == math.huge or y == math.huge
+      or x % 1 ~= 0 or y % 1 ~= 0 then return nil end
   return { map = out.id, x = x, y = y, facing = "down" }
 end
 
@@ -42,6 +44,14 @@ function EmergencyTeleporter.install(mod, TravelSafety)
 
   local function fail(game, text)
     game.stack:push(mod.ui.TextBox.new(game, text))
+  end
+
+  local function spend(game)
+    local inv = game.save and game.save.inventory or {}
+    local count = tonumber(inv[EmergencyTeleporter.ITEM_ID]) or 0
+    if count < 1 then return false end
+    local ok = pcall(takeItem, {save=game.save}, EmergencyTeleporter.ITEM_ID, 1)
+    return ok and (tonumber(inv[EmergencyTeleporter.ITEM_ID]) or 0) == count - 1
   end
 
   mod.hooks:wrap("item.use",
@@ -92,6 +102,7 @@ function EmergencyTeleporter.install(mod, TravelSafety)
     local p = pending
     if not p or p.game ~= game then return result end
 
+    if p.kind == "arriving" then return result end
     local current = mod.world:current()
     if not current or TravelSafety.mapBlocked(current.mapId, game.save) then
       pending = nil
@@ -122,18 +133,35 @@ function EmergencyTeleporter.install(mod, TravelSafety)
       return result
     end
 
+    local origin = {
+      mapId=current.mapId, x=current.x, y=current.y,
+      facing=current.facing or "down",
+    }
+    p.kind = "arriving"
+    local function onArrival()
+      if pending ~= p then return end
+      pending = nil
+      local now = mod.world:current()
+      if now and now.mapId == dest.map
+          and now.x == dest.x and now.y == dest.y and spend(game) then
+        return
+      end
+      -- A warp request is only an accepted transition, not proof that the
+      -- player arrived. Restore a recorded departure where possible.
+      if now and origin.mapId and type(origin.x) == "number"
+          and type(origin.y) == "number" then
+        mod.world:warpTo(origin.mapId, origin.x, origin.y,
+          origin.facing, {arrive="teleport"})
+      end
+      fail(game, "The TELEPORTER arrival\nfailed. No charge was made.")
+    end
     local ok = mod.world:warpTo(
-      dest.map, dest.x, dest.y, dest.facing, { arrive = "teleport" })
+      dest.map, dest.x, dest.y, dest.facing,
+      { arrive = "teleport", onDone = onArrival })
     if not ok then
       pending = nil
       fail(game, "The TELEPORTER failed\nto establish a route.")
-      return result
     end
-
-    -- Public warp accepted: spend exactly one device now. Nothing here
-    -- changes party HP/status, money, active field effects or incident state.
-    takeItem({ save = game.save }, EmergencyTeleporter.ITEM_ID, 1)
-    pending = nil
     return result
   end)
 

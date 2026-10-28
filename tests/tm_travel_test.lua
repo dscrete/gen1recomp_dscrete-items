@@ -149,8 +149,10 @@ end)
 
 local function fakeTeleporterMod(warpResult)
   local hooks,effect={},nil
-  local world={mapId="ROUTE_1",busy=nil,warps={}}
-  function world:current() return {mapId=self.mapId} end
+  local world={mapId="ROUTE_1",x=0,y=0,busy=nil,warps={}}
+  function world:current()
+    return {mapId=self.mapId,x=self.x,y=self.y,facing="down"}
+  end
   function world:availableFieldActions() return {},self.busy end
   function world:warpTo(map,x,y,facing,opts)
     self.warps[#self.warps+1]={
@@ -216,6 +218,10 @@ test("Emergency Teleporter spends only after accepted warp and preserves state",
   eq(#mod.world.warps,1)
   eq(mod.world.warps[1].map,"PALLET_TOWN")
   eq(mod.world.warps[1].opts.arrive,"teleport")
+  eq(game.save.inventory[EmergencyTeleporter.ITEM_ID],1,
+    "a transition request alone must not charge")
+  mod.world.mapId="PALLET_TOWN"; mod.world.x=5; mod.world.y=7
+  mod.world.warps[1].opts.onDone()
   eq(game.save.inventory[EmergencyTeleporter.ITEM_ID],nil)
   eq(game.save.party[1].hp,7)
   eq(game.save.party[1].status,"PSN")
@@ -312,4 +318,28 @@ test("Blank TM pending cancel and ambiguous changes do not delete recordings",fu
   save.inventory[BlankTM.RECORDED_ITEM_ID]=0
   check(not BlankTM.reconcilePending(save,runtime))
   eq(#BlankTM.recordings(runtime),2)
+end)
+
+test("Emergency Teleporter does not spend on wrong arrival or missing completion",function()
+  local mod,hooks=fakeTeleporterMod(true)
+  EmergencyTeleporter.install(mod,TravelSafety)
+  local g=teleporterGame()
+  local list={close=function() end,closeStartMenu=function() end}
+  hooks["item.use"](function() end,g,nil,EmergencyTeleporter.ITEM_ID,nil,list)
+  hooks["input.step"](function() end,g,0)
+  eq(g.save.inventory[EmergencyTeleporter.ITEM_ID],1)
+  hooks["input.step"](function() end,g,0)
+  eq(#mod.world.warps,1,"must not queue another transition during arrival")
+  mod.world.mapId="PALLET_TOWN";mod.world.x=9;mod.world.y=9
+  mod.world.warps[1].opts.onDone()
+  eq(g.save.inventory[EmergencyTeleporter.ITEM_ID],1)
+  eq(#mod.world.warps,2,"bad landing returns to recorded departure")
+end)
+
+test("Emergency Teleporter refuses invalid imported outdoor coordinates",function()
+  local data={maps={PALLET_TOWN={}},field={flyWarps={}}}
+  for _,bad in ipairs({-1, 0.5, math.huge}) do
+    local save={lastHeal={outdoor={id="PALLET_TOWN",x=bad,y=4}}}
+    eq(EmergencyTeleporter.destination(data,save),nil)
+  end
 end)
