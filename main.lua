@@ -73,6 +73,7 @@ return function(mod)
   local TravelSafety=loadLocal(mod,"lib/travel_safety.lua")
   local EmergencyTeleporter=loadLocal(mod,"lib/emergency_teleporter.lua")
   local PCTransfer=loadLocal(mod,"lib/pc_transfer.lua")
+  local MapBeacon=loadLocal(mod,"lib/map_beacon.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -113,6 +114,7 @@ return function(mod)
   local blankTM=BlankTM.install(mod,runtime)
   local emergencyTeleporter=EmergencyTeleporter.install(mod,TravelSafety)
   local pcTransfer=PCTransfer.install(mod,TravelSafety)
+  local mapBeacon=MapBeacon.install(mod,runtime,TravelSafety)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -154,6 +156,7 @@ return function(mod)
   mod.exports.travelSafety=TravelSafety
   mod.exports.emergencyTeleporter=emergencyTeleporter
   mod.exports.pcTransfer=pcTransfer
+  mod.exports.mapBeacon=mapBeacon
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end
