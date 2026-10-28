@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.7.0**.
+Current numbered release: **v0.8.0**.
 
 ## Versioning and updates
 
@@ -327,6 +327,21 @@ link rooms, scripts, forced movement, transitions and other busy field states. N
 destination confirmation is shown. Missing/invalid Center data or a failed warp keeps
 the item; one Teleporter is spent only after the public warp request is accepted.
 
+### PC Transfer Unit
+
+A one-use portable link to **Pokémon storage only**. After the Bag/Start menu closes and
+the field is confirmed safe, it briefly shows a connection message and opens
+Gen1Recomp's native Bill's PC storage interface directly. Withdraw, deposit, release
+and change-box behavior therefore remain engine-owned; the broader PC root and item
+storage are never exposed.
+
+Because the storage UI is layered over the existing overworld rather than reached by a
+temporary warp, the player returns to the exact same map position and facing when the
+PC closes. Party state, money, active DScrete field effects, encounter/incident state
+and other world state are left untouched. The Unit refuses battle, Safari, link rooms,
+scripts, forced movement, transitions and other busy field states. It is consumed only
+after the native storage screen successfully opens; failed connections consume nothing.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -351,7 +366,7 @@ the item; one Teleporter is spent only after the public warp request is accepted
 | DNA Stabilizer | Consumable | Pokémon | Raises non-shiny primary DVs by +1 while preserving existing shiny DV patterns. |
 | Mutation Capsule | Consumable | Pokémon | Previews and applies one locked random primary-DV reroll. |
 | Blank TM | Consumable | Pokémon | Copies one currently known non-HM move into a non-overwritable Recorded TM. |
-| PC Transfer Unit | Consumable | Travel | Opens portable PC access once and safely returns. |
+| PC Transfer Unit | Consumable | Travel | Opens one native Pokémon-storage session in place, then returns to the unchanged field. |
 | Emergency Teleporter | Consumable | Travel | Returns to the exterior landing of the last valid Pokémon Center without healing. |
 | Map Beacon | Consumable pair | Travel | Records a valid field tile and later returns to it. |
 
@@ -362,7 +377,7 @@ stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
 tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder, Fossil
-Catalyst, DNA Stabilizer, Mutation Capsule, Blank TM and Emergency Teleporter also have direct GET ITEMS entries, and
+Catalyst, DNA Stabilizer, Mutation Capsule, Blank TM, Emergency Teleporter and PC Transfer Unit also have direct GET ITEMS entries, and
 INSPECT shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
