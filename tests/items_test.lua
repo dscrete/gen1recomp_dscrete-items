@@ -52,14 +52,14 @@ end)
 
 test("implemented travel tools have registered effects", function()
   local expected={
-    pc_transfer_unit="DS_PC_TRANSFER_EFFECT",
-    emergency_teleporter="DS_TELEPORTER_EFFECT",
-    map_beacon="DS_MAP_BEACON_EFFECT",
+    pc_transfer_unit={effect="DS_PC_TRANSFER_EFFECT",ownership="CONSUMABLE"},
+    emergency_teleporter={effect="DS_TELEPORTER_EFFECT",ownership="CONSUMABLE"},
+    map_beacon={effect="DS_MAP_BEACON_EFFECT",ownership="CONSUMABLE_PAIR"},
   }
-  for key,effect in pairs(expected) do
+  for key,want in pairs(expected) do
     local item=Items.byKey[key]
-    eq(item.effect,effect,key)
-    eq(item.ownership,"CONSUMABLE",key)
+    eq(item.effect,want.effect,key)
+    eq(item.ownership,want.ownership,key)
     eq(item.effectKind,"TRAVEL",key)
     check(item.implemented,key)
   end
