@@ -39,6 +39,7 @@ dofile("tests/trainer_beacon_link_cable_test.lua")
 dofile("tests/pokemon_tools_test.lua")
 dofile("tests/tm_travel_test.lua")
 dofile("tests/pc_transfer_test.lua")
+dofile("tests/map_beacon_test.lua")
 dofile("tests/dv_tools_test.lua")
 
 io.write(("%d passed, %d failed\n"):format(passed, failed))
