@@ -315,3 +315,26 @@ EXP presentation/level-up behavior, save/reload and cleanup.
 With Prototype Ball and EXP Battery implemented, the next ordered battle item is
 **Trainer Beacon**. The checklist remains the source of truth when later dependencies
 require reordering.
+
+## Reliability hardening (v0.9.2)
+
+Map Beacon uses the public warp-completion callback to validate actual landing
+before charging, including currently loaded NPC occupancy, and makes a safe
+attempt to return to departure if the arrival was blocked. It rejects moved
+neighbor actors using the public NPC handles and refuses unloaded mod-spawned
+actors whose occupancy cannot be proven. Emergency Teleporter similarly
+defers charges until arrival. Native PC Storage exceptions are caught and
+leave the transfer unit untouched.
+
+Blank TM now stores the pending native learn intent in `mod.save`, allowing a
+physical recorded-TM consumption to reconcile its corresponding move record
+across a save/reboot interruption. The conversion transaction snapshots the
+bag order and inventory and rolls both back when a bag override refuses or
+fails to add the recorded copy. Missing, sparse or malformed recording data
+fails closed instead of destroying a move.
+
+A `make test-imported-matrix` command checks three exact upstream commits and
+executes each engine's authoritative imported-data modkit validation. It
+requires a legitimate local imported cache and cannot run in public GitHub CI
+without one; the existing three-version fixture CI provides a separate,
+fully automated ROM-free regression gate.

@@ -151,3 +151,17 @@ test("PC Transfer uses native Pokemon storage rather than the broad PC root",fun
   check(not src:find("warpTo",1,true),
     "portable storage should not warp away and back")
 end)
+
+test("PC Transfer refuses native UI exceptions without charging a unit",function()
+  local mod,hooks,_,boxes,_,_,_=fakeMod(false)
+  PCTransfer.install(mod,TravelSafety,{
+    openStorage=function() error("modded UI constructor failed") end,
+  })
+  local g=game()
+  local list={close=function() end,closeStartMenu=function() end}
+  hooks["item.use"](function() end,g,nil,PCTransfer.ITEM_ID,nil,list)
+  hooks["input.step"](function() end,g,0)
+  boxes[1].onDone()
+  eq(g.save.inventory[PCTransfer.ITEM_ID],1)
+  eq(#boxes,2)
+end)

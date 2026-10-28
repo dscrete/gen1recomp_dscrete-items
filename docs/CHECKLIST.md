@@ -697,6 +697,11 @@ code ownership; they do not decide how players obtain an item.
 - [ ] Review and eliminate or explicitly authorize modkit MK006 warnings for
       private engine requires (Bag, Game, Font and Theme) without breaking the
       advertised minimum API floor.
+- [x] Add a reproducible exact-revision imported-cache matrix command for
+      all three pinned Gen1Recomp versions; fail closed on missing caches or
+      any native engine validation errors.
+- [x] Guard custom travel/TM/storage transactions for interrupted warp
+      transitions, changed inventory and native UI failures; record tests.
 - [ ] Run imported-data engine validation at all three pins and resolve any
       version-specific API/merged-content issues.
 - [ ] Verify the full in-game regression matrix against unmodified Gen1Recomp

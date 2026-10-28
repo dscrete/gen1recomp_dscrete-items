@@ -212,3 +212,26 @@ A mod that creates an entirely new actor only during destination `map.entered`
 cannot be predicted ahead of time: the post-arrival check/rollback is the
 defensive fallback. An interrupted engine transition that never invokes
 `onDone` cannot be acknowledged as a completed, charged Beacon return.
+
+## Three-engine imported-cache matrix
+
+The standalone command below is deliberately separate from fixture-based
+public GitHub Actions: copyrighted, user-owned ROM-derived imported data must
+not be committed to this repository or uploaded to public CI.
+
+With **three external Gen1Recomp checkouts**, each at the exact tagged commit
+and each with its own imported Gen 1 cache, set:
+
+```sh
+export GEN1RECOMP_V025_ROOT=/path/to/gen1recomp-v0.2.5
+export GEN1RECOMP_V0274_ROOT=/path/to/gen1recomp-v0.2.74
+export GEN1RECOMP_V033_ROOT=/path/to/gen1recomp-v0.3.3
+make test-imported-matrix
+```
+
+This checks each full Git commit hash, invokes its native modkit with
+`--base imported`, fails on missing checkouts or validation errors, and
+reports each version separately. **No imported-data matrix result is claimed
+until this command has been run with real imported data**. The public CI
+remains an automated ROM-free loader regression gate, not a replacement
+for this integration check.

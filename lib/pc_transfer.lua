@@ -65,10 +65,15 @@ function PCTransfer.install(mod, TravelSafety, opts)
           fail(game, "The storage link\nwas interrupted.")
           return
         end
-        local ok = openStorage(game)
-        if ok then
-          takeItem({ save = game.save }, PCTransfer.ITEM_ID, 1)
-          opened = true
+        local called, ok = pcall(openStorage, game)
+        if called and ok then
+          local before = itemCount(game)
+          local charged = pcall(
+            takeItem, {save=game.save}, PCTransfer.ITEM_ID, 1)
+          opened = charged and itemCount(game) == before - 1
+          if not opened then
+            fail(game, "Storage opened, but\nunit charge failed.")
+          end
         else
           fail(game, "Could not connect to\nPOKEMON STORAGE.")
         end

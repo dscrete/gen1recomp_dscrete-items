@@ -1,4 +1,4 @@
-.PHONY: test test-lua test-static verify-upstream test-integration test-fixture package clean-package
+.PHONY: test test-lua test-static verify-upstream test-integration test-imported-matrix test-fixture package clean-package
 
 PYTHON ?= python3
 LUA ?= luajit
@@ -15,7 +15,7 @@ test-lua:
 	$(LUA) tests/run.lua
 
 test-static:
-	$(PYTHON) -m unittest tests.test_manifest tests.test_repository_boundaries tests.test_verify_upstream tests.test_fixture_gate -v
+	$(PYTHON) -m unittest tests.test_manifest tests.test_repository_boundaries tests.test_verify_upstream tests.test_fixture_gate tests.test_imported_matrix -v
 
 verify-upstream:
 	$(PYTHON) tools/verify_upstream.py --target $(ENGINE_TARGET)
@@ -23,6 +23,11 @@ verify-upstream:
 # Full integration uses a selected, SHA-verified engine checkout and imported base.
 test-integration: verify-upstream
 	cd "$(GEN1RECOMP_ROOT)" && $(PYTHON) tools/modkit.py validate "$(CURDIR)" --base $(ENGINE_BASE)
+
+# Exact-revision, real imported-data compatibility matrix. Requires three
+# legitimate local engine checkouts each with its own imported Gen 1 cache.
+test-imported-matrix:
+	$(PYTHON) tools/imported_matrix.py
 
 # ROM-free loader check for CI; fixture data is not an imported game cache.
 test-fixture: verify-upstream
