@@ -253,6 +253,11 @@ test("Map Beacon RETURN consumes after accepted warp and keeps anchor",function(
   eq(world.warps[1].x,1); eq(world.warps[1].y,1)
   eq(world.warps[1].facing,"up")
   eq(world.warps[1].opts.arrive,"teleport")
+  eq(game.save.inventory[MapBeacon.ITEM_ID],3,
+    "accepted warp is not successful arrival yet")
+  current.mapId="VIRIDIAN_FOREST"
+  current.x=1; current.y=1; current.facing="up"
+  world.warps[1].opts.onDone()
   eq(game.save.inventory[MapBeacon.ITEM_ID],2)
   eq(MapBeacon.get(runtime).mapId,"VIRIDIAN_FOREST",
     "return must keep the saved anchor")
@@ -289,4 +294,79 @@ test("Map Beacon RELOCATE explicitly replaces one point and costs one Beacon",fu
   hooks["input.step"](function() end,game,0)
   eq(MapBeacon.get(runtime).mapId,"ROUTE_1")
   eq(game.save.inventory[MapBeacon.ITEM_ID],2)
+end)
+
+test("Map Beacon rejects occupied neighboring NPC positions and unloaded runtime actors",function()
+  local data=baseData()
+  data.maps.VIRIDIAN_FOREST.objects={
+    {index=1,name="WALKER",x=1,y=1,sprite="SPRITE_BUG_CATCHER"},
+  }
+  local game={data=data,save={}}
+  local pos={x=0,y=0}
+  local moving=false
+  local world={
+    current=function() return {mapId="ROUTE_1",x=1,y=1} end,
+    liveMaps=function() return {
+      {mapId="ROUTE_1",active=true}, {mapId="VIRIDIAN_FOREST",active=false},
+    } end,
+    npc=function(_,mapId,ref)
+      if mapId=="VIRIDIAN_FOREST" and ref==1 then
+        return {
+          position=function() return pos.x,pos.y end,
+          isMoving=function() return moving end,
+        }
+      end
+    end,
+  }
+  local ok,reason=TravelSafety.validateBeaconCell(game,world,"VIRIDIAN_FOREST",0,0)
+  check(not ok); eq(reason,"occupied",
+    "NPC moved off its static spawn onto the Beacon")
+  pos.x=1; pos.y=1; moving=true
+  ok,reason=TravelSafety.validateBeaconCell(game,world,"VIRIDIAN_FOREST",0,0)
+  check(not ok); eq(reason,"moving actor")
+  moving=false
+  check(TravelSafety.validateBeaconCell(game,world,"VIRIDIAN_FOREST",0,0))
+  data.maps.VIRIDIAN_FOREST.objects={
+    {index=2,name="DYNAMIC",runtime=true,x=1,y=1},
+  }
+  world.liveMaps=function() return {{mapId="ROUTE_1",active=true}} end
+  world.npc=function() return nil end
+  ok,reason=TravelSafety.validateBeaconCell(game,world,"VIRIDIAN_FOREST",0,0)
+  check(not ok); eq(reason,"unloaded dynamic actor")
+end)
+
+test("Map Beacon refuses an actor spawned at arrival and restores departure without charge",function()
+  local mod,game,hooks,pushed,current,world=fakeMod(true)
+  local runtime=runtimeStore()
+  MapBeacon.set(runtime,{mapId="VIRIDIAN_FOREST",x=1,y=1,facing="up"})
+  MapBeacon.install(mod,runtime,TravelSafety)
+  local list={close=function() end,closeStartMenu=function() end}
+  hooks["item.use"](function() end,game,nil,MapBeacon.ITEM_ID,nil,list)
+  pushed[#pushed].items[1].onSelect()
+  confirmTop(pushed)
+  hooks["input.step"](function() end,game,0)
+  eq(#world.warps,1)
+  eq(game.save.inventory[MapBeacon.ITEM_ID],3)
+  current.mapId="VIRIDIAN_FOREST"; current.x=1; current.y=1
+  world.npc={x=1,y=1}
+  world.warps[1].opts.onDone()
+  eq(game.save.inventory[MapBeacon.ITEM_ID],3)
+  eq(#world.warps,2,"unsafe arrival should attempt a departure rollback")
+  eq(world.warps[2].mapId,"ROUTE_1")
+  eq(MapBeacon.get(runtime).mapId,"VIRIDIAN_FOREST")
+end)
+
+test("Map Beacon does not replace an anchor when the consumption command refuses",function()
+  local mod,game,hooks,pushed,current,world=fakeMod(true)
+  local runtime=runtimeStore()
+  MapBeacon.set(runtime,{mapId="VIRIDIAN_FOREST",x=1,y=1,facing="up"})
+  mod.content.commands.get=function() return function() return false end end
+  MapBeacon.install(mod,runtime,TravelSafety)
+  local list={close=function() end,closeStartMenu=function() end}
+  hooks["item.use"](function() end,game,nil,MapBeacon.ITEM_ID,nil,list)
+  pushed[#pushed].items[2].onSelect()
+  confirmTop(pushed)
+  hooks["input.step"](function() end,game,0)
+  eq(game.save.inventory[MapBeacon.ITEM_ID],3)
+  eq(MapBeacon.get(runtime).mapId,"VIRIDIAN_FOREST")
 end)

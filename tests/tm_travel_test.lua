@@ -256,3 +256,60 @@ test("Travel and TM tools avoid hard-coded content and healing side effects",fun
     check(not s:find(name,1,true),"Blank TM should not hardcode "..name)
   end
 end)
+
+test("Blank TM conversion restores bag and acquisition order after a mutated failure",function()
+  local data=tmData()
+  local runtime=runtimeStore()
+  local save={inventory={[BlankTM.ITEM_ID]=1,OTHER=2},
+    bagOrder={"OTHER",BlankTM.ITEM_ID}}
+  local bag={
+    remove=function(s,id)
+      s.inventory[id]=nil
+      table.remove(s.bagOrder,2)
+    end,
+    add=function(s,id)
+      table.insert(s.bagOrder,id)
+      s.inventory[id]=1
+      return false -- a misbehaving companion-mod bag override
+    end,
+  }
+  check(not BlankTM.convert(save,data,"TACKLE",runtime,bag))
+  eq(save.inventory[BlankTM.ITEM_ID],1)
+  eq(save.inventory[BlankTM.RECORDED_ITEM_ID],nil)
+  eq(save.inventory.OTHER,2)
+  eq(#save.bagOrder,2)
+  eq(save.bagOrder[1],"OTHER")
+  eq(save.bagOrder[2],BlankTM.ITEM_ID)
+  eq(#BlankTM.recordings(runtime),0)
+end)
+
+test("Blank TM pending native learn survives save reload and reconciles exactly once",function()
+  local runtime=runtimeStore()
+  runtime:setReusableState(BlankTM.STATE_KEY,{
+    recordings={"TACKLE","MOD_PULSE"},
+    pendingTeach={index=2,moveId="MOD_PULSE",beforeCount=2},
+  })
+  local save={inventory={[BlankTM.RECORDED_ITEM_ID]=1}}
+  check(not BlankTM.isConsistent(save,runtime),
+    "native learn may be committed before its save record is updated")
+  check(BlankTM.reconcilePending(save,runtime))
+  check(BlankTM.isConsistent(save,runtime))
+  local rec=BlankTM.recordings(runtime)
+  eq(#rec,1); eq(rec[1],"TACKLE")
+  check(not BlankTM.reconcilePending(save,runtime))
+  eq(#BlankTM.recordings(runtime),1)
+end)
+
+test("Blank TM pending cancel and ambiguous changes do not delete recordings",function()
+  local runtime=runtimeStore()
+  runtime:setReusableState(BlankTM.STATE_KEY,{
+    recordings={"TACKLE","MOD_PULSE"},
+    pendingTeach={index=2,moveId="MOD_PULSE",beforeCount=2},
+  })
+  local save={inventory={[BlankTM.RECORDED_ITEM_ID]=2}}
+  check(not BlankTM.reconcilePending(save,runtime))
+  eq(#BlankTM.recordings(runtime),2)
+  save.inventory[BlankTM.RECORDED_ITEM_ID]=0
+  check(not BlankTM.reconcilePending(save,runtime))
+  eq(#BlankTM.recordings(runtime),2)
+end)

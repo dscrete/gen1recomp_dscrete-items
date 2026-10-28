@@ -199,3 +199,16 @@ save, in each supported engine version where possible:
   interrupted warp and item-consumption edge cases for all 19 bag items.
 - Save while EXP Battery is armed and while each field effect is active; reload,
   finish a battle, travel, cancel menus, and verify no transient hook state leaks.
+
+### Deferred Map Beacon arrival verification
+
+The Beacon now defers consumption until the public `warpTo(...,
+{onDone=...})` callback confirms the player reached the saved cell and
+the freshly loaded map remains safe. If a late-spawned NPC occupies the
+landing, it attempts to return to the recorded departure without spending.
+For loaded neighboring maps, live public NPC handles detect moved actors;
+inaccessible mod-spawned actors on unloaded maps are conservatively refused.
+A mod that creates an entirely new actor only during destination `map.entered`
+cannot be predicted ahead of time: the post-arrival check/rollback is the
+defensive fallback. An interrupted engine transition that never invokes
+`onDone` cannot be acknowledged as a completed, charged Beacon return.

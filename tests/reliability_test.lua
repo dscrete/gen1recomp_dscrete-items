@@ -133,3 +133,12 @@ test("full reset removes unrelated persistent tool state and preserves correct s
   end
   eq(s.values.schema_version,Runtime.SCHEMA_VERSION)
 end)
+
+test("recorded TM state rejects sparse and invalid serialized move entries",function()
+  local s=store();local r=Runtime.new(s)
+  r:setReusableState("blank_tm",{recordings={[1]="TACKLE",[3]="GROWL"}})
+  local save={inventory={[BlankTM.RECORDED_ITEM_ID]=1}}
+  check(not BlankTM.isConsistent(save,r))
+  r:setReusableState("blank_tm",{recordings={[1]=false}})
+  check(not BlankTM.isConsistent(save,r))
+end)
