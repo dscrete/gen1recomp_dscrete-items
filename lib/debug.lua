@@ -78,6 +78,7 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="BLANK TM", value="blank_tm" },
       { label="TELEPORTER", value="teleporter" },
       { label="PC TRANSFER", value="pc_transfer" },
+      { label="MAP BEACON", value="map_beacon" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -101,6 +102,7 @@ function Debug.install(mod, Items, runtime, diagnostics)
     elseif action == "blank_tm" then giveItem(ctx, Items.byKey.blank_tm.itemId, 1)
     elseif action == "teleporter" then giveItem(ctx, Items.byKey.emergency_teleporter.itemId, 1)
     elseif action == "pc_transfer" then giveItem(ctx, Items.byKey.pc_transfer_unit.itemId, 1)
+    elseif action == "map_beacon" then giveItem(ctx, Items.byKey.map_beacon.itemId, 2)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
