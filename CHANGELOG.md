@@ -4,6 +4,22 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.7.0 — 2026-10-28
+
+### Added
+
+- Blank TM, a consumable recorder that copies one currently known non-HM move without removing it from the source Pokémon and converts into a persistent, non-overwritable RECORDED TM.
+- RECORDED TM teaching is data-driven from merged species data: ordinary machine compatibility plus natural starting/level-up learn data qualify, including compatible modded Pokémon and moves. The final teach uses Gen1Recomp's native learn/forget flow and consumes the recorded copy only after a move is actually learned.
+- Multiple recorded moves can coexist behind the protected RECORDED TM bag entry; their move identities persist independently and are removed only with the matching successfully used copy.
+- Emergency Teleporter, a consumable safe-field travel tool that returns to the canonical exterior landing associated with the save's last valid Pokémon Center heal point.
+- Emergency Teleporter refuses Safari, link rooms, battle and busy/scripted field states, but works from ordinary caves/buildings/dungeons without Escape Rope restrictions. It preserves HP, status, money and DScrete runtime effects, and consumes only after the public warp request succeeds.
+- Direct developer-harness grants for Blank TM and Emergency Teleporter plus cleanup for recorded-TM test state.
+
+### Changed
+
+- The implemented Pokémon-tool catalogue now includes Blank TM, and the travel catalogue now includes Emergency Teleporter.
+- Added a shared conservative travel-safety helper for link-room, Safari and public field-readiness checks that later travel tools can reuse.
+
 ## 0.6.0 — 2026-09-24
 
 ### Added
