@@ -26,7 +26,9 @@ def accepted_output(status: int, combined: str) -> tuple[bool, str]:
     if status == 0 and "FAIL gen1recomp_dscrete_items invalid" not in combined:
         return True, "fixture loader returned clean success"
     errors = ERROR.findall(combined)
-    if status != 2:
+    # modkit reports validation failures with exit status 1; accept 2 as
+    # well for builds that use the older CLI failure convention.
+    if status not in (1, 2):
         return False, f"unexpected modkit exit status {status}"
     if "FAIL gen1recomp_dscrete_items invalid" not in combined:
         return False, "modkit did not complete normal validation"
