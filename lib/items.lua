@@ -23,7 +23,7 @@ Items.all = {
   { key="prototype_ball", itemId="DS_PROTOTYPE_BALL", name="PROTO BALL", ownership="CONSUMABLE", family="SILPH_CO", effectKind="CAPTURE", effect="DS_PROTOTYPE_BALL_EFFECT", implemented=true },
   { key="exp_battery", itemId="DS_EXP_BATTERY", name="EXP BATTERY", ownership="CONSUMABLE", family="SILPH_CO", effectKind="BATTLE", effect="DS_EXP_BATTERY_EFFECT", implemented=true },
   { key="link_cable", itemId="DS_LINK_CABLE", name="LINK CABLE", ownership="CONSUMABLE", family="SILPH_CO", effectKind="POKEMON", effect="DS_LINK_CABLE_EFFECT", implemented=true },
-  { key="pc_transfer_unit", itemId="DS_PC_TRANSFER", name="PC TRANSFER", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAVEL" },
+  { key="pc_transfer_unit", itemId="DS_PC_TRANSFER", name="PC TRANSFER", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAVEL", effect="DS_PC_TRANSFER_EFFECT", implemented=true },
   { key="blank_tm", itemId="DS_BLANK_TM", name="BLANK TM", ownership="CONSUMABLE", family="SILPH_CO", effectKind="POKEMON", effect="DS_BLANK_TM_EFFECT", implemented=true },
   { key="emergency_teleporter", itemId="DS_TELEPORTER", name="TELEPORTER", ownership="CONSUMABLE", family="SILPH_CO", effectKind="TRAVEL", effect="DS_TELEPORTER_EFFECT", implemented=true },
   { key="map_beacon", itemId="DS_MAP_BEACON", name="MAP BEACON", ownership="CONSUMABLE_PAIR", family="EXPLORATION", effectKind="TRAVEL" },
