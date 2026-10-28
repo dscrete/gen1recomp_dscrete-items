@@ -117,8 +117,35 @@ end
 function BlankTM.isConsistent(save, runtime)
   local count = tonumber(save and save.inventory
     and save.inventory[BlankTM.RECORDED_ITEM_ID]) or 0
-  local recordings = BlankTM.recordings(runtime)
-  return count >= 0 and count % 1 == 0 and count == #recordings
+  local recordings = state(runtime).recordings
+  if count < 0 or count % 1 ~= 0 then return false end
+  local entries = 0
+  for index, moveId in pairs(recordings) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0
+        or type(moveId) ~= "string" or moveId == "" then return false end
+    entries = entries + 1
+  end
+  return entries == #recordings and count == entries
+end
+
+-- A native four-move learn can consume a physical TM immediately before
+-- its corresponding mod.save recording is updated. Persist this pending
+-- intent so a save/reload in that narrow window can finish the transaction.
+function BlankTM.reconcilePending(save, runtime)
+  local s = state(runtime)
+  local p = s.pendingTeach
+  if type(p) ~= "table" then return false end
+  local count = tonumber(save and save.inventory
+    and save.inventory[BlankTM.RECORDED_ITEM_ID]) or 0
+  if type(p.index) ~= "number" or type(p.beforeCount) ~= "number"
+      or type(p.moveId) ~= "string" or p.beforeCount < 1
+      or count ~= p.beforeCount - 1
+      or #s.recordings ~= p.beforeCount
+      or s.recordings[p.index] ~= p.moveId then return false end
+  table.remove(s.recordings, p.index)
+  s.pendingTeach = nil
+  saveState(runtime, s)
+  return true
 end
 
 function BlankTM.removeRecording(runtime, index, moveId)
@@ -157,11 +184,31 @@ function BlankTM.convert(save, data, moveId, runtime, Bag)
   if (tonumber(save.inventory[BlankTM.ITEM_ID]) or 0) <= 0
       or not BlankTM.isConsistent(save, runtime) then return false end
 
-  -- Remove first so a full bag can exchange BLANK TM -> RECORDED TM in the
-  -- slot it just freed. Roll back completely if the add fails.
-  Bag.remove(save, BlankTM.ITEM_ID, 1, data)
-  if not Bag.add(save, BlankTM.RECORDED_ITEM_ID, 1, data) then
-    Bag.add(save, BlankTM.ITEM_ID, 1, data)
+  -- Keep a snapshot of both inventory and bag order. Bag.add can fail on
+  -- capacity or stack limits, and a third-party Bag override can throw.
+  local inv, beforeInventory = save.inventory, {}
+  for k, v in pairs(inv) do beforeInventory[k] = v end
+  local beforeOrder
+  if type(save.bagOrder) == "table" then
+    beforeOrder = {}
+    for i, v in ipairs(save.bagOrder) do beforeOrder[i] = v end
+  end
+  local function restore()
+    for k in pairs(inv) do inv[k] = nil end
+    for k, v in pairs(beforeInventory) do inv[k] = v end
+    save.bagOrder = beforeOrder
+  end
+  local blankBefore = tonumber(inv[BlankTM.ITEM_ID]) or 0
+  local recordedBefore = tonumber(inv[BlankTM.RECORDED_ITEM_ID]) or 0
+  local removed = pcall(Bag.remove, save, BlankTM.ITEM_ID, 1, data)
+  if not removed or (tonumber(inv[BlankTM.ITEM_ID]) or 0) ~= blankBefore - 1 then
+    restore()
+    return false
+  end
+  local called, added = pcall(Bag.add, save, BlankTM.RECORDED_ITEM_ID, 1, data)
+  if not called or not added
+      or (tonumber(inv[BlankTM.RECORDED_ITEM_ID]) or 0) ~= recordedBefore + 1 then
+    restore()
     return false
   end
   local s = state(runtime)
@@ -200,14 +247,9 @@ function BlankTM.install(mod, runtime)
   end
 
   local function finalizeIfSpent(game)
-    local p = pendingTeach
-    if not p then return false end
-    if itemCount(game, BlankTM.RECORDED_ITEM_ID) >= p.beforeCount then
-      return false
-    end
-    BlankTM.removeRecording(runtime, p.index, p.moveId)
-    pendingTeach = nil
-    return true
+    local committed = BlankTM.reconcilePending(game.save, runtime)
+    if committed then pendingTeach = nil end
+    return committed
   end
 
   mod.hooks:wrap("item.use",
@@ -219,7 +261,17 @@ function BlankTM.install(mod, runtime)
         return next(game, battle, id, itemTarget, list, moveIndex, picker)
       end
 
-      -- A new attempt supersedes a stale cancelled native learn screen.
+      -- Finish a completed learn before checking the bag. An unspent
+      -- pending attempt is a cancelled native menu; a new use cancels it.
+      finalizeIfSpent(game)
+      local prior = state(runtime)
+      if prior.pendingTeach then
+        if itemCount(game, BlankTM.RECORDED_ITEM_ID)
+            == prior.pendingTeach.beforeCount then
+          prior.pendingTeach = nil
+          saveState(runtime, prior)
+        end
+      end
       pendingTeach = nil
       if not BlankTM.isConsistent(game.save, runtime) then
         game.stack:push(mod.ui.TextBox.new(game,
@@ -350,18 +402,22 @@ function BlankTM.install(mod, runtime)
                 index = rec.index, moveId = rec.moveId, mon = target.mon,
               }
               local before = itemCount(game, BlankTM.RECORDED_ITEM_ID)
+              local s = state(runtime)
+              s.pendingTeach = {
+                index = rec.index, moveId = rec.moveId, beforeCount = before,
+              }
+              saveState(runtime, s)
               next(game, battle, id, target.mon, list, moveIndex, picker)
-              -- A free move slot consumes synchronously. Four-move replacement
-              -- consumes later only if the native forget screen succeeds.
-              if itemCount(game, BlankTM.RECORDED_ITEM_ID) < before then
-                BlankTM.removeRecording(runtime, rec.index, rec.moveId)
-                selectedTeach = nil
-              else
+              -- On immediate native consumption commit synchronously; for
+              -- four-move replacement the durable pending record survives
+              -- cancellation or save/reload until a successful consume.
+              if not finalizeIfSpent(game) then
                 pendingTeach = {
                   index = rec.index, moveId = rec.moveId,
                   mon = target.mon, beforeCount = before,
                 }
               end
+              selectedTeach = nil
             end,
             onCancel = function()
               if targetMenu then targetMenu:close() end

@@ -78,7 +78,10 @@ function MapBeacon.install(mod, runtime, TravelSafety)
   end
 
   local function spend(game)
-    takeItem({save=game.save}, MapBeacon.ITEM_ID, 1)
+    local before = itemCount(game)
+    if before < 1 then return false end
+    local ok = pcall(takeItem, {save=game.save}, MapBeacon.ITEM_ID, 1)
+    return ok and itemCount(game) == before - 1
   end
 
   local function confirm(game, message, yesLabel, onYes)
@@ -219,6 +222,8 @@ function MapBeacon.install(mod, runtime, TravelSafety)
       return result
     end
 
+    if p.kind == "arriving" then return result end
+
     if p.kind == "set" then
       local now, reason = currentPoint(game)
       if not now or not samePoint(now, p.point) then
@@ -226,12 +231,18 @@ function MapBeacon.install(mod, runtime, TravelSafety)
         fail(game, "Beacon placement\nchanged before lock.")
         return result
       end
+      local old = MapBeacon.get(runtime)
       if not MapBeacon.set(runtime, p.point) then
         pending=nil
         fail(game, "Beacon location could\nnot be recorded.")
         return result
       end
-      spend(game)
+      if not spend(game) then
+        if old then MapBeacon.set(runtime, old) else MapBeacon.clear(runtime) end
+        pending=nil
+        fail(game, "Beacon was not spent;\nplacement cancelled.")
+        return result
+      end
       pending=nil
       fail(game, "Beacon location\nrecorded.")
       return result
@@ -251,15 +262,37 @@ function MapBeacon.install(mod, runtime, TravelSafety)
         fail(game, "Saved Beacon is\nunsafe: " .. tostring(reason))
         return result
       end
+      local origin = copyPoint(current)
+      p.kind = "arriving"
+      local function onArrival()
+        if pending ~= p then return end
+        pending = nil
+        local landed = mod.world:current()
+        local safe, why = TravelSafety.validateBeaconCell(
+          game, mod.world, stored.mapId, stored.x, stored.y)
+        if landed and landed.mapId == stored.mapId
+            and landed.x == stored.x and landed.y == stored.y and safe
+            and spend(game) then return end
+        -- The engine now loaded the destination and its runtime actors; if
+        -- an NPC spawned on the landing cell, return without spending.
+        if origin then
+          local backSafe = TravelSafety.validateBeaconCell(
+            game, mod.world, origin.mapId, origin.x, origin.y)
+          if backSafe then
+            mod.world:warpTo(origin.mapId, origin.x, origin.y,
+              origin.facing, {arrive="teleport"})
+          end
+        end
+        fail(game, "Beacon arrival was\nunsafe or interrupted.\nNo charge was made.")
+      end
       local warped = mod.world:warpTo(
-        stored.mapId, stored.x, stored.y, stored.facing, {arrive="teleport"})
+        stored.mapId, stored.x, stored.y, stored.facing,
+        {arrive="teleport", onDone=onArrival})
       if not warped then
         pending=nil
         fail(game, "The MAP BEACON failed\nto establish a route.")
         return result
       end
-      spend(game)
-      pending=nil
       return result
     end
 

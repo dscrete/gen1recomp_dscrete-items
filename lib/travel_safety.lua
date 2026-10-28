@@ -168,13 +168,43 @@ function TravelSafety.validateBeaconCell(game, world, mapId, x, y)
     or staticMarkerAt(game.data, save, mapId, x, y)
   if marker then return false, marker .. " tile" end
 
-  if world and type(world.current) == "function"
-      and type(world.overworld) == "function" then
-    local current = world:current()
-    if current and current.mapId == mapId then
-      local ow = world:overworld()
-      if ow and type(ow.npcAtCell) == "function" and ow:npcAtCell(x, y) then
-        return false, "occupied"
+  local current = world and type(world.current) == "function"
+    and world:current() or nil
+  if current and current.mapId == mapId then
+    local ow = world and type(world.overworld) == "function"
+      and world:overworld() or nil
+    if ow and type(ow.npcAtCell) == "function" and ow:npcAtCell(x, y) then
+      return false, "occupied"
+    end
+  else
+    -- The public NPC handle also works for loaded neighboring maps; unlike
+    -- the static spawn coordinates it exposes actors that have since moved.
+    -- This is optional because the v0.2.5 floor does not expose liveMaps().
+    local live = false
+    if world and type(world.liveMaps) == "function" then
+      for _, map in ipairs(world:liveMaps() or {}) do
+        if map.mapId == mapId then live = true; break end
+      end
+    end
+    for _, obj in ipairs(info.def.objects or {}) do
+      if objectVisible(save, mapId, obj) then
+        local handle
+        if world and type(world.npc) == "function" then
+          handle = world:npc(mapId, obj.index or obj.name)
+        end
+        if handle and type(handle.position) == "function" then
+          local hx, hy = handle:position()
+          if hx == x and hy == y then return false, "occupied" end
+          -- Neighbor NPC step targets are not exposed by the public handle.
+          -- Refuse travel while their final positions are uncertain.
+          if type(handle.isMoving) == "function" and handle:isMoving() then
+            return false, "moving actor"
+          end
+        elseif obj.runtime and not live then
+          -- Unloaded mod-spawned actors have no reliable live position.
+          -- Failing closed avoids treating their initial spawn as proof.
+          return false, "unloaded dynamic actor"
+        end
       end
     end
   end
