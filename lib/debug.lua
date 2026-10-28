@@ -75,6 +75,8 @@ function Debug.install(mod, Items, runtime, diagnostics)
       { label="FOSSIL CAT.", value="fossil_catalyst" },
       { label="DNA STABILIZER", value="dna_stabilizer" },
       { label="MUTATE CAP.", value="mutation_capsule" },
+      { label="BLANK TM", value="blank_tm" },
+      { label="TELEPORTER", value="teleporter" },
       { label="ALL IMPLEMENTED", value="all" },
       { label="UNLOCK GADGETS", value="unlock" },
       { label="REMOVE TEST ITEMS", value="remove" },
@@ -95,6 +97,8 @@ function Debug.install(mod, Items, runtime, diagnostics)
     elseif action == "fossil_catalyst" then giveItem(ctx, Items.byKey.fossil_catalyst.itemId, 1)
     elseif action == "dna_stabilizer" then giveItem(ctx, Items.byKey.dna_stabilizer.itemId, 1)
     elseif action == "mutation_capsule" then giveItem(ctx, Items.byKey.mutation_capsule.itemId, 1)
+    elseif action == "blank_tm" then giveItem(ctx, Items.byKey.blank_tm.itemId, 1)
+    elseif action == "teleporter" then giveItem(ctx, Items.byKey.emergency_teleporter.itemId, 1)
     elseif action == "all" then
       for _, item in ipairs(Items.consumables(true)) do
         local stop = giveItem(ctx, item.itemId, 1, false)
@@ -105,6 +109,9 @@ function Debug.install(mod, Items, runtime, diagnostics)
       for _, item in ipairs(Items.permanent(true)) do runtime:unlock(item.key) end
       showText(ctx, "Implemented gadgets\nwere unlocked.")
     elseif action == "remove" then
+      if diagnostics.blankTM and type(diagnostics.blankTM.clearRecorded)=="function" then
+        diagnostics.blankTM.clearRecorded(ctx.game)
+      end
       for _, item in ipairs(Items.consumables(true)) do takeItem(ctx, item.itemId, 99) end
       showText(ctx, "Implemented test items\nwere removed.")
     end
@@ -191,8 +198,16 @@ function Debug.install(mod, Items, runtime, diagnostics)
     })
     if action == "effect" then runtime:clearFieldEffect()
     elseif action == "runtime" then runtime:resetRuntime()
-    elseif action == "save" then runtime:resetPersistent(itemKeys(Items))
-    elseif action == "inventory" then for _, item in ipairs(Items.consumables(true)) do takeItem(ctx, item.itemId, 99) end
+    elseif action == "save" then
+      if diagnostics.blankTM and type(diagnostics.blankTM.clearRecorded)=="function" then
+        diagnostics.blankTM.clearRecorded(ctx.game)
+      end
+      runtime:resetPersistent(itemKeys(Items))
+    elseif action == "inventory" then
+      if diagnostics.blankTM and type(diagnostics.blankTM.clearRecorded)=="function" then
+        diagnostics.blankTM.clearRecorded(ctx.game)
+      end
+      for _, item in ipairs(Items.consumables(true)) do takeItem(ctx, item.itemId, 99) end
     elseif action == "unlocks" then for _, item in ipairs(Items.permanent(true)) do runtime:lock(item.key) end
     elseif action == "telemetry" then runtime.debugRolls, runtime.debugSuccesses = 0, 0
     else return end

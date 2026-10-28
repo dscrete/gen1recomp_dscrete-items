@@ -69,6 +69,9 @@ return function(mod)
   local DvTools=loadLocal(mod,"lib/dv_tools.lua")
   local DNAStabilizer=loadLocal(mod,"lib/dna_stabilizer.lua")
   local MutationCapsule=loadLocal(mod,"lib/mutation_capsule.lua")
+  local BlankTM=loadLocal(mod,"lib/blank_tm.lua")
+  local TravelSafety=loadLocal(mod,"lib/travel_safety.lua")
+  local EmergencyTeleporter=loadLocal(mod,"lib/emergency_teleporter.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -106,6 +109,8 @@ return function(mod)
   local fossilCatalyst=FossilCatalyst.install(mod)
   local dnaStabilizer=DNAStabilizer.install(mod,DvTools)
   local mutationCapsule=MutationCapsule.install(mod,runtime,DvTools)
+  local blankTM=BlankTM.install(mod,runtime)
+  local emergencyTeleporter=EmergencyTeleporter.install(mod,TravelSafety)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -114,7 +119,7 @@ return function(mod)
   })
   Debug.install(mod,Items,runtime,{
     treasure=treasure,glitch=glitch,rocket=rocketDecoder,expBattery=expBattery,
-    trainerBeacon=trainerBeacon,
+    trainerBeacon=trainerBeacon,blankTM=blankTM,
   })
 
   mod.exports.version=mod.version
@@ -143,6 +148,9 @@ return function(mod)
   mod.exports.dvTools=DvTools
   mod.exports.dnaStabilizer=dnaStabilizer
   mod.exports.mutationCapsule=mutationCapsule
+  mod.exports.blankTM=blankTM
+  mod.exports.travelSafety=TravelSafety
+  mod.exports.emergencyTeleporter=emergencyTeleporter
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end

@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.6.0**.
+Current numbered release: **v0.7.0**.
 
 ## Versioning and updates
 
@@ -295,6 +295,38 @@ one Capsule, and clears the stored offer. Because this is intentionally the risk
 a preview may improve or worsen the DV and may create or destroy shiny status; that
 change is disclosed before the final confirmation.
 
+### Blank TM
+
+A Blank TM copies one of a selected party Pokémon's **currently known non-HM moves**.
+The source Pokémon keeps the move. Recording converts the Blank TM into a separate
+**RECORDED TM**; each recorded copy keeps its own move persistently and cannot be
+overwritten.
+
+Using RECORDED TM first chooses one stored recording, then shows only party Pokémon
+whose merged species data legitimately supports that move through normal TM/HM
+compatibility or natural starting/level-up learn data. This deliberately does not infer
+compatibility from type, species family, or hard-coded signature-move exceptions, so
+compatible modded Pokémon and moves participate automatically. HMs cannot be recorded.
+The final teaching step delegates to Gen1Recomp's native learn/forget flow, including
+four-move replacement and HM-forget protection. Cancelling any selection or abandoning
+move replacement keeps the recorded copy; it is consumed only after the move is
+actually learned.
+
+## Travel tools
+
+### Emergency Teleporter
+
+A consumable emergency return device that targets Gen1Recomp's existing last-heal
+Pokémon Center state and lands at that Center's canonical **exterior** town landing.
+It is travel only: it does not heal, cure status, change money, or simulate a blackout.
+Party HP/status, active DScrete field effects and global incident state remain intact.
+
+The Teleporter works from normal safe free-roam areas including caves, buildings and
+dungeons even when Escape Rope would not normally be valid. It refuses battle, Safari,
+link rooms, scripts, forced movement, transitions and other busy field states. No
+destination confirmation is shown. Missing/invalid Center data or a failed warp keeps
+the item; one Teleporter is spent only after the public warp request is accepted.
+
 ## Item catalogue
 
 | Item | Type | Category | Intended effect |
@@ -318,9 +350,9 @@ change is disclosed before the final confirmation.
 | Fossil Catalyst | Consumable | Pokémon | Overclocks Cinnabar revival to Lv.35/40/45/50 with reached level evolutions. |
 | DNA Stabilizer | Consumable | Pokémon | Raises non-shiny primary DVs by +1 while preserving existing shiny DV patterns. |
 | Mutation Capsule | Consumable | Pokémon | Previews and applies one locked random primary-DV reroll. |
-| Blank TM | Consumable | Pokémon | Records and teaches one compatible move. |
+| Blank TM | Consumable | Pokémon | Copies one currently known non-HM move into a non-overwritable Recorded TM. |
 | PC Transfer Unit | Consumable | Travel | Opens portable PC access once and safely returns. |
-| Emergency Teleporter | Consumable | Travel | Returns to the last valid Pokémon Center. |
+| Emergency Teleporter | Consumable | Travel | Returns to the exterior landing of the last valid Pokémon Center without healing. |
 | Map Beacon | Consumable pair | Travel | Records a valid field tile and later returns to it. |
 
 ## Development access
@@ -330,7 +362,7 @@ stabilized. The developer Pallet Town NPC provides **GET ITEMS**, **WARP**,
 **INSPECT**, and **RESET**. **ALL IMPLEMENTED** grants implemented consumables through
 the real inventory path, while **UNLOCK GADGETS** unlocks all implemented permanent
 tools. Prototype Ball, EXP Battery, Trainer Beacon, Link Cable, Move Recorder, Fossil
-Catalyst, DNA Stabilizer and Mutation Capsule also have direct GET ITEMS entries, and
+Catalyst, DNA Stabilizer, Mutation Capsule, Blank TM and Emergency Teleporter also have direct GET ITEMS entries, and
 INSPECT shows whether an EXP Battery charge is currently armed.
 
 Rocket Decoder also exposes a developer-only force-incident entry so each authored
