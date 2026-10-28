@@ -47,8 +47,8 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add direct **PRISM SCENT**, **ELUSIVE SCENT**, **MYSTERY LURE**, **PKMN WHISTLE**,
       **PROTO RESONATOR**, **SAFARI KIT**, **GLITCH DET.**, **TRAINER BEACON**,
       **PROTO BALL**, **EXP BATTERY**, **LINK CABLE**, **MOVE RECORDER**,
-      **FOSSIL CAT.**, **DNA STABILIZER**, **MUTATE CAP.**, **BLANK TM**, and
-      **TELEPORTER** grants.
+      **FOSSIL CAT.**, **DNA STABILIZER**, **MUTATE CAP.**, **BLANK TM**,
+      **TELEPORTER**, and **PC TRANSFER** grants.
 - [x] Limit **ALL IMPLEMENTED**, gadget unlocks, inventory removal, and debug
       inspection/reset helpers to implemented content only.
 - [x] Show Treasure Detector live band/distance, last trigger/sound result, active
@@ -601,8 +601,9 @@ code ownership; they do not decide how players obtain an item.
 - [x] Add a reusable conservative travel-safety foundation for link rooms, active
       Safari sessions and the public field-readiness gate used to reject scripts,
       transitions, forced movement, trainer engagement and other busy states.
-- [ ] Extend shared travel validation for arbitrary future destination tiles and the
-      PC Transfer Unit / Map Beacon cases as those tools are implemented.
+- [ ] Extend shared travel validation for arbitrary future destination tiles required
+      by Map Beacon; PC Transfer needs no destination-tile validation because it opens
+      storage in place without warping.
 - [x] **Emergency Teleporter** — return to the last valid Pokemon Center.
   - [x] Derive the destination from Gen1Recomp's canonical `save.lastHeal` state and
         prefer the associated exterior town's canonical fly landing without hard-coded
@@ -626,7 +627,30 @@ code ownership; they do not decide how players obtain an item.
         active timed DScrete effects, Safari/link/script/busy refusal, failed destination,
         exterior landing/teleport presentation, successful-only consumption, and
         save/reload around the last-heal destination.
-- [ ] **PC Transfer Unit** — provide one portable PC session and safely restore the map.
+- [x] **PC Transfer Unit** — provide one portable Pokémon-storage session in place.
+  - [x] Expose Pokémon storage only; do not open the broad PC root or Player PC item
+        storage.
+  - [x] Close the Bag/Start flow, wait for ordinary safe free-roam control, then show a
+        brief **Connecting to POKEMON STORAGE...** message before opening storage.
+  - [x] Reuse Gen1Recomp's native Gen-1 `src.ui.BoxMenu` / Bill's PC storage
+        interface so withdraw/deposit/release/change-box behavior stays engine-owned.
+  - [x] Keep the storage session in place rather than warping to a Pokémon Center, so
+        closing it naturally returns to the exact same map position and facing.
+  - [x] Preserve party HP/status, money, active DScrete timed effects and unrelated
+        world/incident state; do not perform healing or travel cleanup.
+  - [x] Reuse the shared Safari/link/public-field-readiness guards and conservatively
+        refuse battle, scripts, forced movement, transitions and other busy states.
+  - [x] Consume one Unit only after the native Pokémon-storage screen successfully
+        opens; invalid context, persistent busy state and open failure consume nothing.
+  - [x] Keep implementation compatible with the Gen1Recomp v0.2.5 floor, where the
+        native Gen-1 `BoxMenu.new(game)` storage interface already exists.
+  - [x] Add deterministic tests for Bag/Start unwind, connection handoff, open-time
+        consumption, storage-open failure, Safari/link/busy refusal, field/party/money
+        preservation and a guard against opening Player PC/item storage or warping.
+  - [ ] In-game smoke withdraw/deposit/release/change-box, closing back to the exact
+        activation tile/facing, connection text, successful-only consumption, active
+        timed DScrete effects, poisoned/damaged party state, Safari/link/script/busy
+        refusal, and save/reload around stored Pokémon changes.
 - [ ] **Map Beacon** — record a valid field tile and later return to it.
 
 ## 7. Catalogue completion

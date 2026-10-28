@@ -4,6 +4,21 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.8.0 — 2026-10-28
+
+### Added
+
+- PC Transfer Unit, a one-use portable Pokémon-storage link that opens Gen1Recomp's native Bill's PC storage menu directly rather than exposing the full PC or item storage.
+- A brief **Connecting to POKEMON STORAGE...** handoff after the Bag/Start flow closes and the normal field-safety gate confirms free-roam control.
+- PC Transfer Unit uses the shared Safari/link/busy-state travel guards and refuses battle, scripts, forced movement, transitions and other unsafe field states.
+- The storage session is an in-place UI overlay rather than a temporary warp, so map position/facing, party HP/status, money, DScrete timed effects and unrelated incident/world state remain unchanged.
+- Successful native storage opening consumes exactly one Unit; invalid context, persistent busy state or native storage-open failure consumes nothing.
+- Direct developer-harness grant and deterministic tests for open timing, successful-only consumption, state preservation, Safari/link/busy refusal and native Pokémon-storage-only routing.
+
+### Changed
+
+- The implemented travel catalogue now includes Emergency Teleporter and PC Transfer Unit.
+
 ## 0.7.0 — 2026-10-28
 
 ### Added

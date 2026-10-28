@@ -72,6 +72,7 @@ return function(mod)
   local BlankTM=loadLocal(mod,"lib/blank_tm.lua")
   local TravelSafety=loadLocal(mod,"lib/travel_safety.lua")
   local EmergencyTeleporter=loadLocal(mod,"lib/emergency_teleporter.lua")
+  local PCTransfer=loadLocal(mod,"lib/pc_transfer.lua")
   local Gadgets=loadLocal(mod,"lib/gadgets.lua")
   local runtime=Runtime.new(mod.save)
 
@@ -111,6 +112,7 @@ return function(mod)
   local mutationCapsule=MutationCapsule.install(mod,runtime,DvTools)
   local blankTM=BlankTM.install(mod,runtime)
   local emergencyTeleporter=EmergencyTeleporter.install(mod,TravelSafety)
+  local pcTransfer=PCTransfer.install(mod,TravelSafety)
   local gadgets=Gadgets.install(mod,Items,runtime,{
     silph_tracker=function(game) tracker.open(game) end,
     treasure_detector=function(game) treasure.open(game) end,
@@ -151,6 +153,7 @@ return function(mod)
   mod.exports.blankTM=blankTM
   mod.exports.travelSafety=TravelSafety
   mod.exports.emergencyTeleporter=emergencyTeleporter
+  mod.exports.pcTransfer=pcTransfer
   mod.exports.gadgets=gadgets
   mod.exports.shinyFinder=PrismScent
 end
