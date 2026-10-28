@@ -41,6 +41,7 @@ dofile("tests/tm_travel_test.lua")
 dofile("tests/pc_transfer_test.lua")
 dofile("tests/map_beacon_test.lua")
 dofile("tests/dv_tools_test.lua")
+dofile("tests/reliability_test.lua")
 
 io.write(("%d passed, %d failed\n"):format(passed, failed))
 if failed > 0 then os.exit(1) end

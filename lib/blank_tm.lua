@@ -112,6 +112,15 @@ function BlankTM.recordings(runtime)
   return out
 end
 
+-- Keep the physical RECORDED TM stack and per-move save record count in
+-- agreement. Do not guess which recorded move to discard on damaged saves.
+function BlankTM.isConsistent(save, runtime)
+  local count = tonumber(save and save.inventory
+    and save.inventory[BlankTM.RECORDED_ITEM_ID]) or 0
+  local recordings = BlankTM.recordings(runtime)
+  return count >= 0 and count % 1 == 0 and count == #recordings
+end
+
 function BlankTM.removeRecording(runtime, index, moveId)
   local s = state(runtime)
   if type(index) == "number" and s.recordings[index] == moveId then
@@ -145,7 +154,8 @@ function BlankTM.convert(save, data, moveId, runtime, Bag)
   if not (save and save.inventory and data and data.moves
       and data.moves[moveId]) then return false end
   if BlankTM.isHM(data, moveId) then return false end
-  if (tonumber(save.inventory[BlankTM.ITEM_ID]) or 0) <= 0 then return false end
+  if (tonumber(save.inventory[BlankTM.ITEM_ID]) or 0) <= 0
+      or not BlankTM.isConsistent(save, runtime) then return false end
 
   -- Remove first so a full bag can exchange BLANK TM -> RECORDED TM in the
   -- slot it just freed. Roll back completely if the add fails.
@@ -211,6 +221,11 @@ function BlankTM.install(mod, runtime)
 
       -- A new attempt supersedes a stale cancelled native learn screen.
       pendingTeach = nil
+      if not BlankTM.isConsistent(game.save, runtime) then
+        game.stack:push(mod.ui.TextBox.new(game,
+          "RECORDED TM data is\nout of sync. No item\nwas consumed."))
+        return nil
+      end
 
       if id == BlankTM.ITEM_ID then
         local sources = BlankTM.recordableParty(game)

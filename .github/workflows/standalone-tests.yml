@@ -17,6 +17,8 @@ jobs:
         target: [v0.2.5, v0.2.74, v0.3.3]
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: mod
       - name: Install LuaJIT
         run: sudo apt-get update && sudo apt-get install -y luajit
       - name: Fetch pinned Gen1Recomp checkout
@@ -29,9 +31,10 @@ jobs:
         env:
           GEN1RECOMP_ROOT: ${{ github.workspace }}/upstream
           ENGINE_TARGET: ${{ matrix.target }}
-        run: make test-fixture
+        run: make -C mod test-fixture
 
   test-and-package:
+    needs: engine-fixture
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

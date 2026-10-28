@@ -16,8 +16,11 @@ end
 
 local function copyPoint(point)
   if type(point) ~= "table" then return nil end
-  if type(point.mapId) ~= "string" or type(point.x) ~= "number"
-      or type(point.y) ~= "number" then return nil end
+  if type(point.mapId) ~= "string" or point.mapId == ""
+      or type(point.x) ~= "number" or type(point.y) ~= "number"
+      or point.x < 0 or point.y < 0
+      or point.x == math.huge or point.y == math.huge
+      or point.x % 1 ~= 0 or point.y % 1 ~= 0 then return nil end
   return {
     mapId=point.mapId, x=point.x, y=point.y,
     facing=DIRS[point.facing] and point.facing or "down",

@@ -175,3 +175,23 @@ compatibility; the smoke matrix below remains unchecked until executed in-game.
 
 As more items land, engine-facing regression drivers should be added beside this
 matrix rather than duplicating Gen1Recomp internals in standalone Python models.
+
+## Reliability regression scenarios (cross-item)
+
+Before a candidate release, repeat the following with an existing save and a clean
+save, in each supported engine version where possible:
+
+- Record several different TMs, teach one from a four-move party, cancel another,
+  save/reboot and verify the number of physical RECORDED TM copies exactly matches
+  the serialized recordings; deliberately corrupting this count should refuse
+  further TM use rather than silently lose a move.
+- Cancel and reload Mutation Capsule previews; ensure reopening cannot reroll,
+  but resetting all DScrete persistent data clears the preview.
+- Use DNA Stabilizer and Mutation Capsule on healthy, damaged, poisoned, fainted
+  and shiny Pokémon; no stat-calculation failure may leave a partially edited DV.
+- Save Map Beacon anchors, reload, move the destination NPC, replace collision
+  through a tileset mod, and confirm invalid returns spend no item.
+- Exercise no-item, busy-field, battle, Safari, full-bag, native-menu-cancel,
+  interrupted warp and item-consumption edge cases for all 19 bag items.
+- Save while EXP Battery is armed and while each field effect is active; reload,
+  finish a battle, travel, cancel menus, and verify no transient hook state leaks.

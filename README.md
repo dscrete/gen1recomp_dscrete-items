@@ -407,6 +407,17 @@ scenario can be tested deterministically rather than waiting for the normal sche
 
 ## Testing and release build
 
+CI checks standalone tests and the engine's actual mod-loader validation on
+ROM-free fixture data at exact v0.2.5, v0.2.74 and v0.3.3 commits. Full native
+content cross-reference checks still require an imported game cache; visual and
+input smoke testing still requires gameplay. Recorded TM inventory/state
+mismatches are refused without deleting recordings; DV edits now calculate new
+stats before committing changes.
+
+See [integration_tests/README.md](integration_tests/README.md) for the version
+matrix and remaining live scenarios.
+
+
 `make test` runs the standalone Lua/static suite. `make test-integration` validates
 against the pinned Gen1Recomp integration checkout when its imported Gen-1 cache is
 available.

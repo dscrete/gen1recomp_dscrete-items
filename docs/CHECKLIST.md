@@ -689,6 +689,17 @@ code ownership; they do not decide how players obtain an item.
 
 ## 7. Catalogue completion
 
+- [x] Add pinned ROM-free Gen1Recomp loader checks to CI for v0.2.5,
+      v0.2.74 and v0.3.3, while keeping imported-cache and live smoke checks
+      separate.
+- [x] Add cross-item save/reload, malformed-state, inventory-integrity and
+      failed-DV-application regression coverage.
+- [ ] Run imported-data engine validation at all three pins and resolve any
+      version-specific API/merged-content issues.
+- [ ] Verify the full in-game regression matrix against unmodified Gen1Recomp
+      and the explicitly supported companion-mod combinations.
+
+
 - [ ] Give every item use, cancel, invalid-context, active, and expiration text as
       applicable.
 - [ ] Cover every item with deterministic rules tests plus save/load and transition

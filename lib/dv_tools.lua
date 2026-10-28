@@ -66,14 +66,22 @@ function DvTools.apply(data, mon, dvs, Stats)
   local oldStats = mon.stats
   local oldHP = tonumber(mon.hp)
   local wasFull = oldStats and oldHP ~= nil and oldHP == oldStats.hp
-  mon.dvs = normalized
-  mon.stats = Stats.calc(data.pokemon[mon.species], mon.level or 1,
-    mon.dvs, mon.statExp)
+  -- A custom species or Stats.calc can fail. Never half-apply a DV update:
+  -- calculate and validate the new stats before touching the live Pokemon.
+  local calculated, newStats = pcall(Stats.calc, data.pokemon[mon.species],
+    mon.level or 1, normalized, mon.statExp)
+  if not calculated or type(newStats) ~= "table"
+      or type(newStats.hp) ~= "number" or newStats.hp < 1
+      or newStats.hp ~= newStats.hp then return false end
+  local newHP
   if oldHP == nil or wasFull then
-    mon.hp = mon.stats.hp
+    newHP = newStats.hp
   else
-    mon.hp = math.max(0, math.min(oldHP, mon.stats.hp))
+    newHP = math.max(0, math.min(oldHP, newStats.hp))
   end
+  mon.dvs = normalized
+  mon.stats = newStats
+  mon.hp = newHP
   return true
 end
 

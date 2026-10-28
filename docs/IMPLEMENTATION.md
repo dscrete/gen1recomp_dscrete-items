@@ -301,7 +301,11 @@ logic, Pokedex Chip level/fishing calculations and native-list/entry wiring, Roc
 Decoder serialization/progression/dialogue/rewards, Prototype Ball HP-band/catch-rate
 and registration behavior, and EXP Battery persistence/distribution grouping.
 
-Those tests are not a substitute for engine execution. The unchecked matrix in
+Reliability tests additionally protect recorded-TM bag/save consistency,
+malformed Beacon anchors, mutation preview persistence and all-or-nothing DV writes.
+CI validates real engine mod loading against ROM-free fixture data at the pinned
+v0.2.5, v0.2.74 and v0.3.3 revisions. Those checks are not a substitute for
+imported-data validation or in-game execution. The unchecked matrix in
 `integration_tests/README.md` still covers controller navigation, rendering, native
 Pokédex behavior, runtime actor placement, dialogue/battle flows, real capture storage,
 EXP presentation/level-up behavior, save/reload and cleanup.
