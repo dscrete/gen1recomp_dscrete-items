@@ -98,7 +98,7 @@ test("Whistle chooser includes seen ordinary-wild mod species, but no protected 
   local save={pokedex={seen={
     MODMON=true,RIOLU=true,PIDGEY=true,BULBASAUR=true,KORAIDON=true,RAIKOU=true,
   }}}
-  local hooks={}, effects={}, events={}
+  local hooks,effects,events={},{},{}
   local mod={
     content={item_effects={register=function(_,id,def) effects[id]=def end}},
     hooks={wrap=function(_,id,fn) hooks[id]=fn end},
