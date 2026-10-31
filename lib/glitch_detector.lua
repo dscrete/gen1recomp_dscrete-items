@@ -14,7 +14,6 @@ local FLASH = {
   normal={ period=2.4, window=0.30 },
   frequent={ period=1.2, window=0.45 },
 }
-local LEGENDARIES = { ARTICUNO=true,ZAPDOS=true,MOLTRES=true,MEWTWO=true,MEW=true }
 local DEFAULT_BUCKETS = { 51,102,127,153,178,204,229,242,253,256 }
 
 function GlitchDetector.resolveFlash(v)
@@ -97,14 +96,12 @@ function GlitchDetector.pickTiles(candidates,count,rng)
   return out
 end
 
-function GlitchDetector.kantoPool(pokemon)
+function GlitchDetector.eligibleSpecies(pokemon,eligible)
   local out={}
-  for id,def in pairs(pokemon or {}) do
-    local dex=tonumber(def and (def.dex or def.dexNo or def.pokedex or def.number))
-    local name=tostring(id)
-    if dex and dex>=1 and dex<=151 and not LEGENDARIES[name] then out[#out+1]=id end
+  for species in pairs(eligible or {}) do
+    if pokemon and pokemon[species] then out[#out+1]=species end
   end
-  table.sort(out,function(a,b) return tostring(a)<tostring(b) end)
+  table.sort(out)
   return out
 end
 
@@ -122,14 +119,14 @@ end
 -- A glitch should look ecologically wrong, not merely rare. Exclude every
 -- species native to this map and every species Mystery Lure considers normal
 -- for the current grass habitat before choosing from the remaining Kanto pool.
-function GlitchDetector.anomalyPool(pokemon,encDef,MysteryLure,mapId)
+function GlitchDetector.anomalyPool(pokemon,encDef,MysteryLure,mapId,eligible)
   local excluded=GlitchDetector.nativeSpecies(encDef)
   if MysteryLure and type(MysteryLure.candidates)=="function" then
-    local habitat=MysteryLure.candidates({pokemon=pokemon},nil,mapId,"grass",false)
+    local habitat=MysteryLure.candidates({pokemon=pokemon},nil,mapId,"grass",false,eligible)
     for _,species in ipairs(habitat or {}) do excluded[species]=true end
   end
   local out={}
-  for _,species in ipairs(GlitchDetector.kantoPool(pokemon)) do
+  for _,species in ipairs(GlitchDetector.eligibleSpecies(pokemon,eligible and eligible.all)) do
     if not excluded[species] then out[#out+1]=species end
   end
   return out
@@ -156,9 +153,17 @@ function GlitchDetector.nativeEncounter(encDef,rng)
   return slot and { species=slot.species, level=slot.level } or nil
 end
 
-function GlitchDetector.install(mod,runtime,fx,MysteryLure)
+function GlitchDetector.install(mod,runtime,fx,MysteryLure,Eligibility)
   local currentMap,currentTiles=GlitchDetector.decodeState(
     runtime:getReusableState(GlitchDetector.STATE_KEY,nil))
+  local lastGame=nil
+  local function reloadTiles()
+    currentMap,currentTiles=GlitchDetector.decodeState(
+      runtime:getReusableState(GlitchDetector.STATE_KEY,nil))
+    if not runtime:isActive(GlitchDetector.EFFECT_ID) then
+      currentMap,currentTiles=nil,{}
+    end
+  end
 
   local function persist(mapId,tiles)
     currentMap=mapId; currentTiles=tiles or {}
@@ -199,8 +204,15 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
     opts=opts or {}
     local pos=mod.world:current()
     if not pos or not pos.mapId then return false,"no overworld" end
-    if not GlitchDetector.nativeEncounter(encounterDef(pos.mapId),function() return 0 end) then
+    local def=encounterDef(pos.mapId)
+    if not GlitchDetector.nativeEncounter(def,function() return 0 end) then
       return false,"no wild signal"
+    end
+    local data=opts.data or (opts.game and opts.game.data) or (lastGame and lastGame.data)
+    local pokemon=data and data.pokemon
+    local eligible=Eligibility.collect(mod,data)
+    if #GlitchDetector.anomalyPool(pokemon,def,MysteryLure,pos.mapId,eligible)==0 then
+      return false,"no eligible wild signal"
     end
     local duration=GlitchDetector.resolveDuration(opts.duration or mod.options:get(GlitchDetector.STEPS_OPTION))
     local spots=GlitchDetector.resolveSpotCount(opts.spots or mod.options:get(GlitchDetector.SPOTS_OPTION))
@@ -231,7 +243,9 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
     local def=encounterDef(pos.mapId)
     local native=GlitchDetector.nativeEncounter(def)
     if not native or not native.level then return false end
-    local pool=GlitchDetector.anomalyPool(game and game.data and game.data.pokemon,def,MysteryLure,pos.mapId)
+    local pokemon=game and game.data and game.data.pokemon
+    local eligible=Eligibility.collect(mod,game and game.data)
+    local pool=GlitchDetector.anomalyPool(pokemon,def,MysteryLure,pos.mapId,eligible)
     if #pool==0 then return false end
     local species=pool[love.math.random(1,#pool)]
 
@@ -268,7 +282,7 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
 
   mod.content.item_effects:register(GlitchDetector.ITEM_EFFECT_ID,{
     needsTarget=false,field=true,battle=false,
-    use=function()
+    use=function(ctx)
       local pos=mod.world:current()
       if not pos or not pos.mapId then return "failed",{"No stable field\nsignal here."} end
       if runtime.activeFieldEffect==GlitchDetector.EFFECT_ID then
@@ -279,12 +293,12 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
         replace=runtime:requestFieldReplacement(GlitchDetector.EFFECT_ID)
         if not replace then return "failed",{"Another field effect\nis already active.\fUse GLITCH DET. again\nto replace it."} end
       end
-      local ok,why,d,spots=beginEffect({replace=replace})
+      local ok,why,d,spots=beginEffect({replace=replace,data=ctx and ctx.data})
       if not ok then
         if why=="no nearby grass" or why=="grass unavailable" then
           return "failed",{"No nearby grass can\nhold the anomaly."}
-        elseif why=="no wild signal" then
-          return "failed",{"No wild signal can\nstabilize here."}
+        elseif why=="no wild signal" or why=="no eligible wild signal" then
+          return "failed",{"No eligible wild\nsignal is available."}
         end
         return "failed",{"The detector won't\nstabilize."}
       end
@@ -308,6 +322,7 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
   end)
 
   mod.hooks:wrap("input.step",function(next,game,dt)
+    lastGame=game
     local r=next(game,dt)
     if runtime:isActive(GlitchDetector.EFFECT_ID) and #currentTiles>0 then
       triggerAnomaly(game)
@@ -325,6 +340,9 @@ function GlitchDetector.install(mod,runtime,fx,MysteryLure)
     return r
   end)
 
+  mod.events:on("game.ready",reloadTiles)
+  mod.events:on("save.loaded",reloadTiles)
+  mod.events:on("save.created",reloadTiles)
   return GlitchDetector
 end
 
