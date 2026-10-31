@@ -46,6 +46,7 @@ return function(mod)
   local Runtime=loadLocal(mod,"lib/runtime.lua")
   local Debug=loadLocal(mod,"lib/debug.lua")
   local Weights=loadLocal(mod,"lib/encounter_weights.lua")
+  local Eligibility=loadLocal(mod,"lib/encounter_eligibility.lua")
   local PrismScent=loadLocal(mod,"lib/shiny_finder.lua")
   local ElusiveScent=loadLocal(mod,"lib/elusive_scent.lua")
   local MysteryLure=loadLocal(mod,"lib/mystery_lure.lua")
@@ -81,11 +82,11 @@ return function(mod)
   local fx=OverworldFx.install(mod)
   PrismScent.install(mod,runtime)
   ElusiveScent.install(mod,runtime,Weights)
-  local mystery=MysteryLure.install(mod,runtime,Weights)
-  local whistle=SpeciesWhistle.install(mod,runtime,Weights)
+  local mystery=MysteryLure.install(mod,runtime,Weights,Eligibility)
+  local whistle=SpeciesWhistle.install(mod,runtime,Weights,Eligibility)
   local resonator=PrototypeResonator.install(mod,runtime,Weights)
   local safariKit=SafariKit.install(mod,runtime,Weights)
-  local glitch=GlitchDetector.install(mod,runtime,fx,MysteryLure)
+  local glitch=GlitchDetector.install(mod,runtime,fx,MysteryLure,Eligibility)
   local treasure=TreasureDetector.install(mod,runtime,fx)
   local tracker=SilphTracker.install(mod,runtime,Weights,ElusiveScent,MysteryLure,whistle,safariKit)
   local trackerScan=tracker.scan
@@ -130,6 +131,7 @@ return function(mod)
   mod.exports.items=Items
   mod.exports.runtime=runtime
   mod.exports.encounterWeights=Weights
+  mod.exports.encounterEligibility=Eligibility
   mod.exports.prismScent=PrismScent
   mod.exports.elusiveScent=ElusiveScent
   mod.exports.mysteryLure=MysteryLure

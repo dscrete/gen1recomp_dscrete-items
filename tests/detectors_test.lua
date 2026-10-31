@@ -71,14 +71,21 @@ test("Glitch Detector forced encounter keeps a native grass level slot", functio
   eq(GlitchDetector.nativeEncounter({water=def.grass},function() return 0 end),nil)
 end)
 
-test("Glitch Detector Kanto pool excludes legends and later dex numbers", function()
-  local pool=GlitchDetector.kantoPool({
+test("Glitch Detector supports every eligible generation without Kanto restriction", function()
+  local Eligibility=dofile("lib/encounter_eligibility.lua")
+  local pokemon={
     PIDGEY={dex=16}, CHANSEY={dex=113}, ARTICUNO={dex=144}, MEW={dex=151},
-    CHIKORITA={dex=152}, MODMON={name="MODMON"},
-  })
-  eq(#pool,2)
-  eq(pool[1],"CHANSEY")
-  eq(pool[2],"PIDGEY")
+    CHIKORITA={dex=152}, RIOLU={dex=447}, KORAIDON={dex=1007}, MODMON={dex=1100},
+  }
+  local data={pokemon=pokemon,encounters={ROUTE_1={grass={slots={
+    {species="PIDGEY",level=5},{species="CHANSEY",level=5},
+    {species="ARTICUNO",level=5},{species="CHIKORITA",level=5},
+    {species="RIOLU",level=5},{species="KORAIDON",level=5},
+    {species="MODMON",level=5},
+  }}}}}
+  local pool=GlitchDetector.eligibleSpecies(pokemon,Eligibility.collect(nil,data).all)
+  eq(#pool,4)
+  eq(table.concat(pool,","),"CHANSEY,MODMON,PIDGEY,RIOLU")
 end)
 
 test("Glitch Detector anomaly pool excludes native and Mystery Lure habitat species", function()
@@ -98,7 +105,9 @@ test("Glitch Detector anomaly pool excludes native and Mystery Lure habitat spec
       return {"PIDGEY","PIKACHU"}
     end,
   }
-  local pool=GlitchDetector.anomalyPool(pokemon,def,fakeMystery,"VIRIDIAN_FOREST")
+  local eligible={all={PIDGEY=true,RATTATA=true,PIKACHU=true,RAPIDASH=true,SEEL=true,CHANSEY=true},
+    habitats={forest={PIDGEY=true,PIKACHU=true}}}
+  local pool=GlitchDetector.anomalyPool(pokemon,def,fakeMystery,"VIRIDIAN_FOREST",eligible)
   eq(#pool,2)
   eq(pool[1],"CHANSEY")
   eq(pool[2],"RAPIDASH")

@@ -12,14 +12,12 @@ SpeciesWhistle.ITEM_ID = "DS_SPECIES_WHISTLE"
 local STRENGTHS={ mild=2, strong=4, extreme=8 }
 local DURATIONS={ [25]=true,[50]=true,[100]=true,[250]=true,[500]=true,[1000]=true }
 local RATES={ ["0.5"]=0.005,["1"]=0.01,["2"]=0.02 }
-local LEGENDARY={ ARTICUNO=true,ZAPDOS=true,MOLTRES=true,MEWTWO=true,MEW=true }
 local WILDS_ID="overworld_wild_spawns"
 
 function SpeciesWhistle.resolveStrength(v) return STRENGTHS[tostring(v or "")] or 2 end
 function SpeciesWhistle.resolveDuration(v) local n=tonumber(v); if n and DURATIONS[n] then return n end; return 100 end
 function SpeciesWhistle.resolveNonlocalRate(v) return RATES[tostring(v or "")] or 0.005 end
 function SpeciesWhistle.nonlocalEnabled(mod) return tostring(mod.options:get(SpeciesWhistle.NONLOCAL_OPTION))=="on" end
-function SpeciesWhistle.isLegendary(species) return LEGENDARY[species] == true end
 
 local function seen(save,species)
   local d=save and save.pokedex
@@ -33,13 +31,6 @@ local function encounterDef(mod,mapId)
   return ok and type(def)=="table" and def or nil
 end
 
-local function localSpecies(mod, Weights, mapId, species)
-  local def=encounterDef(mod,mapId); if not def then return false end
-  for _,terrain in ipairs({"grass","water"}) do
-    if (Weights.distribution(def,terrain)[species] or 0)>0 then return true end
-  end
-  return false
-end
 
 local function pickSlot(Weights,tableDef)
   local rows=Weights.slotWeights(tableDef); if #rows==0 then return nil end
@@ -53,17 +44,27 @@ local function pickSlot(Weights,tableDef)
   return last and {species=last.species,level=last.level} or nil
 end
 
-function SpeciesWhistle.install(mod,runtime,Weights)
+function SpeciesWhistle.install(mod,runtime,Weights,Eligibility)
   local wildsWrapped=false
+  local lastData=nil
   local function target() return runtime:getReusableState(SpeciesWhistle.TARGET_KEY,nil) end
-  local function validTarget(data,save,species)
-    return type(species)=="string" and not LEGENDARY[species] and data and data.pokemon and data.pokemon[species] and seen(save,species)
+  local function validTarget(data,save,species,allowed)
+    return type(species)=="string" and data and data.pokemon and data.pokemon[species]
+      and not Eligibility.isProtected(species,data.pokemon)
+      and (allowed or Eligibility.collect(mod,data)).all[species] == true
+      and seen(save,species)
+  end
+
+  local function localSpecies(mapId,species,data)
+    return Eligibility.native(mod,data or lastData,mapId,species)
   end
 
   local function targetRows(game)
+    lastData=game.data
+    local allowed=Eligibility.collect(mod,game.data)
     local rows={}
     for species,def in pairs(game.data.pokemon or {}) do
-      if validTarget(game.data,game.save,species) then rows[#rows+1]={label=(def.name or species),value=species} end
+      if validTarget(game.data,game.save,species,allowed) then rows[#rows+1]={label=(def.name or species),value=species} end
     end
     table.sort(rows,function(a,b) return a.label<b.label end)
     return rows
@@ -114,10 +115,11 @@ function SpeciesWhistle.install(mod,runtime,Weights)
     needsTarget=false,field=true,battle=false,
     use=function(ctx)
       local species=target()
-      if not validTarget(ctx.data,ctx.save,species) then return "failed", {"No seen POKéMON\ncan answer the call."} end
+      lastData=ctx.data
+      if not validTarget(ctx.data,ctx.save,species) then return "failed", {"No eligible wild\nPOKéMON can answer."} end
       local current=mod.world:current(); local mapId=current and current.mapId
       if not mapId then return "failed", {"The whistle has\nno effect here."} end
-      local native=localSpecies(mod,Weights,mapId,species)
+      local native=localSpecies(mapId,species,ctx.data)
       if not native and not SpeciesWhistle.nonlocalEnabled(mod) then return "failed", {"No local POKéMON\nanswer that call."} end
       if runtime.activeFieldEffect==SpeciesWhistle.EFFECT_ID then return "failed", {"The whistle's call\nis already active."} end
       local replace=false
@@ -199,7 +201,7 @@ function SpeciesWhistle.install(mod,runtime,Weights)
   mod.events:on("mods.loaded",installWildsCompatibility)
   mod.events:on("game.ready",installWildsCompatibility)
   SpeciesWhistle.target=target
-  SpeciesWhistle.localSpecies=function(mapId,species) return localSpecies(mod,Weights,mapId,species) end
+  SpeciesWhistle.localSpecies=function(mapId,species) return localSpecies(mapId,species) end
   SpeciesWhistle.targetRows=targetRows
   return SpeciesWhistle
 end

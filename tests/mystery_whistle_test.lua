@@ -9,12 +9,24 @@ test("Mystery Lure share presets resolve", function()
   eq(Mystery.resolveShare("bad"),0.05)
 end)
 
-test("Mystery Lure habitat pools exclude legendaries", function()
-  local pokemon={}
-  for _,id in ipairs({"PIKACHU","CATERPIE","ZUBAT","MAGIKARP","ARTICUNO","MEWTWO"}) do pokemon[id]={name=id} end
-  local save={pokedex={seen={PIKACHU=true,CATERPIE=true,ZUBAT=true,MAGIKARP=true,ARTICUNO=true,MEWTWO=true}}}
-  local forest=Mystery.candidates({pokemon=pokemon},save,"VIRIDIAN_FOREST","grass",true)
-  for _,id in ipairs(forest) do check(id~="ARTICUNO" and id~="MEWTWO") end
+test("Mystery Lure draws seen habitat candidates only from normal wild tables", function()
+  local Eligibility=dofile("lib/encounter_eligibility.lua")
+  local data={pokemon={
+    CATERPIE={dex=10}, PIKACHU={dex=25}, ARTICUNO={dex=144},
+    CHIKORITA={dex=152}, RIOLU={dex=447}, MEWTWO={dex=150},
+  },encounters={
+    VIRIDIAN_FOREST={grass={rate=25,slots={
+      {species="CATERPIE",level=4},{species="ARTICUNO",level=5},
+      {species="CHIKORITA",level=5},{species="RIOLU",level=5},
+    }}},
+    ROUTE_1={grass={rate=25,slots={{species="PIKACHU",level=5}}}},
+  }}
+  local save={pokedex={seen={CATERPIE=true,PIKACHU=true,ARTICUNO=true,CHIKORITA=true}}}
+  local eligible=Eligibility.collect(nil,data)
+  local forest=Mystery.candidates(data,save,"VIRIDIAN_FOREST","grass",true,eligible)
+  eq(#forest,1); eq(forest[1],"CATERPIE")
+  local unseen=Mystery.candidates(data,save,"VIRIDIAN_FOREST","grass",false,eligible)
+  eq(#unseen,2); eq(unseen[1],"CATERPIE"); eq(unseen[2],"RIOLU")
 end)
 
 test("Mystery habitat classification is stable", function()
@@ -36,10 +48,13 @@ test("Species Whistle presets resolve", function()
   eq(Whistle.resolveNonlocalRate("2"),0.02)
 end)
 
-test("Species Whistle excludes legendaries", function()
-  check(Whistle.isLegendary("MEWTWO"))
-  check(Whistle.isLegendary("MEW"))
-  check(not Whistle.isLegendary("PIKACHU"))
+test("Whistle protection policy includes modern legendaries and starters", function()
+  local Eligibility=dofile("lib/encounter_eligibility.lua")
+  check(Eligibility.isProtected("MEWTWO"))
+  check(Eligibility.isProtected("KORAIDON"))
+  check(Eligibility.isProtected("CHIKORITA"))
+  check(Eligibility.isProtected("GRENINJA"))
+  check(not Eligibility.isProtected("PIKACHU"))
 end)
 
 test("targeted encounter boost preserves species and levels", function()
