@@ -21,7 +21,7 @@ The minimum-version verifier still targets the `v0.2.5` tag; `1.0.0` is reserved
 next explicit compatibility-review boundary rather than imposing an arbitrary minor
 version ceiling.
 
-Current numbered release: **v0.9.2**.
+Current numbered release: **v0.9.3**.
 
 ## Versioning and updates
 
@@ -88,13 +88,16 @@ rarer species already present in the area's table.
 
 ### Mystery Lure
 
-Temporarily reserves a small share of successful encounters for one random
-nonlegendary species from a curated habitat pool. It can be restricted to Pokédex-seen
-candidates and works with normal land/water encounters and fishing outside Safari.
+Temporarily reserves a small share of successful encounters for one species
+selected from that habitat's merged ordinary-wild encounter tables across maps.
+Each activation draws a fresh target, which remains fixed for its duration.
+It can be restricted to Pokédex-seen candidates and works with normal
+land/water encounters and fishing outside Safari.
 
 ### PKMN Whistle
 
-Lets the player choose a Pokédex-seen nonlegendary species. Native targets receive a
+Lets the player choose a previously seen species that occurs in an ordinary
+merged wild encounter table somewhere in the game. Native targets receive a
 weight boost; optional non-local mode gives the target a small explicit replacement
 chance. The selected target persists until changed.
 
@@ -114,7 +117,13 @@ SAVE KIT keeps the item and locks out the choice for that run.
 
 Creates one to five intermittent anomaly spots on real nearby grass. Reaching any one
 starts the same guaranteed nonnative one-shot encounter and clears every remaining
-spot. It never mutates map collision or permanent map data.
+spot. Eligible species come from ordinary wild tables across generations, excluding
+native and local-habitat species. It never mutates map collision or permanent map data.
+
+The three species-introducing tools share an internal eligibility filter that
+excludes starter evolutionary families, legendary/mythical Pokémon, Ultra Beasts,
+roamers, gifts and static-only species. It reads merged ordinary encounters and
+fishing data but has **no dependency on a companion mod or external catalogue**.
 
 ## Detection gadgets
 
