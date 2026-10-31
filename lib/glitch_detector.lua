@@ -118,7 +118,7 @@ end
 
 -- A glitch should look ecologically wrong, not merely rare. Exclude every
 -- species native to this map and every species Mystery Lure considers normal
--- for the current grass habitat before choosing from the remaining Kanto pool.
+-- for the current grass habitat before choosing from globally eligible wild species.
 function GlitchDetector.anomalyPool(pokemon,encDef,MysteryLure,mapId,eligible)
   local excluded=GlitchDetector.nativeSpecies(encDef)
   if MysteryLure and type(MysteryLure.candidates)=="function" then
