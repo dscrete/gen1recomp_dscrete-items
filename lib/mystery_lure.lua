@@ -59,12 +59,12 @@ function MysteryLure.install(mod, runtime, Weights, Eligibility)
 
   local function chooseFor(ctx, mapId, terrain)
     local seenOnly = tostring(mod.options:get(MysteryLure.SEEN_ONLY_OPTION)) ~= "all"
-    local pool = MysteryLure.candidates(ctx.data, ctx.save, mapId, terrain, seenOnly, pool(ctx.data))
-    if #pool==0 then return nil end
+    local choices = MysteryLure.candidates(ctx.data, ctx.save, mapId, terrain, seenOnly, pool(ctx.data))
+    if #choices==0 then return nil end
     local key=stateKey(mapId,terrain)
     local existing=runtime:getReusableState(key,nil)
-    for _,s in ipairs(pool) do if s==existing then return s end end
-    local pick=pool[love.math.random(1,#pool)]
+    for _,s in ipairs(choices) do if s==existing then return s end end
+    local pick=choices[love.math.random(1,#choices)]
     runtime:setReusableState(key,pick)
     return pick
   end
