@@ -135,3 +135,76 @@ test("pure eligibility needs no RHH, catalogue, Wilds or other mod API",function
   check(not a.all.KORAIDON)
   check(not a.all.BULBASAUR)
 end)
+
+test("Glitch Detector restores saved anomalies when the active save changes",function()
+  local state=Glitch.encodeState("ROUTE_1",{{x=2,y=3}})
+  local handlers={}
+  local mod={
+    content={item_effects={register=function() end}},
+    hooks={wrap=function() end},
+    events={on=function(_,id,fn) handlers[id]=fn end},
+  }
+  local runtime={
+    isActive=function(_,id) return id==Glitch.EFFECT_ID end,
+    getReusableState=function(_,key) if key==Glitch.STATE_KEY then return state end end,
+  }
+  local tool=Glitch.install(mod,runtime,nil,nil,Eligibility)
+  eq(tool.tiles()[1].x,2)
+  state=Glitch.encodeState("ROUTE_3",{{x=7,y=8}})
+  handlers["save.loaded"]()
+  eq(tool.tiles()[1].x,7)
+  eq(tool.tiles()[1].y,8)
+  state=nil
+  handlers["save.created"]()
+  eq(#tool.tiles(),0)
+end)
+
+test("Mystery Lure draws a new target each activation, not a stale saved pick",function()
+  local data=fixture()
+  local save={pokedex={seen={}}}
+  local active
+  local storage={}
+  local effects={}
+  local mod={
+    world={current=function() return {mapId="ROUTE_1"} end},
+    content={item_effects={register=function(_,key,definition) effects[key]=definition end}},
+    hooks={wrap=function() end},
+    events={on=function() end},
+    options={get=function(_,key)
+      if key==Mystery.SEEN_ONLY_OPTION then return "all" end
+      return "250"
+    end},
+  }
+  local runtime={
+    getReusableState=function(_,key) return storage[key] end,
+    setReusableState=function(_,key,value) storage[key]=value end,
+    activateFieldEffect=function(self,id,steps)
+      self.activeFieldEffect=id
+      self.remainingSteps=steps
+      return true
+    end,
+    isActive=function(self,id) return self.activeFieldEffect==id end,
+  }
+  local oldLove=_G.love
+  local calls=0
+  _G.love={math={random=function(lo,hi)
+    calls=calls+1
+    if hi then return calls==1 and lo or math.min(lo+1,hi) end
+    return 0.1
+  end}}
+  local ok,err=pcall(function()
+    Mystery.install(mod,runtime,nil,Eligibility)
+    local use=effects[Mystery.ITEM_EFFECT_ID].use
+    local result=use({data=data,save=save})
+    eq(result,"consumed")
+    local first=storage.mystery_lure_field
+    check(first~=nil)
+    runtime.activeFieldEffect=nil
+    result=use({data=data,save=save})
+    eq(result,"consumed")
+    local second=storage.mystery_lure_field
+    check(second~=nil and second~=first,"activation must reroll rather than reuse the old species")
+  end)
+  _G.love=oldLove
+  check(ok,err)
+end)
