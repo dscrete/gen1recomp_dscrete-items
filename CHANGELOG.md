@@ -4,6 +4,31 @@ All notable player-facing changes to DScrete Items are recorded here.
 
 Versions follow semantic versioning while the mod is pre-1.0: feature releases bump the minor version and focused fixes bump the patch version.
 
+## 0.9.3 — 2026-10-31
+
+### Fixed
+
+- Mystery Lure, PKMN Whistle and Glitch Detector now use a self-contained
+  species eligibility policy, deriving candidates from merged ordinary wild
+  encounter tables rather than Kanto-only/hardcoded habitat pools.
+- Legendary, mythical, Ultra Beast, starter family and their form identities
+  are excluded across Generations 1-9 without requiring RHH or other mods.
+  Roaming, scripted, static-only and gift-only species are excluded by table scope.
+- Whistle retains its seen-only constraint and recognizes ordinary fishing
+  encounters when selecting an eligible native species.
+- Mystery Lure picks a new habitat target for each activation while keeping
+  its choice stable during that activation, including after save/reload.
+- Glitch Detector validates eligible candidates before consuming the item,
+  supports eligible later-generation Pokémon, and reloads saved anomaly marks
+  when a save is changed.
+
+### Tests
+
+- Added dedicated standalone coverage for modern forms, starters, legends,
+  normal wild/fishing table eligibility, merged encounter overrides and all
+  three tools. Pinned ROM-free engine fixture tests remain the compatibility
+  smoke gate; imported ROM and dual-session gameplay testing are still pending.
+
 ## 0.9.2 — 2026-10-28
 
 ### Fixed
