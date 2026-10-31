@@ -18,10 +18,6 @@ function SpeciesWhistle.resolveStrength(v) return STRENGTHS[tostring(v or "")] o
 function SpeciesWhistle.resolveDuration(v) local n=tonumber(v); if n and DURATIONS[n] then return n end; return 100 end
 function SpeciesWhistle.resolveNonlocalRate(v) return RATES[tostring(v or "")] or 0.005 end
 function SpeciesWhistle.nonlocalEnabled(mod) return tostring(mod.options:get(SpeciesWhistle.NONLOCAL_OPTION))=="on" end
--- A pure helper for legacy callers; the full policy also checks Dex numbers.
-function SpeciesWhistle.isLegendary(species)
-  return ({ARTICUNO=true,ZAPDOS=true,MOLTRES=true,MEWTWO=true,MEW=true})[species]==true
-end
 
 local function seen(save,species)
   local d=save and save.pokedex
